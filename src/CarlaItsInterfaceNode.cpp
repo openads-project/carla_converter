@@ -7,12 +7,10 @@ namespace carla {
 ItsInterface::ItsInterface() : node_handle_(), private_node_handle_("~") {
   ROS_INFO("CarlaItsInterface starting...");
 
-  // load parameters (defaults and min/max are also handled by dynamic_reconfigure)
+  // load parameters
   if(!private_node_handle_.param("parameter_float", parameter_float_, 0.0f)) ROS_WARN("parameter_float not set, defaulting to %f.", parameter_float_);
   if(!private_node_handle_.param("parameter_bool", parameter_bool_, false)) ROS_WARN("parameter_bool not set, defaulting to %d.", parameter_bool_);
   if(!private_node_handle_.param<std::string>("parameter_string", parameter_string_, "none")) ROS_WARN("parameter_string not set, defaulting to %s.", parameter_string_.c_str());
-
-  // load parameters that can not be dynamically reconfigured
   if(!private_node_handle_.param("create_publisher", create_publisher_, true)) ROS_WARN("create_publisher not set, defaulting to %d.", create_publisher_);
   if(!private_node_handle_.param("create_subscriber", create_subscriber_, true)) ROS_WARN("create_subscriber not set, defaulting to %d.", create_subscriber_);
 
@@ -26,19 +24,6 @@ ItsInterface::ItsInterface() : node_handle_(), private_node_handle_("~") {
   if (create_publisher_) timer_ = node_handle_.createTimer(ros::Duration(2.0), &ItsInterface::timerCallback, this);
 
   ros::spin();
-}
-
-
-void ItsInterface::dynamicReconfigureCallback(params_ItsInterfaceConfig &config, uint32_t level) {
-
-  ROS_INFO("dynamic_reconfigure request: parameter_float = %f, parameter_bool = %d, parameter_string = %s", 
-            config.parameter_float,
-            config.parameter_bool,
-            config.parameter_string.c_str());
-
-  parameter_float_ = config.parameter_float;
-  parameter_bool_ = config.parameter_bool;
-  parameter_string_ = config.parameter_string;
 }
 
 
