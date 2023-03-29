@@ -11,6 +11,8 @@ find_package(catkin REQUIRED COMPONENTS
     roscpp
     roslaunch
     std_msgs
+    derived_object_msgs
+    perception_interfaces
 )
 
 
@@ -107,7 +109,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES hx_testmanager
-   CATKIN_DEPENDS message_runtime roscpp std_msgs
+   CATKIN_DEPENDS message_runtime roscpp std_msgs derived_object_msgs perception_interfaces
 #  DEPENDS system_lib
 )
 

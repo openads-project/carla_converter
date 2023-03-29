@@ -53,6 +53,8 @@
   <depend>roscpp</depend>
   <depend>roslaunch</depend>
   <depend>std_msgs</depend>
+  <depend>derived_object_msgs</depend>
+  <depend>perception_interfaces</depend>
   <exec_depend>message_runtime</exec_depend>
 
 </package>

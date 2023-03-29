@@ -5,6 +5,12 @@
 
 #include <ros/ros.h>
 
+
+#include <derived_object_msgs/ObjectArray.h>
+#include <perception_interfaces/ObjectList.h>
+#include <perception_interfaces/ISCACTR.h>
+
+
 namespace carla {
 
 class ItsInterface {
@@ -13,11 +19,13 @@ class ItsInterface {
     ItsInterface();
 
   private:
+    void objectsCallback(const derived_object_msgs::ObjectArray::ConstPtr& msg);
+
     ros::NodeHandle private_node_handle_;
 
-
-    ros::Publisher pub_;
-    ros::Subscriber sub_;
+    ros::Subscriber sub_objects_;
+    
+    perception_interfaces::ObjectList msg_object_list_;
 };
 
 
