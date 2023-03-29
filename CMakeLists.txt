@@ -156,7 +156,7 @@ add_executable(${PROJECT_NAME}_node src/CarlaItsInterfaceNode.cpp)
 ## TARGET PROPERTIES START ##
 
 #set_target_properties(${PROJECT_NAME}_SampleNodelet PROPERTIES OUTPUT_NAME SampleNodelet PREFIX lib)
-set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME SampleNode)
+set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME CarlaItsInterfaceNode)
 ## TARGET PROPERTIES END ##
 
 ## Add cmake target dependencies of the executable
