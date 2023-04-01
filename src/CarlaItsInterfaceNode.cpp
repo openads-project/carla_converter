@@ -42,6 +42,34 @@ void ItsInterface::objectsCallback(const derived_object_msgs::ObjectArray::Const
     perception_interfaces::ObjectAccess::setLength(msg_object_list_.objects[i], msg->objects[i].shape.dimensions[0]);
     perception_interfaces::ObjectAccess::setWidth(msg_object_list_.objects[i], msg->objects[i].shape.dimensions[1]);
     perception_interfaces::ObjectAccess::setHeight(msg_object_list_.objects[i], msg->objects[i].shape.dimensions[2]);
+
+    msg_object_list_.objects[i].state.classifications.resize(1);
+    msg_object_list_.objects[i].state.classifications[0].probability = 1.0; // Probability that the object is of this type is always 1.0 as source is CARLA
+    switch ((int) msg->objects[i].classification)
+    {
+    case derived_object_msgs::Object::CLASSIFICATION_PEDESTRIAN:
+      msg_object_list_.objects[i].state.classifications[0].type = perception_interfaces::ObjectClassification::PEDESTRIAN;
+      break;
+    case derived_object_msgs::Object::CLASSIFICATION_BIKE:
+      msg_object_list_.objects[i].state.classifications[0].type = perception_interfaces::ObjectClassification::BICYCLE;
+      break;
+    case derived_object_msgs::Object::CLASSIFICATION_MOTORCYCLE:
+      msg_object_list_.objects[i].state.classifications[0].type = perception_interfaces::ObjectClassification::MOTORBIKE;
+      break;
+    case derived_object_msgs::Object::CLASSIFICATION_CAR:
+      msg_object_list_.objects[i].state.classifications[0].type = perception_interfaces::ObjectClassification::CAR;
+      break;
+    case derived_object_msgs::Object::CLASSIFICATION_TRUCK:
+      msg_object_list_.objects[i].state.classifications[0].type = perception_interfaces::ObjectClassification::TRUCK;
+      break;
+    case derived_object_msgs::Object::CLASSIFICATION_BARRIER:
+      msg_object_list_.objects[i].state.classifications[0].type = perception_interfaces::ObjectClassification::ROAD_OBSTACLE;
+      break;
+    default:
+      msg_object_list_.objects[i].state.classifications[0].type = perception_interfaces::ObjectClassification::UNCLASSIFIED;
+      break;
+    }
+
   }
 
   pub_objects_.publish(msg_object_list_);
