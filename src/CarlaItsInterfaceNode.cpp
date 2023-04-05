@@ -6,6 +6,8 @@ namespace carla {
 
 ItsInterface::ItsInterface() {
   ROS_INFO("CarlaItsInterface starting...");
+  
+  tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(tfBuffer);
 
   sub_objects_ = private_node_handle_.subscribe("/carla/ego_vehicle/objects", 1, &ItsInterface::objectsCallback, this);
   sub_odometry_ = private_node_handle_.subscribe("/carla/ego_vehicle/odometry", 1, &ItsInterface::odometryCallback, this);
@@ -60,10 +62,23 @@ void ItsInterface::objectsCallback(const derived_object_msgs::ObjectArray::Const
       msg_object_list_.objects[i].state.classifications[0].type = perception_interfaces::ObjectClassification::UNCLASSIFIED;
       break;
     }
-
   }
 
-  pub_objects_.publish(msg_object_list_);
+  // Transform the objectList from carla_map to map frame
+  geometry_msgs::TransformStamped carla_map_to_map_tf;
+  try {
+    carla_map_to_map_tf = tfBuffer.lookupTransform("map", "carla_map", msg_object_list_.header.stamp, ros::Duration(1.0));
+  } catch (tf2::TransformException ex) {
+    ROS_ERROR("%s",ex.what());
+    return;
+  }
+
+  perception_interfaces::ObjectList msg_object_list_map;  
+  tf2::doTransform(msg_object_list_, msg_object_list_map, carla_map_to_map_tf);
+
+  // publish objectList in map frame
+  pub_objects_.publish(msg_object_list_map);
+
 }
 
 

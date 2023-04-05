@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
     derived_object_msgs
     perception_interfaces
     tf
+    tf2_perception_msgs
 )
 
 
@@ -110,7 +111,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES hx_testmanager
-   CATKIN_DEPENDS message_runtime roscpp std_msgs derived_object_msgs perception_interfaces tf
+   CATKIN_DEPENDS message_runtime roscpp std_msgs derived_object_msgs perception_interfaces tf tf2_perception_msgs
 #  DEPENDS system_lib
 )
 
