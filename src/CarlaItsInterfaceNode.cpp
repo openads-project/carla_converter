@@ -84,7 +84,6 @@ void ItsInterface::objectsCallback(const derived_object_msgs::ObjectArray::Const
 
 void ItsInterface::odometryCallback(const nav_msgs::Odometry& msg) 
 {
-  ROS_INFO("Odometry callback");
   // Set up a transformation link between CARLA map and map
   try
   {
