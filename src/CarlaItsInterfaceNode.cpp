@@ -8,7 +8,7 @@ ItsInterface::ItsInterface() {
   ROS_INFO("CarlaItsInterface starting...");
 
   sub_objects_ = private_node_handle_.subscribe("/carla/ego_vehicle/objects", 1, &ItsInterface::objectsCallback, this);
-  pub_objects_ = private_node_handle_.advertise<perception_interfaces::ObjectList>("objectList", 1);
+  pub_objects_ = private_node_handle_.advertise<perception_interfaces::ObjectList>("/global/objectList", 1);
 
   ros::spin();
 }
@@ -24,12 +24,10 @@ void ItsInterface::objectsCallback(const derived_object_msgs::ObjectArray::Const
     msg_object_list_.objects[i].existence_probability = 1.0; // Probability that the object exists is always 1.0 as source is CARLA
     perception_interfaces::object_access::initializeState(msg_object_list_.objects[i], perception_interfaces::ISCACTR::MODEL_ID);
     msg_object_list_.objects[i].state.header = msg_object_list_.header; // optional
-    perception_interfaces::object_access::setX(msg_object_list_.objects[i], msg->objects[i].pose.position.x);
-    perception_interfaces::object_access::setY(msg_object_list_.objects[i], msg->objects[i].pose.position.y);
-    perception_interfaces::object_access::setZ(msg_object_list_.objects[i], msg->objects[i].pose.position.z + msg->objects[i].shape.dimensions[2] / 2.0);
+    perception_interfaces::object_access::setPose(msg_object_list_.objects[i].state, msg->objects[i].pose);
+    perception_interfaces::object_access::setZ(msg_object_list_.objects[i], msg->objects[i].pose.position.z + msg->objects[i].shape.dimensions[2] / 2.0); // Set z to the center of the object
     perception_interfaces::object_access::setVelocity(msg_object_list_.objects[i].state, msg->objects[i].twist.linear);
     perception_interfaces::object_access::setAcceleration(msg_object_list_.objects[i].state, msg->objects[i].accel.linear);
-    perception_interfaces::object_access::setOrientation(msg_object_list_.objects[i].state, msg->objects[i].pose.orientation);
     perception_interfaces::object_access::setYawRate(msg_object_list_.objects[i], msg->objects[i].twist.angular.z);
     perception_interfaces::object_access::setLength(msg_object_list_.objects[i], msg->objects[i].shape.dimensions[0]);
     perception_interfaces::object_access::setWidth(msg_object_list_.objects[i], msg->objects[i].shape.dimensions[1]);
