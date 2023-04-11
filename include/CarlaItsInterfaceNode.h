@@ -16,6 +16,8 @@
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_perception_msgs/tf2_perception_msgs.h>
 
+namespace obj_acc = perception_interfaces::object_access;
+
 
 namespace carla {
 
@@ -33,6 +35,7 @@ class ItsInterface {
     ros::Subscriber sub_objects_;
     ros::Subscriber sub_odometry_;
     ros::Publisher pub_objects_;
+    ros::Publisher pub_objects_base_link_;
     
     tf::TransformListener tf_listener_;
 

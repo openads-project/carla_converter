@@ -12,6 +12,7 @@ ItsInterface::ItsInterface() {
   sub_objects_ = private_node_handle_.subscribe("/carla/ego_vehicle/objects", 1, &ItsInterface::objectsCallback, this);
   sub_odometry_ = private_node_handle_.subscribe("/carla/ego_vehicle/odometry", 1, &ItsInterface::odometryCallback, this);
   pub_objects_ = private_node_handle_.advertise<perception_interfaces::ObjectList>("/global/objectList", 1);
+  pub_objects_base_link_ = private_node_handle_.advertise<perception_interfaces::ObjectList>("objectList/base_link", 1);
 
   ros::spin();
 }
@@ -25,16 +26,16 @@ void ItsInterface::objectsCallback(const derived_object_msgs::ObjectArray::Const
   for (size_t i = 0; i < msg->objects.size(); i++) {
     msg_object_list_.objects[i].id = msg->objects[i].id;
     msg_object_list_.objects[i].existence_probability = 1.0; // Probability that the object exists is always 1.0 as source is CARLA
-    perception_interfaces::object_access::initializeState(msg_object_list_.objects[i], perception_interfaces::ISCACTR::MODEL_ID);
+    obj_acc::initializeState(msg_object_list_.objects[i], perception_interfaces::ISCACTR::MODEL_ID);
     msg_object_list_.objects[i].state.header = msg->objects[i].header;  // optional
-    perception_interfaces::object_access::setPose(msg_object_list_.objects[i].state, msg->objects[i].pose);
-    perception_interfaces::object_access::setZ(msg_object_list_.objects[i], msg->objects[i].pose.position.z + msg->objects[i].shape.dimensions[2] / 2.0); // Set z to the center of the object
-    perception_interfaces::object_access::setVelocity(msg_object_list_.objects[i].state, msg->objects[i].twist.linear);
-    perception_interfaces::object_access::setAcceleration(msg_object_list_.objects[i].state, msg->objects[i].accel.linear);
-    perception_interfaces::object_access::setYawRate(msg_object_list_.objects[i], msg->objects[i].twist.angular.z);
-    perception_interfaces::object_access::setLength(msg_object_list_.objects[i], msg->objects[i].shape.dimensions[0]);
-    perception_interfaces::object_access::setWidth(msg_object_list_.objects[i], msg->objects[i].shape.dimensions[1]);
-    perception_interfaces::object_access::setHeight(msg_object_list_.objects[i], msg->objects[i].shape.dimensions[2]);
+    obj_acc::setPose(msg_object_list_.objects[i].state, msg->objects[i].pose);
+    obj_acc::setZ(msg_object_list_.objects[i], msg->objects[i].pose.position.z + msg->objects[i].shape.dimensions[2] / 2.0); // Set z to the center of the object
+    obj_acc::setVelocity(msg_object_list_.objects[i].state, msg->objects[i].twist.linear);
+    obj_acc::setAcceleration(msg_object_list_.objects[i].state, msg->objects[i].accel.linear);
+    obj_acc::setYawRate(msg_object_list_.objects[i], msg->objects[i].twist.angular.z);
+    obj_acc::setLength(msg_object_list_.objects[i], msg->objects[i].shape.dimensions[0]);
+    obj_acc::setWidth(msg_object_list_.objects[i], msg->objects[i].shape.dimensions[1]);
+    obj_acc::setHeight(msg_object_list_.objects[i], msg->objects[i].shape.dimensions[2]);
 
     msg_object_list_.objects[i].state.classifications.resize(1);
     msg_object_list_.objects[i].state.classifications[0].probability = 1.0; // Probability that the object is of this type is always 1.0 as source is CARLA
@@ -79,6 +80,31 @@ void ItsInterface::objectsCallback(const derived_object_msgs::ObjectArray::Const
   // publish objectList in map frame
   pub_objects_.publish(msg_object_list_map);
 
+
+  // Transform the objectList from map to base_link frame
+  geometry_msgs::TransformStamped map_to_base_link_tf;
+  try {
+    map_to_base_link_tf = tfBuffer.lookupTransform("base_link", "map", msg_object_list_.header.stamp, ros::Duration(1.0));
+  } catch (tf2::TransformException ex) {
+    ROS_ERROR("%s",ex.what());
+    return;
+  }
+
+  perception_interfaces::ObjectList msg_object_list_base_link;
+  tf2::doTransform(msg_object_list_map, msg_object_list_base_link, map_to_base_link_tf);
+
+  // Only consider objects that are within the fov_range
+  perception_interfaces::ObjectList msg_object_list_base_link_filtered;
+  for (size_t i = 0; i < msg_object_list_base_link.objects.size(); i++) {
+    double x = obj_acc::getX(msg_object_list_base_link.objects[i]);
+    double y = obj_acc::getY(msg_object_list_base_link.objects[i]);
+    if (sqrt(x*x + y*y) <= fov_range_) {
+      msg_object_list_base_link_filtered.objects.push_back(msg_object_list_base_link.objects[i]);
+    }
+  }
+  
+  // publish objectList in base_link frame within fov_range
+  pub_objects_base_link_.publish(msg_object_list_base_link_filtered);
 }
 
 
@@ -111,7 +137,7 @@ void ItsInterface::odometryCallback(const nav_msgs::Odometry& msg)
     ego_vehicle_base_link_tf.setOrigin(tf::Vector3(center_to_baselink_,0,0));
     ego_vehicle_base_link_tf.setRotation(tf::Quaternion(0,0,0,1));
 
-    // base_link to adp map
+    // base_link to map
     try
     {
       tf_listener_.lookupTransform("map", "base_link", ros::Time(0), base_link_map_tf);
@@ -144,6 +170,8 @@ void ItsInterface::odometryCallback(const nav_msgs::Odometry& msg)
     static_transformStamped.transform.rotation.w = br_tf.getRotation().w();
 
     static_br_tf_.sendTransform(static_transformStamped);
+
+    ROS_INFO("Published static transform between carla_map and map");
   }
 
 }
