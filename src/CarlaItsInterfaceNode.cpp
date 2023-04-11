@@ -8,7 +8,7 @@ ItsInterface::ItsInterface() {
   
   tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(tfBuffer);
 
-#ifdef ROS1
+#ifdef MODE_ROS1
   ROS_INFO("CarlaItsInterface starting...");
   sub_objects_ = private_node_handle_.subscribe("/carla/ego_vehicle/objects", 1, &ItsInterface::objectsCallback, this);
   sub_odometry_ = private_node_handle_.subscribe("/carla/ego_vehicle/odometry", 1, &ItsInterface::odometryCallback, this);
@@ -20,10 +20,10 @@ ItsInterface::ItsInterface() {
   
 }
 
-#ifdef ROS1
+#ifdef MODE_ROS1
 void ItsInterface::objectsCallback(const derived_object_msgs::ObjectArray::ConstPtr &msg) {
 #endif
-#ifdef ROS2
+#ifdef MODE_ROS2
 void ItsInterface::objectsCallback(const derived_object_msgs::msg::ObjectArray::ConstPtr& msg) {
 #endif
   // Map the objects from the CARLA format to the perception_interfaces format
