@@ -1,4 +1,14 @@
-include:
-  - project: fb-fi/ops/docker-ros
-    ref: main
-    file: /templates/.gitlab-ci.template.yml
+stages:
+  - Build
+
+ros-bridge-ros1:
+  stage: Build
+  trigger:
+    include: docker/.gitlab-ci-ros1.yml
+    strategy: depend
+
+ros-bridge-ros2:
+  stage: Build
+  trigger:
+    include: docker/.gitlab-ci-ros2.yml
+    strategy: depend

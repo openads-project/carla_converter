@@ -1,0 +1,10 @@
+include:
+  - project: fb-fi/ops/docker-ros
+    ref: feature/docker-compose-variable
+    file: templates/.gitlab-ci.template.yml
+
+variables:
+DISABLE_ARCH_ARM64: 'true'
+IMAGE_DEV_TARGET: ${CI_REGISTRY_IMAGE}:ros2-dev
+IMAGE_RUN_TARGET: ${CI_REGISTRY_IMAGE}:ros2
+PUSH_AS_LATEST: 'true'
