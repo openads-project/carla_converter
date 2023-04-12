@@ -60,6 +60,8 @@ class ItsInterface {
     void odometryCallback(const nav_msgs::msg::Odometry& msg);
 #endif
 
+    tf::TransformListener tf_listener_;
+
     std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
     tf2_ros::Buffer tfBuffer;
 
