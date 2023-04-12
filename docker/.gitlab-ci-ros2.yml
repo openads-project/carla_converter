@@ -4,7 +4,7 @@ include:
     file: templates/.gitlab-ci.template.yml
 
 variables:
-DISABLE_ARCH_ARM64: 'true'
-PUSH_AS_LATEST: 'true'
-IMAGE_DEV_TARGET: ${CI_REGISTRY_IMAGE}:ros2-dev
-IMAGE_RUN_TARGET: ${CI_REGISTRY_IMAGE}:ros2
+  DISABLE_ARCH_ARM64: 'true'
+  PUSH_AS_LATEST: 'true'
+  IMAGE_DEV_TARGET: ${CI_REGISTRY_IMAGE}:ros2-dev
+  IMAGE_RUN_TARGET: ${CI_REGISTRY_IMAGE}:ros2
