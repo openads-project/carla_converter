@@ -1,13 +1,13 @@
 stages:
   - Build
 
-ros-bridge-ros1:
+ros1:
   stage: Build
   trigger:
     include: docker/.gitlab-ci-ros1.yml
     strategy: depend
 
-ros-bridge-ros2:
+ros2:
   stage: Build
   trigger:
     include: docker/.gitlab-ci-ros2.yml
