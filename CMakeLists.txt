@@ -26,6 +26,7 @@ if(${ROS_VERSION} EQUAL 2)
   find_package(derived_object_msgs REQUIRED)
   find_package(perception_interfaces REQUIRED)
   find_package(tf2_perception_msgs REQUIRED)
+  find_package(tf2_geometry_msgs REQUIRED)
 
 
   add_executable(${PROJECT_NAME}_node src/CarlaItsInterfaceNode.cpp)
@@ -43,6 +44,7 @@ if(${ROS_VERSION} EQUAL 2)
     derived_object_msgs
     perception_interfaces
     tf2_perception_msgs
+    tf2_geometry_msgs
   )
 
   install(TARGETS
@@ -94,6 +96,8 @@ elseif(${ROS_VERSION} EQUAL 1)
     tf2_perception_msgs
     tf2_ros
     tf2
+    geometry_msgs
+    tf2_geometry_msgs
   )
 
 
@@ -109,7 +113,7 @@ elseif(${ROS_VERSION} EQUAL 1)
   catkin_package(
   #  INCLUDE_DIRS include
   #  LIBRARIES hx_testmanager
-    CATKIN_DEPENDS roscpp std_msgs derived_object_msgs perception_interfaces tf2_perception_msgs tf2_ros tf2
+    CATKIN_DEPENDS roscpp std_msgs derived_object_msgs perception_interfaces tf2_perception_msgs tf2_ros tf2 geometry_msgs tf2_geometry_msgs
   #  DEPENDS system_lib
   )
 

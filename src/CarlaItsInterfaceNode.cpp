@@ -5,7 +5,6 @@ namespace carla {
 
 #ifdef MODE_ROS1
 ItsInterface::ItsInterface() {
-  tf2_buffer_ = std::make_unique<tf2_ros::Buffer>();
   sub_objects_ = private_node_handle_.subscribe("/carla/ego_vehicle/objects", 1, &ItsInterface::objectsCallback, this);
   sub_odometry_ = private_node_handle_.subscribe("/carla/ego_vehicle/odometry", 1, &ItsInterface::odometryCallback, this);
   pub_objects_ = private_node_handle_.advertise<pin::ObjectList>("/global/objectList", 1);
@@ -71,13 +70,14 @@ void ItsInterface::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
 
   // Transform the objectList from carla_map to map frame
   gm::TransformStamped carla_map_to_map_tf;
-  try {
 #ifdef MODE_ROS1
-  carla_map_to_map_tf = tf2_buffer_->lookupTransform("map", "carla_map", msg_object_list_.header.stamp, ros::Duration(1.0));
+  auto timeout = ros::Duration(1.0);
 #endif
 #ifdef MODE_ROS2
-  carla_map_to_map_tf = tf2_buffer_->lookupTransform("map", "carla_map", msg_object_list_.header.stamp, rclcpp::Duration::from_seconds(1.0));
+  auto timeout = rclcpp::Duration::from_seconds(1.0);
 #endif
+  try {
+    carla_map_to_map_tf = tf2_buffer_->lookupTransform("map", "carla_map", msg_object_list_.header.stamp, timeout);
   } catch (tf2::TransformException ex) {
     ROS_LOG_STREAM(ERROR, "\"%s\",ex.what()");
     return;
@@ -93,12 +93,7 @@ void ItsInterface::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
   // Transform the objectList from map to base_link frame
   gm::TransformStamped map_to_base_link_tf;
   try {
-#ifdef MODE_ROS1
-  map_to_base_link_tf = tf2_buffer_->lookupTransform("base_link", "map", msg_object_list_.header.stamp, ros::Duration(1.0));
-#endif
-#ifdef MODE_ROS2
-  map_to_base_link_tf = tf2_buffer_->lookupTransform("base_link", "map", msg_object_list_.header.stamp, rclcpp::Duration::from_seconds(1.0));
-#endif
+    map_to_base_link_tf = tf2_buffer_->lookupTransform("base_link", "map", msg_object_list_.header.stamp, timeout);
   } catch (tf2::TransformException ex) {
     ROS_LOG_STREAM(ERROR, "\"%s\",ex.what()");
     return;
@@ -125,11 +120,18 @@ void ItsInterface::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
 void ItsInterface::odometryCallback(const nam::Odometry& msg) 
 {
   // Set up a transformation link between CARLA map and map
+#ifdef MODE_ROS1
+  auto timezero = ros::Time(0);
+#endif
+#ifdef MODE_ROS2
+  auto timezero = tf2::TimePointZero;
+#endif
+
   try
   {
     // check if transformation is already defined
     gm::TransformStamped transform;
-    transform = tf2_buffer_->lookupTransform("map", "carla_map", tf2::TimePointZero);
+    transform = tf2_buffer_->lookupTransform("map", "carla_map", timezero);
   }
   catch(const tf2::TransformException& e)
   {
@@ -141,7 +143,7 @@ void ItsInterface::odometryCallback(const nam::Odometry& msg)
     // CARLA map to ego_vehicle transform
     try
     {
-      carla_ego_vehicle_tf = tf2_buffer_->lookupTransform("ego_vehicle", "carla_map", tf2::TimePointZero);
+      carla_ego_vehicle_tf = tf2_buffer_->lookupTransform("ego_vehicle", "carla_map", timezero);
     }
     catch(const tf2::TransformException& e)
     {
@@ -155,7 +157,7 @@ void ItsInterface::odometryCallback(const nam::Odometry& msg)
     // base_link to map
     try
     {
-      base_link_map_tf = tf2_buffer_->lookupTransform("map", "base_link", tf2::TimePointZero);
+      base_link_map_tf = tf2_buffer_->lookupTransform("map", "base_link", timezero);
     }
     catch(const tf2::TransformException& e)
     {
@@ -178,7 +180,7 @@ void ItsInterface::odometryCallback(const nam::Odometry& msg)
     gm::TransformStamped static_transformStamped;
 
 #ifdef MODE_ROS1
-    static_transformStamped.header.stamp = ros::Time::now()
+    static_transformStamped.header.stamp = ros::Time::now();
 #endif
 #ifdef MODE_ROS2
     static_transformStamped.header.stamp = this->get_clock()->now();
