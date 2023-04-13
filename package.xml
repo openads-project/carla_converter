@@ -54,7 +54,6 @@
   <depend>derived_object_msgs</depend>
   <depend>perception_interfaces</depend>
   <depend>std_msgs</depend>
-  <depend>tf</depend>
   <depend>tf2_perception_msgs</depend>
   <depend>tf2_ros</depend>
   <depend>tf2</depend>
@@ -65,6 +64,7 @@
 
   <!-- ROS1 -->
   <buildtool_depend condition="$ROS_VERSION == 1">catkin</buildtool_depend>
+  <depend condition="$ROS_VERSION == 1">tf</depend>
   <depend condition="$ROS_VERSION == 1">roscpp</depend>
   <depend condition="$ROS_VERSION == 1">roslaunch</depend>
   <exec_depend condition="$ROS_VERSION == 1">message_runtime</exec_depend>
