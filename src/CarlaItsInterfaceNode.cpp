@@ -3,29 +3,25 @@
 
 namespace carla {
 
-
-ItsInterface::ItsInterface() {
-  
-  tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(tfBuffer);
-
 #ifdef MODE_ROS1
-  ROS_INFO("CarlaItsInterface starting...");
+ItsInterface::ItsInterface() {
+  tf2_buffer_ = std::make_unique<tf2_ros::Buffer>();
   sub_objects_ = private_node_handle_.subscribe("/carla/ego_vehicle/objects", 1, &ItsInterface::objectsCallback, this);
   sub_odometry_ = private_node_handle_.subscribe("/carla/ego_vehicle/odometry", 1, &ItsInterface::odometryCallback, this);
-  pub_objects_ = private_node_handle_.advertise<perception_interfaces::ObjectList>("/global/objectList", 1);
-  pub_objects_base_link_ = private_node_handle_.advertise<perception_interfaces::ObjectList>("objectList/base_link", 1);
-  ros::spin();
-#endif
-
-  
-}
-
-#ifdef MODE_ROS1
-void ItsInterface::objectsCallback(const derived_object_msgs::ObjectArray::ConstPtr &msg) {
+  pub_objects_ = private_node_handle_.advertise<pin::ObjectList>("/global/objectList", 1);
+  pub_objects_base_link_ = private_node_handle_.advertise<pin::ObjectList>("objectList/base_link", 1);
 #endif
 #ifdef MODE_ROS2
-void ItsInterface::objectsCallback(const derived_object_msgs::msg::ObjectArray::ConstPtr& msg) {
+ItsInterface::ItsInterface() : Node("CarlaItsInterface") {
+  tf2_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
 #endif
+
+  tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
+
+  ROS_LOG_STREAM(INFO, "CarlaItsInterface running...");  
+}
+
+void ItsInterface::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
   // Map the objects from the CARLA format to the perception_interfaces format
   msg_object_list_.objects.clear();
   msg_object_list_.header = msg->header;
@@ -34,7 +30,7 @@ void ItsInterface::objectsCallback(const derived_object_msgs::msg::ObjectArray::
   for (size_t i = 0; i < msg->objects.size(); i++) {
     msg_object_list_.objects[i].id = msg->objects[i].id;
     msg_object_list_.objects[i].existence_probability = 1.0; // Probability that the object exists is always 1.0 as source is CARLA
-    obj_acc::initializeState(msg_object_list_.objects[i], perception_interfaces::ISCACTR::MODEL_ID);
+    obj_acc::initializeState(msg_object_list_.objects[i], pin::ISCACTR::MODEL_ID);
     msg_object_list_.objects[i].state.header = msg->objects[i].header;  // optional
     obj_acc::setPose(msg_object_list_.objects[i].state, msg->objects[i].pose);
     obj_acc::setZ(msg_object_list_.objects[i], msg->objects[i].pose.position.z + msg->objects[i].shape.dimensions[2] / 2.0); // Set z to the center of the object
@@ -49,40 +45,45 @@ void ItsInterface::objectsCallback(const derived_object_msgs::msg::ObjectArray::
     msg_object_list_.objects[i].state.classifications[0].probability = 1.0; // Probability that the object is of this type is always 1.0 as source is CARLA
     switch ((int) msg->objects[i].classification)
     {
-    case derived_object_msgs::Object::CLASSIFICATION_PEDESTRIAN:
-      msg_object_list_.objects[i].state.classifications[0].type = perception_interfaces::ObjectClassification::PEDESTRIAN;
+    case dom::Object::CLASSIFICATION_PEDESTRIAN:
+      msg_object_list_.objects[i].state.classifications[0].type = pin::ObjectClassification::PEDESTRIAN;
       break;
-    case derived_object_msgs::Object::CLASSIFICATION_BIKE:
-      msg_object_list_.objects[i].state.classifications[0].type = perception_interfaces::ObjectClassification::BICYCLE;
+    case dom::Object::CLASSIFICATION_BIKE:
+      msg_object_list_.objects[i].state.classifications[0].type = pin::ObjectClassification::BICYCLE;
       break;
-    case derived_object_msgs::Object::CLASSIFICATION_MOTORCYCLE:
-      msg_object_list_.objects[i].state.classifications[0].type = perception_interfaces::ObjectClassification::MOTORBIKE;
+    case dom::Object::CLASSIFICATION_MOTORCYCLE:
+      msg_object_list_.objects[i].state.classifications[0].type = pin::ObjectClassification::MOTORBIKE;
       break;
-    case derived_object_msgs::Object::CLASSIFICATION_CAR:
-      msg_object_list_.objects[i].state.classifications[0].type = perception_interfaces::ObjectClassification::CAR;
+    case dom::Object::CLASSIFICATION_CAR:
+      msg_object_list_.objects[i].state.classifications[0].type = pin::ObjectClassification::CAR;
       break;
-    case derived_object_msgs::Object::CLASSIFICATION_TRUCK:
-      msg_object_list_.objects[i].state.classifications[0].type = perception_interfaces::ObjectClassification::TRUCK;
+    case dom::Object::CLASSIFICATION_TRUCK:
+      msg_object_list_.objects[i].state.classifications[0].type = pin::ObjectClassification::TRUCK;
       break;
-    case derived_object_msgs::Object::CLASSIFICATION_BARRIER:
-      msg_object_list_.objects[i].state.classifications[0].type = perception_interfaces::ObjectClassification::ROAD_OBSTACLE;
+    case dom::Object::CLASSIFICATION_BARRIER:
+      msg_object_list_.objects[i].state.classifications[0].type = pin::ObjectClassification::ROAD_OBSTACLE;
       break;
     default:
-      msg_object_list_.objects[i].state.classifications[0].type = perception_interfaces::ObjectClassification::UNCLASSIFIED;
+      msg_object_list_.objects[i].state.classifications[0].type = pin::ObjectClassification::UNCLASSIFIED;
       break;
     }
   }
 
   // Transform the objectList from carla_map to map frame
-  geometry_msgs::TransformStamped carla_map_to_map_tf;
+  gm::TransformStamped carla_map_to_map_tf;
   try {
-    carla_map_to_map_tf = tfBuffer.lookupTransform("map", "carla_map", msg_object_list_.header.stamp, ros::Duration(1.0));
+#ifdef MODE_ROS1
+  carla_map_to_map_tf = tf2_buffer_->lookupTransform("map", "carla_map", msg_object_list_.header.stamp, ros::Duration(1.0));
+#endif
+#ifdef MODE_ROS2
+  carla_map_to_map_tf = tf2_buffer_->lookupTransform("map", "carla_map", msg_object_list_.header.stamp, rclcpp::Duration::from_seconds(1.0));
+#endif
   } catch (tf2::TransformException ex) {
-    ROS_ERROR("%s",ex.what());
+    ROS_LOG_STREAM(ERROR, "\"%s\",ex.what()");
     return;
   }
 
-  perception_interfaces::ObjectList msg_object_list_map;  
+  pin::ObjectList msg_object_list_map;  
   tf2::doTransform(msg_object_list_, msg_object_list_map, carla_map_to_map_tf);
 
   // publish objectList in map frame
@@ -90,19 +91,24 @@ void ItsInterface::objectsCallback(const derived_object_msgs::msg::ObjectArray::
 
 
   // Transform the objectList from map to base_link frame
-  geometry_msgs::TransformStamped map_to_base_link_tf;
+  gm::TransformStamped map_to_base_link_tf;
   try {
-    map_to_base_link_tf = tfBuffer.lookupTransform("base_link", "map", msg_object_list_.header.stamp, ros::Duration(1.0));
+#ifdef MODE_ROS1
+  map_to_base_link_tf = tf2_buffer_->lookupTransform("base_link", "map", msg_object_list_.header.stamp, ros::Duration(1.0));
+#endif
+#ifdef MODE_ROS2
+  map_to_base_link_tf = tf2_buffer_->lookupTransform("base_link", "map", msg_object_list_.header.stamp, rclcpp::Duration::from_seconds(1.0));
+#endif
   } catch (tf2::TransformException ex) {
-    ROS_ERROR("%s",ex.what());
+    ROS_LOG_STREAM(ERROR, "\"%s\",ex.what()");
     return;
   }
 
-  perception_interfaces::ObjectList msg_object_list_base_link;
+  pin::ObjectList msg_object_list_base_link;
   tf2::doTransform(msg_object_list_map, msg_object_list_base_link, map_to_base_link_tf);
 
   // Only consider objects that are within the fov_range
-  perception_interfaces::ObjectList msg_object_list_base_link_filtered;
+  pin::ObjectList msg_object_list_base_link_filtered;
   for (size_t i = 0; i < msg_object_list_base_link.objects.size(); i++) {
     double x = obj_acc::getX(msg_object_list_base_link.objects[i]);
     double y = obj_acc::getY(msg_object_list_base_link.objects[i]);
@@ -116,57 +122,67 @@ void ItsInterface::objectsCallback(const derived_object_msgs::msg::ObjectArray::
 }
 
 
-void ItsInterface::odometryCallback(const nav_msgs::Odometry& msg) 
+void ItsInterface::odometryCallback(const nam::Odometry& msg) 
 {
   // Set up a transformation link between CARLA map and map
   try
   {
     // check if transformation is already defined
-    tf::StampedTransform transform;
-    tf_listener_.lookupTransform("map", "carla_map", ros::Time(0), transform);
+    gm::TransformStamped transform;
+    transform = tf2_buffer_->lookupTransform("map", "carla_map", tf2::TimePointZero);
   }
-  catch(const std::exception& e)
+  catch(const tf2::TransformException& e)
   {
-    tf::StampedTransform carla_ego_vehicle_tf;
-    tf::StampedTransform base_link_map_tf;
-    tf::Transform ego_vehicle_base_link_tf;
+    gm::TransformStamped carla_ego_vehicle_tf;
+    gm::TransformStamped base_link_map_tf;
+    tf2::Transform ego_vehicle_base_link_tf;
+
 
     // CARLA map to ego_vehicle transform
     try
     {
-      tf_listener_.lookupTransform("ego_vehicle", "carla_map", ros::Time(0), carla_ego_vehicle_tf);
+      carla_ego_vehicle_tf = tf2_buffer_->lookupTransform("ego_vehicle", "carla_map", tf2::TimePointZero);
     }
-    catch(const std::exception& e)
+    catch(const tf2::TransformException& e)
     {
       return;
     }
 
     // ego_vehicle to base_link
-    ego_vehicle_base_link_tf.setOrigin(tf::Vector3(center_to_baselink_,0,0));
-    ego_vehicle_base_link_tf.setRotation(tf::Quaternion(0,0,0,1));
+    ego_vehicle_base_link_tf.setOrigin(tf2::Vector3(center_to_baselink_,0,0));
+    ego_vehicle_base_link_tf.setRotation(tf2::Quaternion(0,0,0,1));
 
     // base_link to map
     try
     {
-      tf_listener_.lookupTransform("map", "base_link", ros::Time(0), base_link_map_tf);
+      base_link_map_tf = tf2_buffer_->lookupTransform("map", "base_link", tf2::TimePointZero);
     }
-    catch(const std::exception& e)
+    catch(const tf2::TransformException& e)
     {
       return;
     }
               
     // combine transformations
     // carla_map -> ego_vehicle -> base_link -> map
-    tf::Transform br_tf = base_link_map_tf * ego_vehicle_base_link_tf * carla_ego_vehicle_tf;
+    tf2::Transform base_link_map;
+    tf2::Transform carla_ego_map;
+    tf2::fromMsg(base_link_map_tf, base_link_map);
+    tf2::fromMsg(carla_ego_vehicle_tf, carla_ego_map);
+    tf2::Transform br_tf = base_link_map * ego_vehicle_base_link_tf * carla_ego_map;
     br_tf = br_tf.inverse();
     // map -> base_link -> ego_vehicle -> carla_map
 
     // broadcast transformation between carla_map and map
 
     static tf2_ros::StaticTransformBroadcaster static_br_tf_;  
-    geometry_msgs::TransformStamped static_transformStamped;
+    gm::TransformStamped static_transformStamped;
 
-    static_transformStamped.header.stamp = ros::Time::now();
+#ifdef MODE_ROS1
+    static_transformStamped.header.stamp = ros::Time::now()
+#endif
+#ifdef MODE_ROS2
+    static_transformStamped.header.stamp = this->get_clock()->now();
+#endif
     static_transformStamped.header.frame_id = "carla_map";
     static_transformStamped.child_frame_id = "map";
     static_transformStamped.transform.translation.x = br_tf.getOrigin().x();
@@ -179,7 +195,8 @@ void ItsInterface::odometryCallback(const nav_msgs::Odometry& msg)
 
     static_br_tf_.sendTransform(static_transformStamped);
 
-    ROS_INFO("Published static transform between carla_map and map");
+    ROS_LOG_STREAM(INFO, "Published static transform between carla_map and map");
+
   }
 
 }
@@ -190,10 +207,16 @@ void ItsInterface::odometryCallback(const nav_msgs::Odometry& msg)
 
 int main(int argc, char **argv)
 {
+#ifdef MODE_ROS1
   ros::init(argc, argv, "CarlaItsInterface");
-
   carla::ItsInterface node;
-
+  ros::spin();
+#endif
+#ifdef MODE_ROS2
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared<carla::ItsInterface>());
+  rclcpp::shutdown();
+#endif
   return 0;
 }
 

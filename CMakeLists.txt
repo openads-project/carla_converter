@@ -91,8 +91,9 @@ elseif(${ROS_VERSION} EQUAL 1)
     std_msgs
     derived_object_msgs
     perception_interfaces
-    tf
     tf2_perception_msgs
+    tf2_ros
+    tf2
   )
 
 
@@ -108,7 +109,7 @@ elseif(${ROS_VERSION} EQUAL 1)
   catkin_package(
   #  INCLUDE_DIRS include
   #  LIBRARIES hx_testmanager
-    CATKIN_DEPENDS roscpp std_msgs derived_object_msgs perception_interfaces tf tf2_perception_msgs
+    CATKIN_DEPENDS roscpp std_msgs derived_object_msgs perception_interfaces tf2_perception_msgs tf2_ros tf2
   #  DEPENDS system_lib
   )
 
