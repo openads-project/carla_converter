@@ -20,9 +20,11 @@ if(${ROS_VERSION} EQUAL 2)
   # find_package(<dependency> REQUIRED)  
   find_package(derived_object_msgs REQUIRED)
   find_package(geometry_msgs REQUIRED)
+  find_package(nav_msgs REQUIRED)
   find_package(perception_interfaces REQUIRED)
   find_package(rclcpp REQUIRED)
   find_package(tf2 REQUIRED)
+  find_package(tf2_geometry_msgs REQUIRED)
   find_package(tf2_perception_msgs REQUIRED)
   find_package(tf2_ros REQUIRED)
 
@@ -37,9 +39,11 @@ if(${ROS_VERSION} EQUAL 2)
   ament_target_dependencies(${PROJECT_NAME}_node
     derived_object_msgs
     geometry_msgs
+    nav_msgs
     perception_interfaces
     rclcpp
     tf2
+    tf2_geometry_msgs
     tf2_perception_msgs
     tf2_ros
   )

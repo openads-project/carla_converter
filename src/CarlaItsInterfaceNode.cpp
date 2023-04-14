@@ -132,7 +132,7 @@ void ItsInterface::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
 }
 
 
-void ItsInterface::odometryCallback(const nam::Odometry& msg) 
+void ItsInterface::odometryCallback(const nam::Odometry::ConstPtr &msg) 
 {
   // Set up a transformation link between CARLA map and map
 #ifdef MODE_ROS1
@@ -178,7 +178,7 @@ void ItsInterface::odometryCallback(const nam::Odometry& msg)
     {
       return;
     }
-              
+
     // combine transformations
     // carla_map -> ego_vehicle -> base_link -> map
     tf2::Transform base_link_map;

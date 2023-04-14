@@ -14,6 +14,7 @@
 #include <perception_interfaces/object_access.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_perception_msgs/tf2_perception_msgs.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #define ROS_LOG_STREAM(level, ...) RCLCPP_##level##_STREAM(this->get_logger(), __VA_ARGS__)
 #endif
@@ -59,8 +60,8 @@ class ItsInterface : public rclcpp::Node {
     ItsInterface();
 
   private:
-    void objectsCallback(const dom::ObjectArray::ConstPtr& msg);
-    void odometryCallback(const nam::Odometry& msg);
+    void objectsCallback(const dom::ObjectArray::ConstPtr &msg);
+    void odometryCallback(const nam::Odometry::ConstPtr &msg);
 #ifdef MODE_ROS1
     ros::NodeHandle private_node_handle_;
     
