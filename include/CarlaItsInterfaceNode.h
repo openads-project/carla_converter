@@ -67,7 +67,10 @@ class ItsInterface : public rclcpp::Node {
     
     ros::Subscriber sub_objects_;
     ros::Subscriber sub_odometry_;
-    ros::Publisher pub_objects_;
+
+    ros::Publisher pub_objects_carla_map_;
+    ros::Publisher pub_objects_ego_vehicle_;
+    ros::Publisher pub_objects_map_;
     ros::Publisher pub_objects_base_link_;
 #endif
 
@@ -76,7 +79,10 @@ class ItsInterface : public rclcpp::Node {
 
     rclcpp::Subscription<dom::ObjectArray>::SharedPtr sub_objects_;
     rclcpp::Subscription<nam::Odometry>::SharedPtr sub_odometry_;
-    rclcpp::Publisher<pin::ObjectList>::SharedPtr pub_objects_;
+    
+    rclcpp::Publisher<pin::ObjectList>::SharedPtr pub_objects_carla_map_;
+    rclcpp::Publisher<pin::ObjectList>::SharedPtr pub_objects_ego_vehicle_;
+    rclcpp::Publisher<pin::ObjectList>::SharedPtr pub_objects_map_;
     rclcpp::Publisher<pin::ObjectList>::SharedPtr pub_objects_base_link_;
 
     pin::ObjectList msg_object_list_;
