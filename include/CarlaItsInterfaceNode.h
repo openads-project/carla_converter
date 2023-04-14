@@ -2,34 +2,29 @@
 
 #include <memory>
 #include <string>
+#include <tf2_ros/buffer.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_listener.h>
-#include <tf2_ros/buffer.h>
 
 // ROS2
 
 #ifdef MODE_ROS2
-#include <rclcpp/rclcpp.hpp>
-
-#include <perception_interfaces/object_access.hpp>
 #include <derived_object_msgs/msg/object_array.hpp>
 #include <nav_msgs/msg/odometry.hpp>
-
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <perception_interfaces/object_access.hpp>
+#include <rclcpp/rclcpp.hpp>
 #include <tf2_perception_msgs/tf2_perception_msgs.hpp>
 
 #define ROS_LOG_STREAM(level, ...) RCLCPP_##level##_STREAM(this->get_logger(), __VA_ARGS__)
 #endif
 
 #ifdef MODE_ROS1
-#include <ros/ros.h>
-
-#include <perception_interfaces/object_access.h>
 #include <derived_object_msgs/ObjectArray.h>
 #include <nav_msgs/Odometry.h>
-#include <perception_interfaces/ObjectList.h>
 #include <perception_interfaces/ISCACTR.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <perception_interfaces/object_access.h>
+#include <perception_interfaces/ObjectList.h>
+#include <ros/ros.h>
 #include <tf2_perception_msgs/tf2_perception_msgs.h>
 
 #define ROS_LOG_STREAM(level, ...) ROS_##level(__VA_ARGS__)
