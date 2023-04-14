@@ -78,8 +78,8 @@ void ItsInterface::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
 #endif
   try {
     carla_map_to_map_tf = tf2_buffer_->lookupTransform("map", "carla_map", msg_object_list_.header.stamp, timeout);
-  } catch (tf2::TransformException ex) {
-    ROS_LOG_STREAM(ERROR, "\"%s\",ex.what()");
+  } catch (tf2::TransformException& ex) {
+    ROS_LOG_STREAM(ERROR, "\"Exception caught: \" << ex.what()");
     return;
   }
 
@@ -94,8 +94,8 @@ void ItsInterface::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
   gm::TransformStamped map_to_base_link_tf;
   try {
     map_to_base_link_tf = tf2_buffer_->lookupTransform("base_link", "map", msg_object_list_.header.stamp, timeout);
-  } catch (tf2::TransformException ex) {
-    ROS_LOG_STREAM(ERROR, "\"%s\",ex.what()");
+  } catch (tf2::TransformException& ex) {
+    ROS_LOG_STREAM(ERROR, "\"Exception caught: \" << ex.what()");
     return;
   }
 
