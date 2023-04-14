@@ -18,15 +18,13 @@ if(${ROS_VERSION} EQUAL 2)
   # uncomment the following section in order to fill in
   # further dependencies manually.
   # find_package(<dependency> REQUIRED)  
+  find_package(derived_object_msgs REQUIRED)
   find_package(geometry_msgs REQUIRED)
+  find_package(perception_interfaces REQUIRED)
   find_package(rclcpp REQUIRED)
   find_package(tf2 REQUIRED)
-  find_package(tf2_ros REQUIRED)
-
-  find_package(derived_object_msgs REQUIRED)
-  find_package(perception_interfaces REQUIRED)
   find_package(tf2_perception_msgs REQUIRED)
-  find_package(tf2_geometry_msgs REQUIRED)
+  find_package(tf2_ros REQUIRED)
 
 
   add_executable(${PROJECT_NAME}_node src/CarlaItsInterfaceNode.cpp)
@@ -37,14 +35,13 @@ if(${ROS_VERSION} EQUAL 2)
   target_compile_features(${PROJECT_NAME}_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
   ament_target_dependencies(${PROJECT_NAME}_node
+    derived_object_msgs
     geometry_msgs
+    perception_interfaces
     rclcpp
     tf2
-    tf2_ros
-    derived_object_msgs
-    perception_interfaces
     tf2_perception_msgs
-    tf2_geometry_msgs
+    tf2_ros
   )
 
   install(TARGETS
@@ -88,16 +85,15 @@ elseif(${ROS_VERSION} EQUAL 1)
   ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
   ## is used, also find other catkin packages
   find_package(catkin REQUIRED COMPONENTS
+    derived_object_msgs
+    geometry_msgs
+    perception_interfaces
     roscpp
     roslaunch
     std_msgs
-    derived_object_msgs
-    perception_interfaces
+    tf2
     tf2_perception_msgs
     tf2_ros
-    tf2
-    geometry_msgs
-    tf2_geometry_msgs
   )
 
 
@@ -113,7 +109,7 @@ elseif(${ROS_VERSION} EQUAL 1)
   catkin_package(
   #  INCLUDE_DIRS include
   #  LIBRARIES hx_testmanager
-    CATKIN_DEPENDS roscpp std_msgs derived_object_msgs perception_interfaces tf2_perception_msgs tf2_ros tf2 geometry_msgs tf2_geometry_msgs
+    CATKIN_DEPENDS roscpp std_msgs derived_object_msgs perception_interfaces tf2_perception_msgs tf2_ros tf2 geometry_msgs
   #  DEPENDS system_lib
   )
 
