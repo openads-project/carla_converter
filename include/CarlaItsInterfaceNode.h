@@ -78,6 +78,10 @@ class ItsInterface : public rclcpp::Node {
     std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
     std::unique_ptr<tf2_ros::Buffer> tf2_buffer_;
 
+    rclcpp::Subscription<dom::ObjectArray>::SharedPtr sub_objects_;
+    rclcpp::Subscription<nam::Odometry>::SharedPtr sub_odometry_;
+    rclcpp::Publisher<pin::ObjectList>::SharedPtr pub_objects_;
+    rclcpp::Publisher<pin::ObjectList>::SharedPtr pub_objects_base_link_;
 
     pin::ObjectList msg_object_list_;
 

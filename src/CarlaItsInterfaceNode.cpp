@@ -13,6 +13,11 @@ ItsInterface::ItsInterface() {
 #ifdef MODE_ROS2
 ItsInterface::ItsInterface() : Node("CarlaItsInterface") {
   tf2_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
+  sub_objects_ = this->create_subscription<dom::ObjectArray>("/carla/ego_vehicle/objects", 1, std::bind(&ItsInterface::objectsCallback, this, std::placeholders::_1));
+  sub_odometry_ = this->create_subscription<nam::Odometry>("/carla/ego_vehicle/odometry", 1, std::bind(&ItsInterface::odometryCallback, this, std::placeholders::_1));
+  pub_objects_ = this->create_publisher<pin::ObjectList>("/global/objectList", 1);
+  pub_objects_base_link_ = this->create_publisher<pin::ObjectList>("objectList/base_link", 1);
+
 #endif
 
   tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
@@ -87,7 +92,12 @@ void ItsInterface::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
   tf2::doTransform(msg_object_list_, msg_object_list_map, carla_map_to_map_tf);
 
   // publish objectList in map frame
+#ifdef MODE_ROS1
   pub_objects_.publish(msg_object_list_map);
+#endif
+#ifdef MODE_ROS2
+  pub_objects_->publish(msg_object_list_map);
+#endif
 
 
   // Transform the objectList from map to base_link frame
@@ -113,7 +123,12 @@ void ItsInterface::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
   }
   
   // publish objectList in base_link frame within fov_range
+#ifdef MODE_ROS1
   pub_objects_base_link_.publish(msg_object_list_base_link_filtered);
+#endif
+#ifdef MODE_ROS2
+  pub_objects_base_link_->publish(msg_object_list_base_link_filtered);
+#endif
 }
 
 
@@ -176,7 +191,7 @@ void ItsInterface::odometryCallback(const nam::Odometry& msg)
 
     // broadcast transformation between carla_map and map
 
-    static tf2_ros::StaticTransformBroadcaster static_br_tf_;  
+    static tf2_ros::StaticTransformBroadcaster static_br_tf_(*this);  
     gm::TransformStamped static_transformStamped;
 
 #ifdef MODE_ROS1
