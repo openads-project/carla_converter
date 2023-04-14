@@ -72,11 +72,9 @@ class ItsInterface : public rclcpp::Node {
     ros::Publisher pub_objects_ego_vehicle_;
     ros::Publisher pub_objects_map_;
     ros::Publisher pub_objects_base_link_;
-#endif
 
-    std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
-    std::unique_ptr<tf2_ros::Buffer> tf2_buffer_;
-
+    tf2_ros::Buffer tf2_buffer_;
+#elif MODE_ROS2
     rclcpp::Subscription<dom::ObjectArray>::SharedPtr sub_objects_;
     rclcpp::Subscription<nam::Odometry>::SharedPtr sub_odometry_;
     
@@ -84,11 +82,18 @@ class ItsInterface : public rclcpp::Node {
     rclcpp::Publisher<pin::ObjectList>::SharedPtr pub_objects_ego_vehicle_;
     rclcpp::Publisher<pin::ObjectList>::SharedPtr pub_objects_map_;
     rclcpp::Publisher<pin::ObjectList>::SharedPtr pub_objects_base_link_;
+    std::unique_ptr<tf2_ros::Buffer> tf2_buffer_;
+#endif
+
+    std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
 
     pin::ObjectList msg_object_list_;
 
     double fov_range_ = 75.0;
     double center_to_baselink_ = 1.2645;
+
+    bool publish_carla_;
+    bool publish_lanelet_;
 };
 
 

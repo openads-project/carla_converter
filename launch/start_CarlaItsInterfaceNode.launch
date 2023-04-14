@@ -1,10 +1,6 @@
 <launch>
-
-  <group ns="/carla_its_interface">
-    <node pkg="carla_its_interface" type="CarlaItsInterfaceNode" name="ItsInterfaceNode" output="screen">
-      <rosparam command="load" file="$(find carla_its_interface)/launch/params_CarlaItsInterfaceNode.yaml" />
-    </node>
-  </group>
-
+    <rosparam command="load" file="$(find carla_its_interface)/launch/params_CarlaItsInterfaceNode.yaml" />
+    
+    <node pkg="carla_its_interface" type="CarlaItsInterfaceNode" name="ItsInterfaceNode" output="screen" />
 </launch>
 

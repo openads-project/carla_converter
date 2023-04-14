@@ -1,3 +1,5 @@
-parameter_float: 0.75
-parameter_bool: false
-parameter_string: "Hello World!"
+ItsInterfaceNode:
+    ros__parameters:
+        publish_carla: True
+        publish_lanelet: False
+    

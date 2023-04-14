@@ -8,24 +8,53 @@ ItsInterface::ItsInterface() {
   sub_objects_ = private_node_handle_.subscribe("/carla/ego_vehicle/objects", 1, &ItsInterface::objectsCallback, this);
   sub_odometry_ = private_node_handle_.subscribe("/carla/ego_vehicle/odometry", 1, &ItsInterface::odometryCallback, this);
 
-  pub_objects_carla_map_ = private_node_handle_.advertise<pin::ObjectList>("objectList/carla_map", 1);
-  pub_objects_ego_vehicle_ = private_node_handle_.advertise<pin::ObjectList>("objectList/ego_vehicle", 1);
+  pub_objects_carla_map_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_interface/objectList/carla_map", 1);
+  pub_objects_ego_vehicle_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_interface/objectList/ego_vehicle", 1);
   pub_objects_map_ = private_node_handle_.advertise<pin::ObjectList>("/global/objectList", 1);
-  pub_objects_base_link_ = private_node_handle_.advertise<pin::ObjectList>("objectList/base_link", 1);
-#endif
-#ifdef MODE_ROS2
+  pub_objects_base_link_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_interface/objectList/base_link", 1);
+
+  // Load parameters
+  if (!private_node_handle_.getParam("ItsInterfaceNode/ros__parameters/publish_carla", publish_carla_)) {
+    ROS_LOG_STREAM(ERROR, "Parameter \'ItsInterfaceNode/ros__parameters/publish_carla\' is required");
+    return;
+  }
+  if (!private_node_handle_.getParam("ItsInterfaceNode/ros__parameters/publish_lanelet", publish_lanelet_)) {
+    ROS_LOG_STREAM(ERROR, "Parameter \'ItsInterfaceNode/ros__parameters/publish_lanelet\' is required");
+    return;
+  }
+
+  tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(tf2_buffer_);
+  
+
+#elif MODE_ROS2
 ItsInterface::ItsInterface() : Node("CarlaItsInterface") {
   tf2_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
   sub_objects_ = this->create_subscription<dom::ObjectArray>("/carla/ego_vehicle/objects", 1, std::bind(&ItsInterface::objectsCallback, this, std::placeholders::_1));
   sub_odometry_ = this->create_subscription<nam::Odometry>("/carla/ego_vehicle/odometry", 1, std::bind(&ItsInterface::odometryCallback, this, std::placeholders::_1));
 
-  pub_objects_carla_map_ = this->create_publisher<pin::ObjectList>("objectList/carla_map", 1);
-  pub_objects_ego_vehicle_ = this->create_publisher<pin::ObjectList>("objectList/ego_vehicle", 1);
+  pub_objects_carla_map_ = this->create_publisher<pin::ObjectList>("/carla_its_interface/objectList/carla_map", 1);
+  pub_objects_ego_vehicle_ = this->create_publisher<pin::ObjectList>("/carla_its_interface/objectList/ego_vehicle", 1);
   pub_objects_map_ = this->create_publisher<pin::ObjectList>("/global/objectList", 1);
-  pub_objects_base_link_ = this->create_publisher<pin::ObjectList>("objectList/base_link", 1);
-#endif
+  pub_objects_base_link_ = this->create_publisher<pin::ObjectList>("/carla_its_interface/objectList/base_link", 1);
+
+  // Load parameters
+  this->declare_parameter("publish_carla", rclcpp::ParameterType::PARAMETER_BOOL);
+  try {
+    publish_carla_ = this->get_parameter("publish_carla").as_bool();
+  } catch (rclcpp::exceptions::ParameterUninitializedException&) {
+    ROS_LOG_STREAM(ERROR, "Parameter \'publish_carla\' is required");
+    return;
+  }
+  this->declare_parameter("publish_lanelet", rclcpp::ParameterType::PARAMETER_BOOL);
+  try {
+    publish_lanelet_ = this->get_parameter("publish_lanelet").as_bool();
+  } catch (rclcpp::exceptions::ParameterUninitializedException&) {
+    ROS_LOG_STREAM(ERROR, "Parameter \'publish_lanelet\' is required");
+    return;
+  }
 
   tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
+#endif
 
   ROS_LOG_STREAM(INFO, "CarlaItsInterface running...");  
 }
@@ -78,90 +107,100 @@ void ItsInterface::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
     }
   }
 
-  // publish objectList in carla_map frame
 #ifdef MODE_ROS1
-  pub_objects_carla_map_.publish(msg_object_list_);
-#endif
-#ifdef MODE_ROS2
-  pub_objects_carla_map_->publish(msg_object_list_);
+    auto timeout = ros::Duration(1.0);
+#elif MODE_ROS2
+    auto timeout = rclcpp::Duration::from_seconds(1.0);
 #endif
 
+  // Only publish carla_map and ego_vehicle objectLists if publish_carla_ is true
+  if(publish_carla_){
+    // publish objectList in carla_map frame
 #ifdef MODE_ROS1
-  auto timeout = ros::Duration(1.0);
+    pub_objects_carla_map_.publish(msg_object_list_);
+#elif MODE_ROS2
+    pub_objects_carla_map_->publish(msg_object_list_);
 #endif
-#ifdef MODE_ROS2
-  auto timeout = rclcpp::Duration::from_seconds(1.0);
-#endif
 
-
-  // Transform the objectList from carla_map to ego_vehicle
-  pin::ObjectList msg_object_list_ego_vehicle;
-  gm::TransformStamped carla_map_to_ego_vehicle_tf;
-  try {
-    carla_map_to_ego_vehicle_tf = tf2_buffer_->lookupTransform("ego_vehicle", "carla_map", msg_object_list_.header.stamp, timeout);
-  } catch (tf2::TransformException& ex) {
-    ROS_LOG_STREAM(ERROR, "\"Exception caught: \" << ex.what()");
-    return;
-  }
-  tf2::doTransform(msg_object_list_, msg_object_list_ego_vehicle, carla_map_to_ego_vehicle_tf);
-
-  // publish objectList in ego_vehicle frame
+    // Transform the objectList from carla_map to ego_vehicle
+    pin::ObjectList msg_object_list_ego_vehicle;
+    gm::TransformStamped carla_map_to_ego_vehicle_tf;
+    try {
 #ifdef MODE_ROS1
-  pub_objects_ego_vehicle_.publish(msg_object_list_ego_vehicle);
+      carla_map_to_ego_vehicle_tf = tf2_buffer_.lookupTransform("ego_vehicle", "carla_map", msg_object_list_.header.stamp, timeout);
+#elif MODE_ROS2
+      carla_map_to_ego_vehicle_tf = tf2_buffer_->lookupTransform("ego_vehicle", "carla_map", msg_object_list_.header.stamp, timeout);
 #endif
-#ifdef MODE_ROS2
-  pub_objects_ego_vehicle_->publish(msg_object_list_ego_vehicle);
-#endif
-
-  
-  // Transform the objectList from carla_map to map frame
-  pin::ObjectList msg_object_list_map;
-  gm::TransformStamped carla_map_to_map_tf;
-  try {
-    carla_map_to_map_tf = tf2_buffer_->lookupTransform("map", "carla_map", msg_object_list_.header.stamp, timeout);
-  } catch (tf2::TransformException& ex) {
-    ROS_LOG_STREAM(ERROR, "\"Exception caught: \" << ex.what()");
-    return;
-  }
-  tf2::doTransform(msg_object_list_, msg_object_list_map, carla_map_to_map_tf);
-
-  // publish objectList in map frame
-#ifdef MODE_ROS1
-  pub_objects_map_.publish(msg_object_list_map);
-#endif
-#ifdef MODE_ROS2
-  pub_objects_map_->publish(msg_object_list_map);
-#endif
-
-
-  // Transform the objectList from map to base_link frame
-  pin::ObjectList msg_object_list_base_link;
-  gm::TransformStamped map_to_base_link_tf;
-  try {
-    map_to_base_link_tf = tf2_buffer_->lookupTransform("base_link", "map", msg_object_list_.header.stamp, timeout);
-  } catch (tf2::TransformException& ex) {
-    ROS_LOG_STREAM(ERROR, "\"Exception caught: \" << ex.what()");
-    return;
-  }
-  tf2::doTransform(msg_object_list_map, msg_object_list_base_link, map_to_base_link_tf);
-
-  // Only consider objects that are within the fov_range
-  pin::ObjectList msg_object_list_base_link_filtered;
-  for (size_t i = 0; i < msg_object_list_base_link.objects.size(); i++) {
-    double x = obj_acc::getX(msg_object_list_base_link.objects[i]);
-    double y = obj_acc::getY(msg_object_list_base_link.objects[i]);
-    if (sqrt(x*x + y*y) <= fov_range_) {
-      msg_object_list_base_link_filtered.objects.push_back(msg_object_list_base_link.objects[i]);
+    } catch (tf2::TransformException& ex) {
+      ROS_LOG_STREAM(ERROR, "\"Exception caught: \" << ex.what()");
+      return;
     }
-  }
-  
-  // publish objectList in base_link frame within fov_range
+    tf2::doTransform(msg_object_list_, msg_object_list_ego_vehicle, carla_map_to_ego_vehicle_tf);
+
+    // publish objectList in ego_vehicle frame
 #ifdef MODE_ROS1
-  pub_objects_base_link_.publish(msg_object_list_base_link_filtered);
+    pub_objects_ego_vehicle_.publish(msg_object_list_ego_vehicle);
+#elif MODE_ROS2
+    pub_objects_ego_vehicle_->publish(msg_object_list_ego_vehicle);
 #endif
-#ifdef MODE_ROS2
-  pub_objects_base_link_->publish(msg_object_list_base_link_filtered);
+  }
+
+  // Only publish map and base_link objectLists if publish_lanelet_ is true
+  if(publish_lanelet_) {
+    // Transform the objectList from carla_map to map frame
+    pin::ObjectList msg_object_list_map;
+    gm::TransformStamped carla_map_to_map_tf;
+    try {
+#ifdef MODE_ROS1
+      carla_map_to_map_tf = tf2_buffer_.lookupTransform("map", "carla_map", msg_object_list_.header.stamp, timeout);
+#elif MODE_ROS2
+      carla_map_to_map_tf = tf2_buffer_->lookupTransform("map", "carla_map", msg_object_list_.header.stamp, timeout);
 #endif
+    } catch (tf2::TransformException& ex) {
+      ROS_LOG_STREAM(ERROR, "\"Exception caught: \" << ex.what()");
+      return;
+    }
+    tf2::doTransform(msg_object_list_, msg_object_list_map, carla_map_to_map_tf);
+
+    // publish objectList in map frame
+#ifdef MODE_ROS1
+    pub_objects_map_.publish(msg_object_list_map);
+#elif MODE_ROS2
+    pub_objects_map_->publish(msg_object_list_map);
+#endif
+
+    // Transform the objectList from map to base_link frame
+    pin::ObjectList msg_object_list_base_link;
+    gm::TransformStamped map_to_base_link_tf;
+    try {
+#ifdef MODE_ROS1
+      map_to_base_link_tf = tf2_buffer_.lookupTransform("base_link", "map", msg_object_list_.header.stamp, timeout);
+#elif MODE_ROS2
+      map_to_base_link_tf = tf2_buffer_->lookupTransform("base_link", "map", msg_object_list_.header.stamp, timeout);
+#endif
+    } catch (tf2::TransformException& ex) {
+      ROS_LOG_STREAM(ERROR, "\"Exception caught: \" << ex.what()");
+      return;
+    }
+    tf2::doTransform(msg_object_list_map, msg_object_list_base_link, map_to_base_link_tf);
+
+    // Only consider objects that are within the fov_range
+    pin::ObjectList msg_object_list_base_link_filtered;
+    for (size_t i = 0; i < msg_object_list_base_link.objects.size(); i++) {
+      double x = obj_acc::getX(msg_object_list_base_link.objects[i]);
+      double y = obj_acc::getY(msg_object_list_base_link.objects[i]);
+      if (sqrt(x*x + y*y) <= fov_range_) {
+        msg_object_list_base_link_filtered.objects.push_back(msg_object_list_base_link.objects[i]);
+      }
+    }
+    
+    // publish objectList in base_link frame within fov_range
+#ifdef MODE_ROS1
+    pub_objects_base_link_.publish(msg_object_list_base_link_filtered);
+#elif MODE_ROS2
+    pub_objects_base_link_->publish(msg_object_list_base_link_filtered);
+#endif
+  }
 }
 
 
@@ -170,8 +209,7 @@ void ItsInterface::odometryCallback(const nam::Odometry::ConstPtr &msg)
   // Set up a transformation link between CARLA map and map
 #ifdef MODE_ROS1
   auto timezero = ros::Time(0);
-#endif
-#ifdef MODE_ROS2
+#elif MODE_ROS2
   auto timezero = tf2::TimePointZero;
 #endif
 
@@ -179,7 +217,11 @@ void ItsInterface::odometryCallback(const nam::Odometry::ConstPtr &msg)
   {
     // check if transformation is already defined
     gm::TransformStamped transform;
+#ifdef MODE_ROS1
+    transform = tf2_buffer_.lookupTransform("map", "carla_map", timezero);
+#elif MODE_ROS2
     transform = tf2_buffer_->lookupTransform("map", "carla_map", timezero);
+#endif
   }
   catch(const tf2::TransformException& e)
   {
@@ -191,7 +233,11 @@ void ItsInterface::odometryCallback(const nam::Odometry::ConstPtr &msg)
     // CARLA map to ego_vehicle transform
     try
     {
+#ifdef MODE_ROS1
+      carla_ego_vehicle_tf = tf2_buffer_.lookupTransform("ego_vehicle", "carla_map", timezero);
+#elif MODE_ROS2
       carla_ego_vehicle_tf = tf2_buffer_->lookupTransform("ego_vehicle", "carla_map", timezero);
+#endif
     }
     catch(const tf2::TransformException& e)
     {
@@ -205,7 +251,11 @@ void ItsInterface::odometryCallback(const nam::Odometry::ConstPtr &msg)
     // base_link to map
     try
     {
+#ifdef MODE_ROS1
+      base_link_map_tf = tf2_buffer_.lookupTransform("map", "base_link", timezero);
+#elif MODE_ROS2
       base_link_map_tf = tf2_buffer_->lookupTransform("map", "base_link", timezero);
+#endif
     }
     catch(const tf2::TransformException& e)
     {
@@ -223,14 +273,13 @@ void ItsInterface::odometryCallback(const nam::Odometry::ConstPtr &msg)
     // map -> base_link -> ego_vehicle -> carla_map
 
     // broadcast transformation between carla_map and map
-
-    static tf2_ros::StaticTransformBroadcaster static_br_tf_(*this);  
     gm::TransformStamped static_transformStamped;
 
 #ifdef MODE_ROS1
+    static tf2_ros::StaticTransformBroadcaster static_br_tf_;
     static_transformStamped.header.stamp = ros::Time::now();
-#endif
-#ifdef MODE_ROS2
+#elif MODE_ROS2
+    static tf2_ros::StaticTransformBroadcaster static_br_tf_(this);
     static_transformStamped.header.stamp = this->get_clock()->now();
 #endif
     static_transformStamped.header.frame_id = "carla_map";
@@ -261,8 +310,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "CarlaItsInterface");
   carla::ItsInterface node;
   ros::spin();
-#endif
-#ifdef MODE_ROS2
+#elif MODE_ROS2
   rclcpp::init(argc, argv);
   rclcpp::spin(std::make_shared<carla::ItsInterface>());
   rclcpp::shutdown();
