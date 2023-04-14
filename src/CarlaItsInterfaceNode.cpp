@@ -168,8 +168,8 @@ void ItsInterface::odometryCallback(const nam::Odometry& msg)
     // carla_map -> ego_vehicle -> base_link -> map
     tf2::Transform base_link_map;
     tf2::Transform carla_ego_map;
-    tf2::fromMsg(base_link_map_tf, base_link_map);
-    tf2::fromMsg(carla_ego_vehicle_tf, carla_ego_map);
+    tf2::convert(base_link_map_tf.transform, base_link_map);
+    tf2::convert(carla_ego_vehicle_tf.transform, carla_ego_map);
     tf2::Transform br_tf = base_link_map * ego_vehicle_base_link_tf * carla_ego_map;
     br_tf = br_tf.inverse();
     // map -> base_link -> ego_vehicle -> carla_map
