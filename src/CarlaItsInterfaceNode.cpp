@@ -186,6 +186,7 @@ void ItsInterface::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
 
     // Only consider objects that are within the fov_range
     pin::ObjectList msg_object_list_base_link_filtered;
+    msg_object_list_base_link_filtered.header = msg_object_list_base_link.header;
     for (size_t i = 0; i < msg_object_list_base_link.objects.size(); i++) {
       double x = obj_acc::getX(msg_object_list_base_link.objects[i]);
       double y = obj_acc::getY(msg_object_list_base_link.objects[i]);
