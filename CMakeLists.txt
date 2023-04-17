@@ -69,11 +69,6 @@ if(${ROS_VERSION} EQUAL 2)
     DESTINATION share/${PROJECT_NAME}
   )
 
-  install(
-    DIRECTORY config
-    DESTINATION share/${PROJECT_NAME}
-  )
-
   if(BUILD_TESTING)
     #find_package(ament_lint_auto REQUIRED)
     # the following line skips the linter which checks for copyrights
@@ -207,11 +202,11 @@ elseif(${ROS_VERSION} EQUAL 1)
 
 
   ## Mark cpp header files for installation
-  # install(DIRECTORY include/${PROJECT_NAME}/
-  #   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  #   FILES_MATCHING PATTERN "*.h"
-  #   PATTERN ".svn" EXCLUDE
-  # )
+  install(DIRECTORY include/${PROJECT_NAME}/
+    DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+    FILES_MATCHING PATTERN "*.h"
+    PATTERN ".svn" EXCLUDE
+  )
 
   ## Mark other files for installation (e.g. launch and bag files, etc.)
   # install(FILES
