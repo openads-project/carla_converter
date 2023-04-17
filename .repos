@@ -9,5 +9,5 @@ repositories:
     version: master
   derived_object_msgs:
     type: git
-    url: https://github.com/astuff/astuff_sensor_msgs/tree/master/derived_object_msgs.git
+    url: https://github.com/astuff/astuff_sensor_msgs.git
     version: master
