@@ -47,6 +47,17 @@ if(${ROS_VERSION} EQUAL 2)
     tf2_perception_msgs
     tf2_ros
   )
+  ament_export_dependencies(
+    derived_object_msgs
+    geometry_msgs
+    nav_msgs
+    perception_interfaces
+    rclcpp
+    tf2
+    tf2_geometry_msgs
+    tf2_perception_msgs
+    tf2_ros
+  )
 
   install(TARGETS
   ${PROJECT_NAME}_node
