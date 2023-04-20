@@ -96,10 +96,6 @@ class ItsInterface : public rclcpp::Node {
     bool publish_ego_vehicle_;
     bool publish_map_;
     bool publish_base_link_;
-    
-
-    bool publish_carla_;
-    bool publish_lanelet_;
 };
 
 
