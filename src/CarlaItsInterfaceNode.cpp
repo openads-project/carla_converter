@@ -25,7 +25,7 @@ ItsInterface::ItsInterface() {
     }
     v_parameter_bool.push_back(b_param);
   }
-  publish_carla_ = v_parameter_bool[0];
+  publish_carla_map_ = v_parameter_bool[0];
   publish_ego_vehicle_ = v_parameter_bool[1];
   publish_map_ = v_parameter_bool[2];
   publish_base_link_ = v_parameter_bool[3];
