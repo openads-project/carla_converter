@@ -1,5 +1,8 @@
 ItsInterfaceNode:
     ros__parameters:
-        publish_carla: True
-        publish_lanelet: False
+        publish:
+            carla_map: True
+            ego_vehicle: True
+            map: False
+            base_link: False
     

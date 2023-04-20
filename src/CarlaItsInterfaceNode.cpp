@@ -13,15 +13,22 @@ ItsInterface::ItsInterface() {
   pub_objects_map_ = private_node_handle_.advertise<pin::ObjectList>("/global/objectList", 1);
   pub_objects_base_link_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_interface/objectList/base_link", 1);
 
-  // Load parameters
-  if (!private_node_handle_.getParam("ItsInterfaceNode/ros__parameters/publish_carla", publish_carla_)) {
-    ROS_LOG_STREAM(ERROR, "Parameter \'ItsInterfaceNode/ros__parameters/publish_carla\' is required");
-    return;
+  // Load publish parameters
+  std::vector<std::string> v_parameter_str = {"publish/carla_map", "publish/ego_vehicle", "publish/map", "publish/base_link"};
+  std::vector<bool> v_parameter_bool;
+  for (auto parameter_str : v_parameter_str) {
+    bool b_param;
+    if (!private_node_handle_.getParam("ItsInterfaceNode/ros__parameters/" + parameter_str, b_param)) {
+      std::string error_msg = "Parameter \'ItsInterfaceNode/ros__parameters/" + parameter_str + "\' is required";
+      ROS_LOG_STREAM(ERROR, "Parameter Error"); // ToDo: Make Error with error_msg work
+      return;
+    }
+    v_parameter_bool.push_back(b_param);
   }
-  if (!private_node_handle_.getParam("ItsInterfaceNode/ros__parameters/publish_lanelet", publish_lanelet_)) {
-    ROS_LOG_STREAM(ERROR, "Parameter \'ItsInterfaceNode/ros__parameters/publish_lanelet\' is required");
-    return;
-  }
+  publish_carla_ = v_parameter_bool[0];
+  publish_ego_vehicle_ = v_parameter_bool[1];
+  publish_map_ = v_parameter_bool[2];
+  publish_base_link_ = v_parameter_bool[3];
 
   tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(tf2_buffer_);
   
@@ -37,21 +44,24 @@ ItsInterface::ItsInterface() : Node("CarlaItsInterface") {
   pub_objects_map_ = this->create_publisher<pin::ObjectList>("/global/objectList", 1);
   pub_objects_base_link_ = this->create_publisher<pin::ObjectList>("/carla_its_interface/objectList/base_link", 1);
 
-  // Load parameters
-  this->declare_parameter("publish_carla", rclcpp::ParameterType::PARAMETER_BOOL);
-  try {
-    publish_carla_ = this->get_parameter("publish_carla").as_bool();
-  } catch (rclcpp::exceptions::ParameterUninitializedException&) {
-    ROS_LOG_STREAM(ERROR, "Parameter \'publish_carla\' is required");
-    return;
+  // Load publish parameters
+  std::vector<std::string> v_parameter_str = {"publish.carla_map", "publish.ego_vehicle", "publish.map", "publish.base_link"};
+  std::vector<bool> v_parameter_bool;
+  for (auto parameter_str : v_parameter_str) {
+    this->declare_parameter(parameter_str, rclcpp::ParameterType::PARAMETER_BOOL);
+    try {
+      v_parameter_bool.push_back(this->get_parameter(parameter_str).as_bool());
+    } catch (rclcpp::exceptions::ParameterUninitializedException&) {
+      std::string error_msg = "Parameter \'" + parameter_str + "\' is required";
+      ROS_LOG_STREAM(ERROR, error_msg);
+      return;
+    }
   }
-  this->declare_parameter("publish_lanelet", rclcpp::ParameterType::PARAMETER_BOOL);
-  try {
-    publish_lanelet_ = this->get_parameter("publish_lanelet").as_bool();
-  } catch (rclcpp::exceptions::ParameterUninitializedException&) {
-    ROS_LOG_STREAM(ERROR, "Parameter \'publish_lanelet\' is required");
-    return;
-  }
+
+  publish_carla_map_ = v_parameter_bool[0];
+  publish_ego_vehicle_ = v_parameter_bool[1];
+  publish_map_ = v_parameter_bool[2];
+  publish_base_link_ = v_parameter_bool[3];
 
   tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
 #endif
@@ -113,15 +123,15 @@ void ItsInterface::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
     auto timeout = rclcpp::Duration::from_seconds(1.0);
 #endif
 
-  // Only publish carla_map and ego_vehicle objectLists if publish_carla_ is true
-  if(publish_carla_){
+  if(publish_carla_map_){
     // publish objectList in carla_map frame
 #ifdef MODE_ROS1
     pub_objects_carla_map_.publish(msg_object_list_);
 #elif MODE_ROS2
     pub_objects_carla_map_->publish(msg_object_list_);
 #endif
-
+  }
+  if(publish_ego_vehicle_){
     // Transform the objectList from carla_map to ego_vehicle
     pin::ObjectList msg_object_list_ego_vehicle;
     gm::TransformStamped carla_map_to_ego_vehicle_tf;
@@ -145,8 +155,7 @@ void ItsInterface::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
 #endif
   }
 
-  // Only publish map and base_link objectLists if publish_lanelet_ is true
-  if(publish_lanelet_) {
+  if(publish_map_) {
     // Transform the objectList from carla_map to map frame
     pin::ObjectList msg_object_list_map;
     gm::TransformStamped carla_map_to_map_tf;
@@ -168,21 +177,23 @@ void ItsInterface::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
 #elif MODE_ROS2
     pub_objects_map_->publish(msg_object_list_map);
 #endif
-
+  }
+  
+  if(publish_base_link_) {
     // Transform the objectList from map to base_link frame
     pin::ObjectList msg_object_list_base_link;
-    gm::TransformStamped map_to_base_link_tf;
+    gm::TransformStamped carla_map_to_base_link_tf;
     try {
 #ifdef MODE_ROS1
-      map_to_base_link_tf = tf2_buffer_.lookupTransform("base_link", "map", msg_object_list_.header.stamp, timeout);
+      carla_map_to_base_link_tf = tf2_buffer_.lookupTransform("base_link", "carla_map", msg_object_list_.header.stamp, timeout);  // ToDo: Direct tf from carla_map to base_link possible?
 #elif MODE_ROS2
-      map_to_base_link_tf = tf2_buffer_->lookupTransform("base_link", "map", msg_object_list_.header.stamp, timeout);
+      carla_map_to_base_link_tf = tf2_buffer_->lookupTransform("base_link", "carla_map", msg_object_list_.header.stamp, timeout); // ToDo: Direct tf from carla_map to base_link possible?
 #endif
     } catch (tf2::TransformException& ex) {
       ROS_LOG_STREAM(ERROR, "\"Exception caught: \" << ex.what()");
       return;
     }
-    tf2::doTransform(msg_object_list_map, msg_object_list_base_link, map_to_base_link_tf);
+    tf2::doTransform(msg_object_list_, msg_object_list_base_link, carla_map_to_base_link_tf);
 
     // Only consider objects that are within the fov_range
     pin::ObjectList msg_object_list_base_link_filtered;
