@@ -68,6 +68,7 @@ class ItsInterface : public rclcpp::Node {
   private:
     void objectsCallback(const dom::ObjectArray::ConstPtr &msg);
     void odometryCallback(const nam::Odometry::ConstPtr &msg);
+    bool loadParameters();
 #ifdef MODE_ROS1
     ros::NodeHandle private_node_handle_;
     tf2_ros::Buffer tf2_buffer_;

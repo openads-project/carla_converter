@@ -13,23 +13,6 @@ ItsInterface::ItsInterface() {
   pub_objects_map_ = private_node_handle_.advertise<pin::ObjectList>("/global/objectList", 1);
   pub_objects_base_link_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_interface/objectList/base_link", 1);
 
-  // Load publish parameters
-  std::vector<std::string> v_parameter_str = {"publish/carla_map", "publish/ego_vehicle", "publish/map", "publish/base_link"};
-  std::vector<bool> v_parameter_bool;
-  for (auto parameter_str : v_parameter_str) {
-    bool b_param;
-    if (!private_node_handle_.getParam("ItsInterfaceNode/ros__parameters/" + parameter_str, b_param)) {
-      std::string error_msg = "Parameter \'ItsInterfaceNode/ros__parameters/" + parameter_str + "\' is required";
-      ROS_LOG_STREAM(ERROR, "Parameter Error"); // ToDo: Make Error with error_msg work
-      return;
-    }
-    v_parameter_bool.push_back(b_param);
-  }
-  publish_carla_map_ = v_parameter_bool[0];
-  publish_ego_vehicle_ = v_parameter_bool[1];
-  publish_map_ = v_parameter_bool[2];
-  publish_base_link_ = v_parameter_bool[3];
-
   tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(tf2_buffer_);
   
 
@@ -44,29 +27,46 @@ ItsInterface::ItsInterface() : Node("CarlaItsInterface") {
   pub_objects_map_ = this->create_publisher<pin::ObjectList>("/global/objectList", 1);
   pub_objects_base_link_ = this->create_publisher<pin::ObjectList>("/carla_its_interface/objectList/base_link", 1);
 
+  tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
+#endif
+
+  // Load Parameters and if not successful, return
+  if(!loadParameters()) return;
+
+  ROS_LOG_STREAM(INFO, "CarlaItsInterface running...");  
+}
+
+
+bool ItsInterface::loadParameters() {
   // Load publish parameters
-  std::vector<std::string> v_parameter_str = {"publish.carla_map", "publish.ego_vehicle", "publish.map", "publish.base_link"};
+  std::vector<std::string> v_parameter_str = {"carla_map", "ego_vehicle", "map", "base_link"};
   std::vector<bool> v_parameter_bool;
   for (auto parameter_str : v_parameter_str) {
-    this->declare_parameter(parameter_str, rclcpp::ParameterType::PARAMETER_BOOL);
+#ifdef MODE_ROS1
+    bool b_param;
+    if (!private_node_handle_.getParam("ItsInterfaceNode/ros__parameters/publish/" + parameter_str, b_param)) {
+      std::string error_msg = "Parameter \'ItsInterfaceNode/ros__parameters/publish/" + parameter_str + "\' is required";
+      ROS_LOG_STREAM(ERROR, error_msg.c_str());
+      return false;
+    }
+    v_parameter_bool.push_back(b_param);
+#elif MODE_ROS2
+    this->declare_parameter("publish." + parameter_str, rclcpp::ParameterType::PARAMETER_BOOL);
     try {
       v_parameter_bool.push_back(this->get_parameter(parameter_str).as_bool());
     } catch (rclcpp::exceptions::ParameterUninitializedException&) {
-      std::string error_msg = "Parameter \'" + parameter_str + "\' is required";
+      std::string error_msg = "Parameter \'publish." + parameter_str + "\' is required";
       ROS_LOG_STREAM(ERROR, error_msg);
-      return;
+      return false;
     }
+#endif
   }
-
   publish_carla_map_ = v_parameter_bool[0];
   publish_ego_vehicle_ = v_parameter_bool[1];
   publish_map_ = v_parameter_bool[2];
   publish_base_link_ = v_parameter_bool[3];
 
-  tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
-#endif
-
-  ROS_LOG_STREAM(INFO, "CarlaItsInterface running...");  
+  return true;
 }
 
 void ItsInterface::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
