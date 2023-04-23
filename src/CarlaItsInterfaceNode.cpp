@@ -10,7 +10,7 @@ ItsInterface::ItsInterface() {
 
   pub_objects_carla_map_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_interface/objectList/carla_map", 1);
   pub_objects_ego_vehicle_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_interface/objectList/ego_vehicle", 1);
-  pub_objects_map_ = private_node_handle_.advertise<pin::ObjectList>("/global/objectList", 1);
+  pub_objects_map_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_interface/objectList/map", 1);
   pub_objects_base_link_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_interface/objectList/base_link", 1);
 
   tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(tf2_buffer_);
@@ -24,7 +24,7 @@ ItsInterface::ItsInterface() : Node("CarlaItsInterface") {
 
   pub_objects_carla_map_ = this->create_publisher<pin::ObjectList>("/carla_its_interface/objectList/carla_map", 1);
   pub_objects_ego_vehicle_ = this->create_publisher<pin::ObjectList>("/carla_its_interface/objectList/ego_vehicle", 1);
-  pub_objects_map_ = this->create_publisher<pin::ObjectList>("/global/objectList", 1);
+  pub_objects_map_ = this->create_publisher<pin::ObjectList>("/carla_its_interface/objectList/map", 1);
   pub_objects_base_link_ = this->create_publisher<pin::ObjectList>("/carla_its_interface/objectList/base_link", 1);
 
   tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
