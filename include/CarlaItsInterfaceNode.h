@@ -88,13 +88,13 @@ class ItsInterface : public rclcpp::Node {
 
     pin::ObjectList msg_object_list_;
 
-    double fov_range_ = 75.0;
-    double center_to_baselink_ = 1.2645;
-
     bool publish_carla_map_;
     bool publish_ego_vehicle_;
     bool publish_map_;
     bool publish_base_link_;
+
+    double fov_range_;
+    double center_to_baselink_;
 };
 
 

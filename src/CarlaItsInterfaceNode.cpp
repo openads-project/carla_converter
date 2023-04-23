@@ -53,7 +53,7 @@ bool ItsInterface::loadParameters() {
 #elif MODE_ROS2
     this->declare_parameter("publish." + parameter_str, rclcpp::ParameterType::PARAMETER_BOOL);
     try {
-      v_parameter_bool.push_back(this->get_parameter(parameter_str).as_bool());
+      v_parameter_bool.push_back(this->get_parameter("publish." + parameter_str).as_bool());
     } catch (rclcpp::exceptions::ParameterUninitializedException&) {
       std::string error_msg = "Parameter \'publish." + parameter_str + "\' is required";
       ROS_LOG_STREAM(ERROR, error_msg);
@@ -65,6 +65,33 @@ bool ItsInterface::loadParameters() {
   publish_ego_vehicle_ = v_parameter_bool[1];
   publish_map_ = v_parameter_bool[2];
   publish_base_link_ = v_parameter_bool[3];
+
+  // Load value parameters
+#ifdef MODE_ROS1
+  if (!private_node_handle_.getParam("ItsInterfaceNode/ros__parameters/fov_range", fov_range_)) {
+    ROS_LOG_STREAM(ERROR, "Parameter \'ItsInterfaceNode/ros__parameters/fov_range\' is required");
+    return false;
+  }
+  if (!private_node_handle_.getParam("ItsInterfaceNode/ros__parameters/center_to_baselink", center_to_baselink_)) {
+    ROS_LOG_STREAM(ERROR, "Parameter \'ItsInterfaceNode/ros__parameters/center_to_baselink\' is required");
+    return false;
+  }
+#elif MODE_ROS2
+  this->declare_parameter("fov_range", rclcpp::ParameterType::PARAMETER_DOUBLE);
+  try {
+    fov_range_ = this->get_parameter("fov_range").as_double();
+  } catch (rclcpp::exceptions::ParameterUninitializedException&) {
+    ROS_LOG_STREAM(ERROR, "Parameter \'fov_range\' is required");
+    return false;
+  }
+  this->declare_parameter("center_to_baselink", rclcpp::ParameterType::PARAMETER_DOUBLE);
+  try {
+    center_to_baselink_ = this->get_parameter("center_to_baselink").as_double();
+  } catch (rclcpp::exceptions::ParameterUninitializedException&) {
+    ROS_LOG_STREAM(ERROR, "Parameter \'center_to_baselink\' is required");
+    return false;
+  }
+#endif
 
   return true;
 }
