@@ -7,4 +7,3 @@ ItsInterfaceNode:
             base_link: False
         fov_range: 75.0
         center_to_baselink: 1.2645
-    
