@@ -100,47 +100,51 @@ void ItsInterface::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
   // Map the objects from the CARLA format to the perception_interfaces format
   msg_object_list_.objects.clear();
   msg_object_list_.header = msg->header;
-  
-  msg_object_list_.objects.resize(msg->objects.size());
-  for (size_t i = 0; i < msg->objects.size(); i++) {
-    msg_object_list_.objects[i].id = msg->objects[i].id;
-    msg_object_list_.objects[i].existence_probability = 1.0; // Probability that the object exists is always 1.0 as source is CARLA
-    obj_acc::initializeState(msg_object_list_.objects[i], pin::ISCACTR::MODEL_ID);
-    msg_object_list_.objects[i].state.header = msg->objects[i].header;  // optional
-    obj_acc::setPose(msg_object_list_.objects[i].state, msg->objects[i].pose);
-    obj_acc::setZ(msg_object_list_.objects[i], msg->objects[i].pose.position.z + msg->objects[i].shape.dimensions[2] / 2.0); // Set z to the center of the object
-    obj_acc::setVelocity(msg_object_list_.objects[i].state, msg->objects[i].twist.linear);
-    obj_acc::setAcceleration(msg_object_list_.objects[i].state, msg->objects[i].accel.linear);
-    obj_acc::setYawRate(msg_object_list_.objects[i], msg->objects[i].twist.angular.z);
-    obj_acc::setLength(msg_object_list_.objects[i], msg->objects[i].shape.dimensions[0]);
-    obj_acc::setWidth(msg_object_list_.objects[i], msg->objects[i].shape.dimensions[1]);
-    obj_acc::setHeight(msg_object_list_.objects[i], msg->objects[i].shape.dimensions[2]);
 
-    msg_object_list_.objects[i].state.classifications.resize(1);
-    msg_object_list_.objects[i].state.classifications[0].probability = 1.0; // Probability that the object is of this type is always 1.0 as source is CARLA
-    switch ((int) msg->objects[i].classification)
-    {
-    case dom::Object::CLASSIFICATION_PEDESTRIAN:
-      msg_object_list_.objects[i].state.classifications[0].type = pin::ObjectClassification::PEDESTRIAN;
-      break;
-    case dom::Object::CLASSIFICATION_BIKE:
-      msg_object_list_.objects[i].state.classifications[0].type = pin::ObjectClassification::BICYCLE;
-      break;
-    case dom::Object::CLASSIFICATION_MOTORCYCLE:
-      msg_object_list_.objects[i].state.classifications[0].type = pin::ObjectClassification::MOTORBIKE;
-      break;
-    case dom::Object::CLASSIFICATION_CAR:
-      msg_object_list_.objects[i].state.classifications[0].type = pin::ObjectClassification::CAR;
-      break;
-    case dom::Object::CLASSIFICATION_TRUCK:
-      msg_object_list_.objects[i].state.classifications[0].type = pin::ObjectClassification::TRUCK;
-      break;
-    case dom::Object::CLASSIFICATION_BARRIER:
-      msg_object_list_.objects[i].state.classifications[0].type = pin::ObjectClassification::ROAD_OBSTACLE;
-      break;
-    default:
-      msg_object_list_.objects[i].state.classifications[0].type = pin::ObjectClassification::UNCLASSIFIED;
-      break;
+  for (size_t i = 0; i < msg->objects.size(); i++) {
+    if(msg->objects[i].object_classified) { // Insanity Check: Only add objects that are classified
+      pin::Object objectTemp;
+      objectTemp.id = msg->objects[i].id;
+      objectTemp.existence_probability = 1.0; // Probability that the object exists is always 1.0 as source is CARLA
+      obj_acc::initializeState(objectTemp, pin::ISCACTR::MODEL_ID);
+      objectTemp.state.header = msg->objects[i].header;  // optional
+      obj_acc::setPose(objectTemp.state, msg->objects[i].pose);
+      obj_acc::setZ(objectTemp, msg->objects[i].pose.position.z + msg->objects[i].shape.dimensions[2] / 2.0); // Set z to the center of the object
+      obj_acc::setVelocity(objectTemp.state, msg->objects[i].twist.linear);
+      obj_acc::setAcceleration(objectTemp.state, msg->objects[i].accel.linear);
+      obj_acc::setYawRate(objectTemp.state, msg->objects[i].twist.angular.z);
+      obj_acc::setLength(objectTemp, msg->objects[i].shape.dimensions[0]);
+      obj_acc::setWidth(objectTemp, msg->objects[i].shape.dimensions[1]);
+      obj_acc::setHeight(objectTemp, msg->objects[i].shape.dimensions[2]);
+
+      objectTemp.state.classifications.resize(1);
+      objectTemp.state.classifications[0].probability = 1.0; // Probability that the object is of this type is always 1.0 as source is CARLA
+      switch ((int) msg->objects[i].classification)
+      {
+        case dom::Object::CLASSIFICATION_PEDESTRIAN:
+        objectTemp.state.classifications[0].type = pin::ObjectClassification::PEDESTRIAN;
+        break;
+      case dom::Object::CLASSIFICATION_BIKE:
+        objectTemp.state.classifications[0].type = pin::ObjectClassification::BICYCLE;
+        break;
+      case dom::Object::CLASSIFICATION_MOTORCYCLE:
+        objectTemp.state.classifications[0].type = pin::ObjectClassification::MOTORBIKE;
+        break;
+      case dom::Object::CLASSIFICATION_CAR:
+        objectTemp.state.classifications[0].type = pin::ObjectClassification::CAR;
+        break;
+      case dom::Object::CLASSIFICATION_TRUCK:
+        objectTemp.state.classifications[0].type = pin::ObjectClassification::TRUCK;
+        break;
+      case dom::Object::CLASSIFICATION_BARRIER:
+        objectTemp.state.classifications[0].type = pin::ObjectClassification::ROAD_OBSTACLE;
+        break;
+      default:
+        objectTemp.state.classifications[0].type = pin::ObjectClassification::UNCLASSIFIED;
+        break;
+      }
+
+      msg_object_list_.objects.push_back(objectTemp);
     }
   }
 
