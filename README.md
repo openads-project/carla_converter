@@ -41,11 +41,11 @@ This package contains the CarlaItsInterfaceNode - a simple ROS Node that convert
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| publish.carla_map | bool | Whether to publish the Carla map or not. |
-| publish.ego_vehicle | bool | Whether to publish the ego vehicle or not. |
-| publish.map | bool | Whether to publish the map or not. |
-| publish.base_link | bool | Whether to publish the base link or not. |
-| fov_range | float | Field of view range. |
+| publish.carla_map | bool | Whether to publish object list in carla map frame or not. |
+| publish.ego_vehicle | bool | Whether to publish object list in ego vehicle frame or not. |
+| publish.map | bool | Whether to publish object list in map frame or not. |
+| publish.base_link | bool | Whether to publish object list in base link frame or not. |
+| fov_range | float | Maximum field of view range for objects in the base link frame. Only objects within the FOV will be published. |
 | center_to_baselink | float | Distance between center of the vehicle and its base link. |
 
 ## Usage of docker-ros Images
