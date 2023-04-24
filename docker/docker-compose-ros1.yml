@@ -1,7 +1,7 @@
 x-base-image: &base-image gitlab.ika.rwth-aachen.de:5050/fb-fi/ops/docker-base/ros1:latest
 x-dev-image:  &dev-image  gitlab.ika.rwth-aachen.de:5050/fb-fi/simulation/carla/carla_its_interface:ros1-dev
 x-run-image:  &run-image  gitlab.ika.rwth-aachen.de:5050/fb-fi/simulation/carla/carla_its_interface:ros1
-x-command:    &command    roslaunch carla_its_interface start_CarlaItsInterfaceNode.launch 
+x-command:    &command    roslaunch carla_its_interface carla_its_interface_ros1.launch 
 
 # ==============================================================================
 
