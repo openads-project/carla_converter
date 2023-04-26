@@ -1,0 +1,7 @@
+<launch>
+
+  <node pkg="carla_its_interface" exec="carla_its_interface_node" name="ItsInterfaceNode" output="screen">
+    <param from="$(find-pkg-share carla_its_interface)/config/carla_its_interface_params.yaml" />
+  </node>
+
+</launch>

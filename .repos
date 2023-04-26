@@ -1,0 +1,13 @@
+repositories:
+  perception_interfaces:
+    type: git
+    url: https://gitlab.ika.rwth-aachen.de/fb-fi/definitions/perception_interfaces.git
+    version: main
+  ros-carla-msgs:
+    type: git
+    url: https://github.com/carla-simulator/ros-carla-msgs.git
+    version: master
+  derived_object_msgs:
+    type: git
+    url: https://github.com/astuff/astuff_sensor_msgs.git
+    version: master
