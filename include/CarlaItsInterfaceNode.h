@@ -68,6 +68,8 @@ class ItsInterface : public rclcpp::Node {
   private:
     void objectsCallback(const dom::ObjectArray::ConstPtr &msg);
     void odometryCallback(const nam::Odometry::ConstPtr &msg);
+    void vehicleStatusCallback(const carla_msgs::msg::CarlaEgoVehicleStatus::SharedPtr msg)
+    void vehicleInfoCallback(const carla_msgs::msg::CarlaEgoVehicleInfo::SharedPtr msg)
     bool loadParameters();
 #ifdef MODE_ROS1
     ros::NodeHandle private_node_handle_;
@@ -84,9 +86,12 @@ class ItsInterface : public rclcpp::Node {
     Publisher<pin::ObjectList> pub_objects_map_;
     Publisher<pin::ObjectList> pub_objects_base_link_;
 
+    Publisher<pin::EgoData> pub_ego_data_;
+
     std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
 
     pin::ObjectList msg_object_list_;
+    pin::EgoData msg_ego_data_;
 
     bool publish_carla_map_;
     bool publish_ego_vehicle_;
@@ -95,6 +100,9 @@ class ItsInterface : public rclcpp::Node {
 
     double fov_range_;
     double center_to_baselink_;
+
+    int ego_id_;
+    float ego_steering_angle_;
 };
 
 

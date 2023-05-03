@@ -21,6 +21,8 @@ ItsInterface::ItsInterface() : Node("CarlaItsInterface") {
   tf2_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
   sub_objects_ = this->create_subscription<dom::ObjectArray>("/carla/ego_vehicle/objects", 1, std::bind(&ItsInterface::objectsCallback, this, std::placeholders::_1));
   sub_odometry_ = this->create_subscription<nam::Odometry>("/carla/ego_vehicle/odometry", 1, std::bind(&ItsInterface::odometryCallback, this, std::placeholders::_1));
+  sub_vehicle_status = this->create_subscription<carla_msgs::msg::CarlaEgoVehicleStatus>("/carla/ego_vehicle/vehicle_status", 1, std::bind(&ItsInterface::vehicleStatusCallback, this, std::placeholders::_1));
+  sub_vehicle_info = this->create_subscription<carla_msgs::msg::CarlaEgoVehicleInfo>("/carla/ego_vehicle/vehicle_info", 1, std::bind(&ItsInterface::vehicleInfoCallback, this, std::placeholders::_1));
 
   pub_objects_carla_map_ = this->create_publisher<pin::ObjectList>("/carla_its_interface/objectList/carla_map", 1);
   pub_objects_ego_vehicle_ = this->create_publisher<pin::ObjectList>("/carla_its_interface/objectList/ego_vehicle", 1);
@@ -145,6 +147,22 @@ void ItsInterface::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
       }
 
       msg_object_list_.objects.push_back(objectTemp);
+
+      std::cout << ego_id_ << msg->objects[i].id << std::endl;
+      if(publish_ego_data_){
+        if(ego_id_ == msg->objects[i].id){ //TODO überprüfen ob ego wirklich classified ist (ansonsten außerhalb von if)
+          objectTemp.model_id = 1;
+          obj_acc::setSteeringAngleAck(objectTemp.state, ego_steering_angle_);
+          // obj_acc::setSteeringAngleRateAck(objectTemp.state, msg); //TODO steht nicht direkt zur Verfügung
+          objectTemp.vehicle_id = ego_id;
+          obj_acc::setStandstill(objectTemp.state, msg->velocity == 0);
+#ifdef MODE_ROS1
+          pub_ego_data_.publish(objectTemp);
+#elif MODE_ROS2
+          pub_ego_data_->publish(objectTemp);
+#endif 
+        }
+      }
     }
   }
 
@@ -162,6 +180,7 @@ void ItsInterface::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
     pub_objects_carla_map_->publish(msg_object_list_);
 #endif
   }
+
   if(publish_ego_vehicle_){
     // Transform the objectList from carla_map to ego_vehicle
     pin::ObjectList msg_object_list_ego_vehicle;
@@ -246,9 +265,7 @@ void ItsInterface::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
   }
 }
 
-
-void ItsInterface::odometryCallback(const nam::Odometry::ConstPtr &msg) 
-{
+void ItsInterface::odometryCallback(const nam::Odometry::ConstPtr &msg) {
   // Set up a transformation link between CARLA map and map
 #ifdef MODE_ROS1
   auto timezero = ros::Time(0);
@@ -343,7 +360,94 @@ void ItsInterface::odometryCallback(const nam::Odometry::ConstPtr &msg)
 
 }
 
+void ItsInterface::vehicleStatusCallback(const carla_msgs::msg::CarlaEgoVehicleStatus::SharedPtr msg){
+  ego_steering_angle_ = msg->control.steer
+//   msg_ego_data_.clear();
+//   msg_ego_data_.header = msg->header;
 
+//   obj_acc::setPose()
+//   //   # Dynamic motion state estimate of the ego vehicle
+//   // ObjectState state
+
+//       // std_msgs/Header header
+
+//       // # to ensure that the model_id is unique, all existing models an their corresponding id's are listed here:
+//       // #   EGO:      1
+//       // #   ISCACTR: 16
+//       // uint8 model_id
+//       msg_ego_data_.model_id = 1;
+
+//       // # continuous state vector (N)
+//       // float64[] continuous_state
+      
+//       obj_acc::setVelocity(msg_ego_data_.state, msg->velocity); //TODO muss aufgeteilt werden in lon und lat
+//       obj_acc::setAcceleration(msg_ego_data_.state, msg->acceleration.linear); //TODO or angular?
+//       obj_acc::setOrientation(msg_ego_data_.state, msg->orientation);
+//       obj_acc::setYawRate(msg_ego_data_.state, msg) //TODO steht nicht direkt zur Verfügung
+      
+      
+      
+//       obj_acc::setSteeringAngleAck(msg_ego_data_.state, msg->control.steer);
+//       // obj_acc::setSteeringAngleRateAck(msg_ego_data_.state, msg); //TODO steht nicht direkt zur Verfügung
+
+//       // # discrete state vector (M) for discrete int/bool/string quantitites
+//       // int64[] discrete_state
+//       obj_acc::setStandstill(msg_ego_data_.state, msg->velocity == 0);
+
+//       // # continuous state covariance matrix (N*N flattened)
+//       // float64[] continuous_state_covariance
+
+//       // # classification incl. probabilities
+//       // ObjectClassification[] classifications
+
+//       // # reference point for object position
+//       // ObjectReferencePoint reference_point
+
+//   // erstmal rauslassen
+//   // # Planned trajectory of the ego_vehicle
+//   // ObjectState[] trajectory_planned
+
+//   // # Past trajectory of the ego_vehicle
+//   // ObjectState[] trajectory_past
+
+//   // # Planned route of the ego_vehicle
+//   // geometry_msgs/Point[] route_planned
+
+
+//   // # Parameters
+//   // uint64 vehicle_id           # Globally unique vehicle id
+//   msg_ego_data_.vehicle_id = 1;
+//   // float64 length              # value of vehicle length [m]
+//   // float64 width               # value of vehicle width [m]
+//   // float64 height              # value of vehicle height [m]
+//   obj_acc::setLength(msg_ego_data_, msg->shape.dimensions[0]);
+//   obj_acc::setWidth(msg_ego_data_, msg->objects[i].shape.dimensions[1]);
+//   obj_acc::setHeight(msg_ego_data_, msg->objects[i].shape.dimensions[2]);
+
+//   // Transform the ego position from map to base_link frame
+//     pin::ObjectList msg_object_list_base_link;
+//     gm::TransformStamped carla_map_to_base_link_tf;
+//     try {
+// #ifdef MODE_ROS1
+//       carla_map_to_base_link_tf = tf2_buffer_.lookupTransform("base_link", "carla_map", msg_object_list_.header.stamp, timeout);  // ToDo: Direct tf from carla_map to base_link possible?
+// #elif MODE_ROS2
+//       carla_map_to_base_link_tf = tf2_buffer_->lookupTransform("base_link", "carla_map", msg_object_list_.header.stamp, timeout); // ToDo: Direct tf from carla_map to base_link possible?
+// #endif
+//     } catch (tf2::TransformException& ex) {
+//       ROS_LOG_STREAM(ERROR, "\"Exception caught: \" << ex.what()");
+//       return;
+//     }
+//     tf2::doTransform(msg_ego_data_, msg_ego_data_base_link, carla_map_to_base_link_tf);
+
+//     obj_acc::setPosition(msg_ego_data_,)
+
+
+  
+}
+
+void ItsInterface::vehicleInfoCallback(const carla_msgs::msg::CarlaEgoVehicleInfo::SharedPtr msg){
+  ego_id_ = msg.id;
+}
 }  // end of namespace
 
 
