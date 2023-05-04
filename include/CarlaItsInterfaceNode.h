@@ -67,7 +67,7 @@ class ItsInterface : public rclcpp::Node {
 
   private:
     void objectsCallback(const dom::ObjectArray::ConstPtr &msg);
-    void odometryCallback(const nam::Odometry::ConstPtr &msg);
+    void odometryCallback(const nav_msgs::Odometry::ConstPtr &msg);
     void vehicleStatusCallback(const carla_msgs::msg::CarlaEgoVehicleStatus::SharedPtr msg)
     void vehicleInfoCallback(const carla_msgs::msg::CarlaEgoVehicleInfo::SharedPtr msg)
     bool loadParameters();
@@ -103,6 +103,10 @@ class ItsInterface : public rclcpp::Node {
 
     int ego_id_;
     float ego_steering_angle_;
+    geometry_msgs::Accel ego_acceleration_;
+    shape_msgs::SolidPrimitive ego_shape_;
+    bool ego_shape_set_ = false;
+    bool ego_status_set_ = false;
 };
 
 
