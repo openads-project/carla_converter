@@ -27,6 +27,8 @@ if(${ROS_VERSION} EQUAL 2)
   find_package(tf2_geometry_msgs REQUIRED)
   find_package(tf2_perception_msgs REQUIRED)
   find_package(tf2_ros REQUIRED)
+  find_package(shape_msgs REQUIRED)
+  find_package(carla_msgs REQUIRED)
 
 
   add_executable(${PROJECT_NAME}_node src/CarlaItsInterfaceNode.cpp)
@@ -46,6 +48,8 @@ if(${ROS_VERSION} EQUAL 2)
     tf2_geometry_msgs
     tf2_perception_msgs
     tf2_ros
+    shape_msgs
+    carla_msgs
   )
   ament_export_dependencies(
     derived_object_msgs
@@ -57,6 +61,8 @@ if(${ROS_VERSION} EQUAL 2)
     tf2_geometry_msgs
     tf2_perception_msgs
     tf2_ros
+    shape_msgs
+    carla_msgs
   )
 
   install(TARGETS
@@ -109,6 +115,7 @@ elseif(${ROS_VERSION} EQUAL 1)
     tf2
     tf2_perception_msgs
     tf2_ros
+    carla_msgs
   )
 
 

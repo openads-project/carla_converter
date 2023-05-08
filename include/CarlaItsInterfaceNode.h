@@ -15,6 +15,10 @@
 #include <perception_interfaces/ObjectList.h>
 #include <ros/ros.h>
 #include <tf2_perception_msgs/tf2_perception_msgs.h>
+#include <geometry_msgs/Accel.h>
+#include <shape_msgs/SolidPrimitive.h>
+#include <carla_msgs/CarlaEgoVehicleStatus.h>
+#include <carla_msgs/CarlaEgoVehicleInfo.h>
 
 #define ROS_LOG_STREAM(level, ...) ROS_##level(__VA_ARGS__)
 
@@ -22,6 +26,8 @@ namespace dom = derived_object_msgs;
 namespace nam = nav_msgs;
 namespace pin = perception_interfaces;
 namespace gm = geometry_msgs;
+namespace sm = shape_msgs;
+namespace cm = carla_msgs;
 
 template<typename T>
 using Subscriber = ros::Subscriber;
@@ -35,6 +41,11 @@ using Publisher = ros::Publisher;
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_perception_msgs/tf2_perception_msgs.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <geometry_msgs/msg/accel.hpp>
+#include <shape_msgs/msg/solid_primitive.hpp>
+#include <carla_msgs/msg/carla_ego_vehicle_status.hpp>
+#include <carla_msgs/msg/carla_ego_vehicle_info.hpp>
+// #include <Matrix3x3.h>
 
 #define ROS_LOG_STREAM(level, ...) RCLCPP_##level##_STREAM(this->get_logger(), __VA_ARGS__)
 
@@ -42,6 +53,8 @@ namespace dom = derived_object_msgs::msg;
 namespace nam = nav_msgs::msg;
 namespace pin = perception_interfaces::msg;
 namespace gm = geometry_msgs::msg;
+namespace sm = shape_msgs::msg;
+namespace cm = carla_msgs::msg;
 
 template<typename T>
 using Subscriber = typename rclcpp::Subscription<T>::SharedPtr;
@@ -67,9 +80,9 @@ class ItsInterface : public rclcpp::Node {
 
   private:
     void objectsCallback(const dom::ObjectArray::ConstPtr &msg);
-    void odometryCallback(const nav_msgs::Odometry::ConstPtr &msg);
-    void vehicleStatusCallback(const carla_msgs::msg::CarlaEgoVehicleStatus::SharedPtr msg)
-    void vehicleInfoCallback(const carla_msgs::msg::CarlaEgoVehicleInfo::SharedPtr msg)
+    void odometryCallback(const nam::Odometry::SharedPtr msg);
+    void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::SharedPtr msg);
+    void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::SharedPtr msg);
     bool loadParameters();
 #ifdef MODE_ROS1
     ros::NodeHandle private_node_handle_;
@@ -80,12 +93,13 @@ class ItsInterface : public rclcpp::Node {
 
     Subscriber<dom::ObjectArray> sub_objects_;
     Subscriber<nam::Odometry> sub_odometry_;
+    Subscriber<cm::CarlaEgoVehicleStatus> sub_vehicle_status_;
+    Subscriber<cm::CarlaEgoVehicleInfo> sub_vehicle_info_;
 
     Publisher<pin::ObjectList> pub_objects_carla_map_;
     Publisher<pin::ObjectList> pub_objects_ego_vehicle_;
     Publisher<pin::ObjectList> pub_objects_map_;
     Publisher<pin::ObjectList> pub_objects_base_link_;
-
     Publisher<pin::EgoData> pub_ego_data_;
 
     std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
@@ -97,16 +111,18 @@ class ItsInterface : public rclcpp::Node {
     bool publish_ego_vehicle_;
     bool publish_map_;
     bool publish_base_link_;
+    bool publish_ego_data_;
 
     double fov_range_;
     double center_to_baselink_;
 
     int ego_id_;
     float ego_steering_angle_;
-    geometry_msgs::Accel ego_acceleration_;
-    shape_msgs::SolidPrimitive ego_shape_;
+    gm::Accel ego_acceleration_;
+    sm::SolidPrimitive ego_shape_;
     bool ego_shape_set_ = false;
     bool ego_status_set_ = false;
+    bool ego_id_set_ = false;
 };
 
 

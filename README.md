@@ -45,6 +45,7 @@ This package contains the CarlaItsInterfaceNode - a simple ROS Node that convert
 | publish.ego_vehicle | bool | Whether to publish object list in ego vehicle frame or not. |
 | publish.map | bool | Whether to publish object list in map frame or not. |
 | publish.base_link | bool | Whether to publish object list in base link frame or not. |
+| publish.egoData | bool | Whether to publish TODO or not. |
 | fov_range | float | Maximum field of view range for objects in the base link frame. Only objects within the FOV will be published. |
 | center_to_baselink | float | Distance between center of the vehicle and its base link. |
 
