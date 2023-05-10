@@ -80,9 +80,9 @@ class ItsInterface : public rclcpp::Node {
 
   private:
     void objectsCallback(const dom::ObjectArray::ConstPtr &msg);
-    void odometryCallback(const nam::Odometry::SharedPtr msg);
-    void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::SharedPtr msg);
-    void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::SharedPtr msg);
+    void odometryCallback(const nam::Odometry::ConstPtr msg);
+    void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg);
+    void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg);
     bool loadParameters();
 #ifdef MODE_ROS1
     ros::NodeHandle private_node_handle_;

@@ -111,9 +111,6 @@ void ItsInterface::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
   // Map the objects from the CARLA format to the perception_interfaces format
   msg_object_list_.objects.clear();
   msg_object_list_.header = msg->header;
-  if(ego_id_set_){
-  ROS_LOG_STREAM(INFO, ego_id_);
-  }
 
   for (size_t i = 0; i < msg->objects.size(); i++) {
     if(msg->objects[i].object_classified) { // Insanity Check: Only add objects that are classified
@@ -193,17 +190,11 @@ void ItsInterface::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
   }
 }
 
-void ItsInterface::odometryCallback(const nam::Odometry::SharedPtr msg) {
-  ROS_LOG_STREAM(INFO, "odometryCallback");
-
-  ROS_LOG_STREAM(INFO, publish_ego_data_);
-  ROS_LOG_STREAM(INFO, ego_shape_set_);
-  ROS_LOG_STREAM(INFO, ego_status_set_);
-
+void ItsInterface::odometryCallback(const nam::Odometry::ConstPtr msg) {
   if(publish_ego_data_){ 
     if(ego_shape_set_ && ego_status_set_){
       msg_ego_data_.header = msg->header;
-      // msg_ego_data_.model_id = 1;
+      obj_acc::initializeState(msg_ego_data_, 1); //TODO constant instead of 1?
       obj_acc::setPose(msg_ego_data_.state, msg->pose.pose);
       obj_acc::setZ(msg_ego_data_, msg->pose.pose.position.z + ego_shape_.dimensions[2] / 2.0); // Set z to the center of the object
       obj_acc::setYawRate(msg_ego_data_.state, msg->twist.twist.angular.z);
@@ -240,9 +231,9 @@ void ItsInterface::odometryCallback(const nam::Odometry::SharedPtr msg) {
       // geometry_msgs/Point[] route_planned
 
       msg_ego_data_.vehicle_id = ego_id_;
-      obj_acc::setLength(msg_ego_data_, ego_shape_.dimensions[0]);
-      obj_acc::setWidth(msg_ego_data_, ego_shape_.dimensions[1]);
-      obj_acc::setHeight(msg_ego_data_, ego_shape_.dimensions[2]);
+      msg_ego_data_.length = ego_shape_.dimensions[0];
+      msg_ego_data_.width = ego_shape_.dimensions[1];
+      msg_ego_data_.height = ego_shape_.dimensions[2];
       ROS_LOG_STREAM(INFO, "publish");
 #ifdef MODE_ROS1
       pub_ego_data_.publish(msg_ego_data_);
@@ -253,15 +244,15 @@ void ItsInterface::odometryCallback(const nam::Odometry::SharedPtr msg) {
   }
 }
 
-void ItsInterface::vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::SharedPtr msg){
+void ItsInterface::vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg){
   ego_steering_angle_ = msg->control.steer;
   ego_acceleration_ = msg->acceleration;
   ego_status_set_ = true;
 }
 
-void ItsInterface::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::SharedPtr msg){
+void ItsInterface::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg){
   ROS_LOG_STREAM(INFO, "ego_id");
-  ROS_LOG_STREAM(INFO, msg->id);
+  // ROS_LOG_STREAM(INFO, msg->id);
   ego_id_ = msg->id;
   ego_id_set_ = true;
 }
