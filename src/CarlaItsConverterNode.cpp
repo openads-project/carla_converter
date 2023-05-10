@@ -10,15 +10,8 @@ ItsConverter::ItsConverter() {
   sub_vehicle_status_ = private_node_handle_.subscribe("/carla/ego_vehicle/vehicle_status", 1, &ItsConverter::vehicleStatusCallback, this);
   sub_vehicle_info_ = private_node_handle_.subscribe("/carla/ego_vehicle/vehicle_info", 1, &ItsConverter::vehicleInfoCallback, this);
 
-  pub_objects_carla_map_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_converter/objectList/carla_map", 1);
-  pub_objects_ego_vehicle_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_converter/objectList/ego_vehicle", 1);
-  pub_objects_map_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_converter/objectList/map", 1);
-  pub_objects_base_link_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_converter/objectList/base_link", 1);
+  pub_objects_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_converter/objectList", 1);
   pub_ego_data_ = private_node_handle_.advertise<pin::EgoData>("/carla_its_converter/egoData", 1);
-
-  tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(tf2_buffer_);
-  
-
 #elif MODE_ROS2
 ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
   tf2_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
@@ -31,13 +24,8 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
   qosLatching.reliable();
   sub_vehicle_info_ = this->create_subscription<cm::CarlaEgoVehicleInfo>("/carla/ego_vehicle/vehicle_info", qosLatching, std::bind(&ItsConverter::vehicleInfoCallback, this, std::placeholders::_1));
 
-  pub_objects_carla_map_ = this->create_publisher<pin::ObjectList>("/carla_its_converter/objectList/carla_map", 1);
-  pub_objects_ego_vehicle_ = this->create_publisher<pin::ObjectList>("/carla_its_converter/objectList/ego_vehicle", 1);
-  pub_objects_map_ = this->create_publisher<pin::ObjectList>("/carla_its_converter/objectList/map", 1);
-  pub_objects_base_link_ = this->create_publisher<pin::ObjectList>("/carla_its_converter/objectList/base_link", 1);
+  pub_objects_ = this->create_publisher<pin::ObjectList>("/carla_its_converter/objectList", 1);
   pub_ego_data_ = this->create_publisher<pin::EgoData>("/carla_its_converter/egoData", 1);
-
-  tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
 #endif
 
   // Load Parameters and if not successful, return
@@ -49,7 +37,7 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
 
 bool ItsConverter::loadParameters() {
   // Load publish parameters
-  std::vector<std::string> v_parameter_str = {"carla_map", "ego_vehicle", "map", "base_link"}; //"egoData"
+  std::vector<std::string> v_parameter_str = {"object_list", "ego_data"}; //"egoData"
   std::vector<bool> v_parameter_bool;
   for (auto parameter_str : v_parameter_str) {
 #ifdef MODE_ROS1
@@ -71,38 +59,8 @@ bool ItsConverter::loadParameters() {
     }
 #endif
   }
-  publish_carla_map_ = v_parameter_bool[0];
-  publish_ego_vehicle_ = false; //v_parameter_bool[1];
-  publish_map_ = v_parameter_bool[2];
-  publish_base_link_ = v_parameter_bool[3];
-  publish_ego_data_ = true; // v_parameter_bool[4];
-
-  // Load value parameters
-#ifdef MODE_ROS1
-  if (!private_node_handle_.getParam("ItsConverterNode/ros__parameters/fov_range", fov_range_)) {
-    ROS_LOG_STREAM(ERROR, "Parameter \'ItsConverterNode/ros__parameters/fov_range\' is required");
-    return false;
-  }
-  if (!private_node_handle_.getParam("ItsConverterNode/ros__parameters/center_to_baselink", center_to_baselink_)) {
-    ROS_LOG_STREAM(ERROR, "Parameter \'ItsConverterNode/ros__parameters/center_to_baselink\' is required");
-    return false;
-  }
-#elif MODE_ROS2
-  this->declare_parameter("fov_range", rclcpp::ParameterType::PARAMETER_DOUBLE);
-  try {
-    fov_range_ = this->get_parameter("fov_range").as_double();
-  } catch (rclcpp::exceptions::ParameterUninitializedException&) {
-    ROS_LOG_STREAM(ERROR, "Parameter \'fov_range\' is required");
-    return false;
-  }
-  this->declare_parameter("center_to_baselink", rclcpp::ParameterType::PARAMETER_DOUBLE);
-  try {
-    center_to_baselink_ = this->get_parameter("center_to_baselink").as_double();
-  } catch (rclcpp::exceptions::ParameterUninitializedException&) {
-    ROS_LOG_STREAM(ERROR, "Parameter \'center_to_baselink\' is required");
-    return false;
-  }
-#endif
+  publish_object_list_ = v_parameter_bool[0];
+  publish_ego_data_ = v_parameter_bool[1];
 
   return true;
 }
@@ -174,23 +132,18 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
     }
   }
 
-#ifdef MODE_ROS1
-    auto timeout = ros::Duration(1.0);
-#elif MODE_ROS2
-    auto timeout = rclcpp::Duration::from_seconds(1.0);
-#endif
-
-  if(publish_carla_map_){
+  if(publish_object_list_){
     // publish objectList in carla_map frame
 #ifdef MODE_ROS1
-    pub_objects_carla_map_.publish(msg_object_list_);
+    pub_objects_.publish(msg_object_list_);
 #elif MODE_ROS2
-    pub_objects_carla_map_->publish(msg_object_list_);
+    pub_objects_->publish(msg_object_list_);
 #endif
   }
 }
 
 void ItsConverter::odometryCallback(const nam::Odometry::ConstPtr msg) {
+  // Map the ego from the CARLA format to the perception_interfaces format
   if(publish_ego_data_){ 
     if(ego_shape_set_ && ego_status_set_){
       msg_ego_data_.header = msg->header;
@@ -234,6 +187,8 @@ void ItsConverter::odometryCallback(const nam::Odometry::ConstPtr msg) {
       msg_ego_data_.length = ego_shape_.dimensions[0];
       msg_ego_data_.width = ego_shape_.dimensions[1];
       msg_ego_data_.height = ego_shape_.dimensions[2];
+
+      // publish egoData in carla_map frame
 #ifdef MODE_ROS1
       pub_ego_data_.publish(msg_ego_data_);
 #elif MODE_ROS2
@@ -244,14 +199,14 @@ void ItsConverter::odometryCallback(const nam::Odometry::ConstPtr msg) {
 }
 
 void ItsConverter::vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg){
+  // get steering_angle and acceleration form ego
   ego_steering_angle_ = msg->control.steer;
   ego_acceleration_ = msg->acceleration;
   ego_status_set_ = true;
 }
 
 void ItsConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg){
-  ROS_LOG_STREAM(INFO, "ego_id");
-  // ROS_LOG_STREAM(INFO, msg->id);
+  // get id from ego
   ego_id_ = msg->id;
   ego_id_set_ = true;
 }

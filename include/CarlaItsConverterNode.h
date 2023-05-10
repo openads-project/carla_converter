@@ -96,21 +96,14 @@ class ItsConverter : public rclcpp::Node {
     Subscriber<cm::CarlaEgoVehicleStatus> sub_vehicle_status_;
     Subscriber<cm::CarlaEgoVehicleInfo> sub_vehicle_info_;
 
-    Publisher<pin::ObjectList> pub_objects_carla_map_;
-    Publisher<pin::ObjectList> pub_objects_ego_vehicle_;
-    Publisher<pin::ObjectList> pub_objects_map_;
-    Publisher<pin::ObjectList> pub_objects_base_link_;
+    Publisher<pin::ObjectList> pub_objects_;
     Publisher<pin::EgoData> pub_ego_data_;
 
-    std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
 
     pin::ObjectList msg_object_list_;
     pin::EgoData msg_ego_data_;
 
-    bool publish_carla_map_;
-    bool publish_ego_vehicle_;
-    bool publish_map_;
-    bool publish_base_link_;
+    bool publish_object_list_;
     bool publish_ego_data_;
 
     double fov_range_;
