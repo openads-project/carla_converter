@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>carla_its_interface</name>
+  <name>carla_its_converter</name>
   <version>1.0.0</version>
-  <description>This package contains the CarlaInterfaceNode that acts as an Converter to the FB-FI definitions and publishes necessary transforms.</description>
+  <description>This package contains the CarlaConverterNode that acts as an Converter to the FB-FI definitions and publishes necessary transforms.</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->

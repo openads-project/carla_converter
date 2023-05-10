@@ -1,4 +1,4 @@
-ItsInterfaceNode:
+ItsConverterNode:
     ros__parameters:
         publish:
             carla_map: True

@@ -1,41 +1,41 @@
-#include <CarlaItsInterfaceNode.h>
+#include <CarlaItsConverterNode.h>
 
 
 namespace carla {
 
 #ifdef MODE_ROS1
-ItsInterface::ItsInterface() {
-  sub_objects_ = private_node_handle_.subscribe("/carla/objects", 1, &ItsInterface::objectsCallback, this);
-  sub_odometry_ = private_node_handle_.subscribe("/carla/ego_vehicle/odometry", 1, &ItsInterface::odometryCallback, this);
-  sub_vehicle_status_ = private_node_handle_.subscribe("/carla/ego_vehicle/vehicle_status", 1, &ItsInterface::vehicleStatusCallback, this);
-  sub_vehicle_info_ = private_node_handle_.subscribe("/carla/ego_vehicle/vehicle_info", 1, &ItsInterface::vehicleInfoCallback, this);
+ItsConverter::ItsConverter() {
+  sub_objects_ = private_node_handle_.subscribe("/carla/objects", 1, &ItsConverter::objectsCallback, this);
+  sub_odometry_ = private_node_handle_.subscribe("/carla/ego_vehicle/odometry", 1, &ItsConverter::odometryCallback, this);
+  sub_vehicle_status_ = private_node_handle_.subscribe("/carla/ego_vehicle/vehicle_status", 1, &ItsConverter::vehicleStatusCallback, this);
+  sub_vehicle_info_ = private_node_handle_.subscribe("/carla/ego_vehicle/vehicle_info", 1, &ItsConverter::vehicleInfoCallback, this);
 
-  pub_objects_carla_map_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_interface/objectList/carla_map", 1);
-  pub_objects_ego_vehicle_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_interface/objectList/ego_vehicle", 1);
-  pub_objects_map_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_interface/objectList/map", 1);
-  pub_objects_base_link_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_interface/objectList/base_link", 1);
-  pub_ego_data_ = private_node_handle_.advertise<pin::EgoData>("/carla_its_interface/egoData", 1);
+  pub_objects_carla_map_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_converter/objectList/carla_map", 1);
+  pub_objects_ego_vehicle_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_converter/objectList/ego_vehicle", 1);
+  pub_objects_map_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_converter/objectList/map", 1);
+  pub_objects_base_link_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_converter/objectList/base_link", 1);
+  pub_ego_data_ = private_node_handle_.advertise<pin::EgoData>("/carla_its_converter/egoData", 1);
 
   tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(tf2_buffer_);
   
 
 #elif MODE_ROS2
-ItsInterface::ItsInterface() : Node("CarlaItsInterface") {
+ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
   tf2_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
-  sub_objects_ = this->create_subscription<dom::ObjectArray>("/carla/objects", 1, std::bind(&ItsInterface::objectsCallback, this, std::placeholders::_1));
-  sub_odometry_ = this->create_subscription<nam::Odometry>("/carla/ego_vehicle/odometry", 1, std::bind(&ItsInterface::odometryCallback, this, std::placeholders::_1));
-  sub_vehicle_status_ = this->create_subscription<cm::CarlaEgoVehicleStatus>("/carla/ego_vehicle/vehicle_status", 1, std::bind(&ItsInterface::vehicleStatusCallback, this, std::placeholders::_1));
+  sub_objects_ = this->create_subscription<dom::ObjectArray>("/carla/objects", 1, std::bind(&ItsConverter::objectsCallback, this, std::placeholders::_1));
+  sub_odometry_ = this->create_subscription<nam::Odometry>("/carla/ego_vehicle/odometry", 1, std::bind(&ItsConverter::odometryCallback, this, std::placeholders::_1));
+  sub_vehicle_status_ = this->create_subscription<cm::CarlaEgoVehicleStatus>("/carla/ego_vehicle/vehicle_status", 1, std::bind(&ItsConverter::vehicleStatusCallback, this, std::placeholders::_1));
   
   rclcpp::QoS qosLatching = rclcpp::QoS(rclcpp::KeepLast(1));
   qosLatching.transient_local();
   qosLatching.reliable();
-  sub_vehicle_info_ = this->create_subscription<cm::CarlaEgoVehicleInfo>("/carla/ego_vehicle/vehicle_info", qosLatching, std::bind(&ItsInterface::vehicleInfoCallback, this, std::placeholders::_1));
+  sub_vehicle_info_ = this->create_subscription<cm::CarlaEgoVehicleInfo>("/carla/ego_vehicle/vehicle_info", qosLatching, std::bind(&ItsConverter::vehicleInfoCallback, this, std::placeholders::_1));
 
-  pub_objects_carla_map_ = this->create_publisher<pin::ObjectList>("/carla_its_interface/objectList/carla_map", 1);
-  pub_objects_ego_vehicle_ = this->create_publisher<pin::ObjectList>("/carla_its_interface/objectList/ego_vehicle", 1);
-  pub_objects_map_ = this->create_publisher<pin::ObjectList>("/carla_its_interface/objectList/map", 1);
-  pub_objects_base_link_ = this->create_publisher<pin::ObjectList>("/carla_its_interface/objectList/base_link", 1);
-  pub_ego_data_ = this->create_publisher<pin::EgoData>("/carla_its_interface/egoData", 1);
+  pub_objects_carla_map_ = this->create_publisher<pin::ObjectList>("/carla_its_converter/objectList/carla_map", 1);
+  pub_objects_ego_vehicle_ = this->create_publisher<pin::ObjectList>("/carla_its_converter/objectList/ego_vehicle", 1);
+  pub_objects_map_ = this->create_publisher<pin::ObjectList>("/carla_its_converter/objectList/map", 1);
+  pub_objects_base_link_ = this->create_publisher<pin::ObjectList>("/carla_its_converter/objectList/base_link", 1);
+  pub_ego_data_ = this->create_publisher<pin::EgoData>("/carla_its_converter/egoData", 1);
 
   tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
 #endif
@@ -43,19 +43,19 @@ ItsInterface::ItsInterface() : Node("CarlaItsInterface") {
   // Load Parameters and if not successful, return
   if(!loadParameters()) return;
 
-  ROS_LOG_STREAM(INFO, "CarlaItsInterface running...");  
+  ROS_LOG_STREAM(INFO, "CarlaItsConverter running...");  
 }
 
 
-bool ItsInterface::loadParameters() {
+bool ItsConverter::loadParameters() {
   // Load publish parameters
   std::vector<std::string> v_parameter_str = {"carla_map", "ego_vehicle", "map", "base_link"}; //"egoData"
   std::vector<bool> v_parameter_bool;
   for (auto parameter_str : v_parameter_str) {
 #ifdef MODE_ROS1
     bool b_param;
-    if (!private_node_handle_.getParam("ItsInterfaceNode/ros__parameters/publish/" + parameter_str, b_param)) {
-      std::string error_msg = "Parameter \'ItsInterfaceNode/ros__parameters/publish/" + parameter_str + "\' is required";
+    if (!private_node_handle_.getParam("ItsConverterNode/ros__parameters/publish/" + parameter_str, b_param)) {
+      std::string error_msg = "Parameter \'ItsConverterNode/ros__parameters/publish/" + parameter_str + "\' is required";
       ROS_LOG_STREAM(ERROR, error_msg.c_str());
       return false;
     }
@@ -79,12 +79,12 @@ bool ItsInterface::loadParameters() {
 
   // Load value parameters
 #ifdef MODE_ROS1
-  if (!private_node_handle_.getParam("ItsInterfaceNode/ros__parameters/fov_range", fov_range_)) {
-    ROS_LOG_STREAM(ERROR, "Parameter \'ItsInterfaceNode/ros__parameters/fov_range\' is required");
+  if (!private_node_handle_.getParam("ItsConverterNode/ros__parameters/fov_range", fov_range_)) {
+    ROS_LOG_STREAM(ERROR, "Parameter \'ItsConverterNode/ros__parameters/fov_range\' is required");
     return false;
   }
-  if (!private_node_handle_.getParam("ItsInterfaceNode/ros__parameters/center_to_baselink", center_to_baselink_)) {
-    ROS_LOG_STREAM(ERROR, "Parameter \'ItsInterfaceNode/ros__parameters/center_to_baselink\' is required");
+  if (!private_node_handle_.getParam("ItsConverterNode/ros__parameters/center_to_baselink", center_to_baselink_)) {
+    ROS_LOG_STREAM(ERROR, "Parameter \'ItsConverterNode/ros__parameters/center_to_baselink\' is required");
     return false;
   }
 #elif MODE_ROS2
@@ -107,7 +107,7 @@ bool ItsInterface::loadParameters() {
   return true;
 }
 
-void ItsInterface::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
+void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
   // Map the objects from the CARLA format to the perception_interfaces format
   msg_object_list_.objects.clear();
   msg_object_list_.header = msg->header;
@@ -190,7 +190,7 @@ void ItsInterface::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
   }
 }
 
-void ItsInterface::odometryCallback(const nam::Odometry::ConstPtr msg) {
+void ItsConverter::odometryCallback(const nam::Odometry::ConstPtr msg) {
   if(publish_ego_data_){ 
     if(ego_shape_set_ && ego_status_set_){
       msg_ego_data_.header = msg->header;
@@ -234,7 +234,6 @@ void ItsInterface::odometryCallback(const nam::Odometry::ConstPtr msg) {
       msg_ego_data_.length = ego_shape_.dimensions[0];
       msg_ego_data_.width = ego_shape_.dimensions[1];
       msg_ego_data_.height = ego_shape_.dimensions[2];
-      ROS_LOG_STREAM(INFO, "publish");
 #ifdef MODE_ROS1
       pub_ego_data_.publish(msg_ego_data_);
 #elif MODE_ROS2
@@ -244,13 +243,13 @@ void ItsInterface::odometryCallback(const nam::Odometry::ConstPtr msg) {
   }
 }
 
-void ItsInterface::vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg){
+void ItsConverter::vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg){
   ego_steering_angle_ = msg->control.steer;
   ego_acceleration_ = msg->acceleration;
   ego_status_set_ = true;
 }
 
-void ItsInterface::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg){
+void ItsConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg){
   ROS_LOG_STREAM(INFO, "ego_id");
   // ROS_LOG_STREAM(INFO, msg->id);
   ego_id_ = msg->id;
@@ -262,12 +261,12 @@ void ItsInterface::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr m
 int main(int argc, char **argv)
 {
 #ifdef MODE_ROS1
-  ros::init(argc, argv, "CarlaItsInterface");
-  carla::ItsInterface node;
+  ros::init(argc, argv, "CarlaItsConverter");
+  carla::ItsConverter node;
   ros::spin();
 #elif MODE_ROS2
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<carla::ItsInterface>());
+  rclcpp::spin(std::make_shared<carla::ItsConverter>());
   rclcpp::shutdown();
 #endif
   return 0;

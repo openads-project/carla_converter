@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12.0 FATAL_ERROR)
-project(carla_its_interface)
+project(carla_its_converter)
 
 find_package(ros_environment REQUIRED QUIET)
 set(ROS_VERSION $ENV{ROS_VERSION})
@@ -31,7 +31,7 @@ if(${ROS_VERSION} EQUAL 2)
   find_package(carla_msgs REQUIRED)
 
 
-  add_executable(${PROJECT_NAME}_node src/CarlaItsInterfaceNode.cpp)
+  add_executable(${PROJECT_NAME}_node src/CarlaItsConverterNode.cpp)
 
   target_include_directories(${PROJECT_NAME}_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -146,7 +146,7 @@ elseif(${ROS_VERSION} EQUAL 1)
     ${catkin_INCLUDE_DIRS}
   )
 
-  add_executable(${PROJECT_NAME}_node src/CarlaItsInterfaceNode.cpp)
+  add_executable(${PROJECT_NAME}_node src/CarlaItsConverterNode.cpp)
   ## EXECUTABLES END ##
 
   ## Rename C++ executable without prefix
@@ -158,7 +158,7 @@ elseif(${ROS_VERSION} EQUAL 1)
   ## TARGET PROPERTIES START ##
 
   #set_target_properties(${PROJECT_NAME}_SampleNodelet PROPERTIES OUTPUT_NAME SampleNodelet PREFIX lib)
-  set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME CarlaItsInterfaceNode)
+  set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME CarlaItsConverterNode)
   ## TARGET PROPERTIES END ##
 
   ## Add cmake target dependencies of the executable

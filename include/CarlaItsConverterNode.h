@@ -69,14 +69,14 @@ namespace obj_acc = perception_interfaces::object_access;
 namespace carla {
 
 #ifdef MODE_ROS1
-class ItsInterface {
+class ItsConverter {
 #endif
 #ifdef MODE_ROS2
-class ItsInterface : public rclcpp::Node {
+class ItsConverter : public rclcpp::Node {
 #endif
 
   public:
-    ItsInterface();
+    ItsConverter();
 
   private:
     void objectsCallback(const dom::ObjectArray::ConstPtr &msg);

@@ -1,6 +1,0 @@
-<launch>
-    <rosparam command="load" file="$(find carla_its_interface)/config/carla_its_interface_params.yaml" />
-    
-    <node pkg="carla_its_interface" type="CarlaItsInterfaceNode" name="ItsInterfaceNode" output="screen" />
-</launch>
-

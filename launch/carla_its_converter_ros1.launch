@@ -1,0 +1,6 @@
+<launch>
+    <rosparam command="load" file="$(find carla_its_converter)/config/carla_its_converter_params.yaml" />
+    
+    <node pkg="carla_its_converter" type="CarlaItsConverterNode" name="ItsConverterNode" output="screen" />
+</launch>
+
