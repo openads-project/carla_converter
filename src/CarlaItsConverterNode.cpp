@@ -9,9 +9,13 @@ ItsConverter::ItsConverter() {
   sub_odometry_ = private_node_handle_.subscribe("/carla/ego_vehicle/odometry", 1, &ItsConverter::odometryCallback, this);
   sub_vehicle_status_ = private_node_handle_.subscribe("/carla/ego_vehicle/vehicle_status", 1, &ItsConverter::vehicleStatusCallback, this);
   sub_vehicle_info_ = private_node_handle_.subscribe("/carla/ego_vehicle/vehicle_info", 1, &ItsConverter::vehicleInfoCallback, this);
-
-  pub_objects_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_converter/objectList", 1);
+  pub_objects_carla_map_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_converter/objectList/carla_map", 1);
+  pub_objects_ego_vehicle_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_converter/objectList/ego_vehicle", 1);
   pub_ego_data_ = private_node_handle_.advertise<pin::EgoData>("/carla_its_converter/egoData", 1);
+  
+  tf2_buffer_.setUsingDedicatedThread(true);
+  tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(tf2_buffer_);
+
 #elif MODE_ROS2
 ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
   tf2_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
@@ -24,8 +28,12 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
   qosLatching.reliable();
   sub_vehicle_info_ = this->create_subscription<cm::CarlaEgoVehicleInfo>("/carla/ego_vehicle/vehicle_info", qosLatching, std::bind(&ItsConverter::vehicleInfoCallback, this, std::placeholders::_1));
 
-  pub_objects_ = this->create_publisher<pin::ObjectList>("/carla_its_converter/objectList", 1);
+  pub_objects_carla_map_ = this->create_publisher<pin::ObjectList>("/carla_its_converter/objectList/carla_map", 1);
+  pub_objects_ego_vehicle_ = this->create_publisher<pin::ObjectList>("/carla_its_converter/objectList/ego_vehicle", 1);
   pub_ego_data_ = this->create_publisher<pin::EgoData>("/carla_its_converter/egoData", 1);
+  
+  tf2_buffer_->setUsingDedicatedThread(true);
+  tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
 #endif
 
   // Load Parameters and if not successful, return
@@ -37,7 +45,7 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
 
 bool ItsConverter::loadParameters() {
   // Load publish parameters
-  std::vector<std::string> v_parameter_str = {"object_list", "ego_data"}; //"egoData"
+  std::vector<std::string> v_parameter_str = {"object_list_carla_map_frame", "object_list_ego_vehicle_frame", "ego_data"};
   std::vector<bool> v_parameter_bool;
   for (auto parameter_str : v_parameter_str) {
 #ifdef MODE_ROS1
@@ -59,8 +67,9 @@ bool ItsConverter::loadParameters() {
     }
 #endif
   }
-  publish_object_list_ = v_parameter_bool[0];
-  publish_ego_data_ = v_parameter_bool[1];
+  publish_object_list_carla_map_frame_ = v_parameter_bool[0];
+  publish_object_list_ego_vehicle_frame_ = v_parameter_bool[1];
+  publish_ego_data_ = v_parameter_bool[2];
 
   return true;
 }
@@ -132,12 +141,42 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
     }
   }
 
-  if(publish_object_list_){
+  if(publish_object_list_carla_map_frame_){
     // publish objectList in carla_map frame
 #ifdef MODE_ROS1
-    pub_objects_.publish(msg_object_list_);
+    pub_objects_carla_map_.publish(msg_object_list_);
 #elif MODE_ROS2
-    pub_objects_->publish(msg_object_list_);
+    pub_objects_carla_map_->publish(msg_object_list_);
+#endif
+  }
+
+  if(publish_object_list_ego_vehicle_frame_){
+#ifdef MODE_ROS1
+    auto timeout = ros::Duration(1.0);
+#elif MODE_ROS2
+    auto timeout = rclcpp::Duration::from_seconds(1.0);
+#endif
+
+    // Transform the objectList from carla_map to ego_vehicle
+    pin::ObjectList msg_object_list_ego_vehicle;
+    gm::TransformStamped carla_map_to_ego_vehicle_tf;
+    try {
+#ifdef MODE_ROS1
+      carla_map_to_ego_vehicle_tf = tf2_buffer_.lookupTransform("ego_vehicle", "carla_map", msg_object_list_.header.stamp, timeout);
+#elif MODE_ROS2
+      carla_map_to_ego_vehicle_tf = tf2_buffer_->lookupTransform("ego_vehicle", "carla_map", msg_object_list_.header.stamp, timeout);
+#endif
+    } catch (tf2::TransformException& ex) {
+      ROS_LOG_STREAM(ERROR, "\"Exception caught: \" << ex.what()");
+      return;
+    }
+    tf2::doTransform(msg_object_list_, msg_object_list_ego_vehicle, carla_map_to_ego_vehicle_tf);
+
+    // publish objectList in ego_vehicle frame
+#ifdef MODE_ROS1
+    pub_objects_ego_vehicle_.publish(msg_object_list_ego_vehicle);
+#elif MODE_ROS2
+    pub_objects_ego_vehicle_->publish(msg_object_list_ego_vehicle);
 #endif
   }
 }
