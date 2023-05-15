@@ -32,22 +32,15 @@ This package contains the CarlaItsConverterNode - a simple ROS Node that convert
 
 | Topic | Type | Description |
 | --- | --- | --- |
-| `/carla_its_converter/objectList/carla_map` | `pin::ObjectList` | Object list in carla map frame |
-| `/carla_its_converter/objectList/ego_vehicle` | `pin::ObjectList` | Object list in ego vehicle frame |
-| `/carla_its_converter/objectList/map` | `pin::ObjectList` | Object list in map frame |
-| `/carla_its_converter/objectList/base_link` | `pin::ObjectList` | Object list in base link frame |
+| `/carla_its_converter/objectList` | `pin::ObjectList` | Object list in carla map frame |
+| `/carla_its_converter/egoData` | `pin::ObjectList` | Object list in base link frame |
 
 #### Parameters
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| publish.carla_map | bool | Whether to publish object list in carla map frame or not. |
-| publish.ego_vehicle | bool | Whether to publish object list in ego vehicle frame or not. |
-| publish.map | bool | Whether to publish object list in map frame or not. |
-| publish.base_link | bool | Whether to publish object list in base link frame or not. |
-| publish.egoData | bool | Whether to publish TODO or not. |
-| fov_range | float | Maximum field of view range for objects in the base link frame. Only objects within the FOV will be published. |
-| center_to_baselink | float | Distance between center of the vehicle and its base link. |
+| publish.object_list | bool | Whether to publish object list in carla map frame or not. |
+| publish.ego_data | bool | Whether to publish egodata information or not. |
 
 ## Usage of docker-ros Images
 
