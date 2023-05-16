@@ -1,6 +1,0 @@
-ItsConverterNode:
-    ros__parameters:
-        publish:
-            object_list_carla_map_frame: True
-            object_list_ego_vehicle_frame: True
-            ego_data: True

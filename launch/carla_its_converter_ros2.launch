@@ -1,7 +1,0 @@
-<launch>
-
-  <node pkg="carla_its_converter" exec="carla_its_converter_node" name="ItsConverterNode" output="screen">
-    <param from="$(find-pkg-share carla_its_converter)/config/carla_its_converter_params.yaml" />
-  </node>
-
-</launch>

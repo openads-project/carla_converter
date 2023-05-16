@@ -1,6 +1,8 @@
 <launch>
-    <rosparam command="load" file="$(find carla_its_converter)/config/carla_its_converter_params.yaml" />
-    
-    <node pkg="carla_its_converter" type="CarlaItsConverterNode" name="ItsConverterNode" output="screen" />
+    <arg name="publish_ego_vehicle" default="True"/> 
+
+    <node pkg="carla_its_converter" type="CarlaItsConverterNode" name="ItsConverterNode" output="screen">
+        <param name="publish_ego_vehicle" value="$(arg publish_ego_vehicle)"/>
+    </node>
 </launch>
 
