@@ -13,9 +13,9 @@ ItsConverter::ItsConverter() {
   sub_vehicle_status_ = private_node_handle_.subscribe("/carla/ego_vehicle/vehicle_status", 1, &ItsConverter::vehicleStatusCallback, this);
   sub_vehicle_info_ = private_node_handle_.subscribe("/carla/ego_vehicle/vehicle_info", 1, &ItsConverter::vehicleInfoCallback, this);
   
-  pub_objects_carla_map_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_converter/objectList/carla_map", 1);
-  pub_objects_ego_vehicle_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_converter/objectList/ego_vehicle", 1);
-  pub_ego_data_ = private_node_handle_.advertise<pin::EgoData>("/carla_its_converter/egoData", 1);
+  pub_objects_carla_map_ = private_node_handle_.advertise<pi::ObjectList>("/carla_its_converter/objectList/carla_map", 1);
+  pub_objects_ego_vehicle_ = private_node_handle_.advertise<pi::ObjectList>("/carla_its_converter/objectList/ego_vehicle", 1);
+  pub_ego_data_ = private_node_handle_.advertise<pi::EgoData>("/carla_its_converter/egoData", 1);
   
 #elif MODE_ROS2
 ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
@@ -32,9 +32,9 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
   sub_vehicle_status_ = this->create_subscription<cm::CarlaEgoVehicleStatus>("/carla/ego_vehicle/vehicle_status", 1, std::bind(&ItsConverter::vehicleStatusCallback, this, std::placeholders::_1));
   sub_vehicle_info_ = this->create_subscription<cm::CarlaEgoVehicleInfo>("/carla/ego_vehicle/vehicle_info", qosLatching, std::bind(&ItsConverter::vehicleInfoCallback, this, std::placeholders::_1));
 
-  pub_objects_carla_map_ = this->create_publisher<pin::ObjectList>("/carla_its_converter/objectList/carla_map", 1);
-  pub_objects_ego_vehicle_ = this->create_publisher<pin::ObjectList>("/carla_its_converter/objectList/ego_vehicle", 1);
-  pub_ego_data_ = this->create_publisher<pin::EgoData>("/carla_its_converter/egoData", 1);
+  pub_objects_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/objectList/carla_map", 1);
+  pub_objects_ego_vehicle_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/objectList/ego_vehicle", 1);
+  pub_ego_data_ = this->create_publisher<pi::EgoData>("/carla_its_converter/egoData", 1);
   
 #endif
 
@@ -82,7 +82,7 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
       continue;
     } 
     
-    pin::Object objectTemp;
+    pi::Object objectTemp;
     objectTemp.id = msg->objects[i].id;
     objectTemp.existence_probability = 1.0; // probability that the object exists is always 1.0 as source is CARLA
 
@@ -94,16 +94,16 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
     matrix.getRPY(roll, pitch, yaw);
 
     // fill state
-    obj_acc::initializeState(objectTemp, pin::ISCACTR::MODEL_ID);
+    oa::initializeState(objectTemp, pi::ISCACTR::MODEL_ID);
     objectTemp.state.header = msg->objects[i].header;
-    obj_acc::setPose(objectTemp.state, msg->objects[i].pose);
-    obj_acc::setZ(objectTemp, msg->objects[i].pose.position.z + msg->objects[i].shape.dimensions[2] / 2.0); // Set z to the center of the object
-    obj_acc::setVelocityXYZYaw(objectTemp.state, msg->objects[i].twist.linear, yaw);
-    obj_acc::setAccelerationXYZYaw(objectTemp.state, msg->objects[i].accel.linear, yaw);
-    obj_acc::setYawRate(objectTemp.state, msg->objects[i].twist.angular.z);
-    obj_acc::setLength(objectTemp, msg->objects[i].shape.dimensions[0]);
-    obj_acc::setWidth(objectTemp, msg->objects[i].shape.dimensions[1]);
-    obj_acc::setHeight(objectTemp, msg->objects[i].shape.dimensions[2]);
+    oa::setPose(objectTemp.state, msg->objects[i].pose);
+    oa::setZ(objectTemp, msg->objects[i].pose.position.z + msg->objects[i].shape.dimensions[2] / 2.0); // Set z to the center of the object
+    oa::setVelocityXYZYaw(objectTemp.state, msg->objects[i].twist.linear, yaw);
+    oa::setAccelerationXYZYaw(objectTemp.state, msg->objects[i].accel.linear, yaw);
+    oa::setYawRate(objectTemp.state, msg->objects[i].twist.angular.z);
+    oa::setLength(objectTemp, msg->objects[i].shape.dimensions[0]);
+    oa::setWidth(objectTemp, msg->objects[i].shape.dimensions[1]);
+    oa::setHeight(objectTemp, msg->objects[i].shape.dimensions[2]);
 
     // classification for object state
     objectTemp.state.classifications.resize(1);
@@ -111,30 +111,30 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
     switch ((int) msg->objects[i].classification)
     {
       case dom::Object::CLASSIFICATION_PEDESTRIAN:
-      objectTemp.state.classifications[0].type = pin::ObjectClassification::PEDESTRIAN;
+      objectTemp.state.classifications[0].type = pi::ObjectClassification::PEDESTRIAN;
       break;
     case dom::Object::CLASSIFICATION_BIKE:
-      objectTemp.state.classifications[0].type = pin::ObjectClassification::BICYCLE;
+      objectTemp.state.classifications[0].type = pi::ObjectClassification::BICYCLE;
       break;
     case dom::Object::CLASSIFICATION_MOTORCYCLE:
-      objectTemp.state.classifications[0].type = pin::ObjectClassification::MOTORBIKE;
+      objectTemp.state.classifications[0].type = pi::ObjectClassification::MOTORBIKE;
       break;
     case dom::Object::CLASSIFICATION_CAR:
-      objectTemp.state.classifications[0].type = pin::ObjectClassification::CAR;
+      objectTemp.state.classifications[0].type = pi::ObjectClassification::CAR;
       break;
     case dom::Object::CLASSIFICATION_TRUCK:
-      objectTemp.state.classifications[0].type = pin::ObjectClassification::TRUCK;
+      objectTemp.state.classifications[0].type = pi::ObjectClassification::TRUCK;
       break;
     case dom::Object::CLASSIFICATION_BARRIER:
-      objectTemp.state.classifications[0].type = pin::ObjectClassification::ROAD_OBSTACLE;
+      objectTemp.state.classifications[0].type = pi::ObjectClassification::ROAD_OBSTACLE;
       break;
     default:
-      objectTemp.state.classifications[0].type = pin::ObjectClassification::UNCLASSIFIED;
+      objectTemp.state.classifications[0].type = pi::ObjectClassification::UNCLASSIFIED;
       break;
     }
 
     // reference point for object state position
-    objectTemp.state.reference_point.value = pin::ObjectReferencePoint::GEOMETRIC_CENTER;
+    objectTemp.state.reference_point.value = pi::ObjectReferencePoint::GEOMETRIC_CENTER;
 
     // add object to object list
     msg_object_list_.objects.push_back(objectTemp);
@@ -155,7 +155,7 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
 #endif
 
     // transform the objectList from carla_map to ego_vehicle
-    pin::ObjectList msg_object_list_ego_vehicle;
+    pi::ObjectList msg_object_list_ego_vehicle;
     gm::TransformStamped carla_map_to_ego_vehicle_tf;
     try {
 #ifdef MODE_ROS1
@@ -191,17 +191,17 @@ void ItsConverter::odometryCallback(const nam::Odometry::ConstPtr msg) {
     matrix.getRPY(roll, pitch, yaw);
 
     // fill state
-    obj_acc::initializeState(msg_ego_data_, pin::EGO::MODEL_ID);
-    obj_acc::setPose(msg_ego_data_.state, msg->pose.pose);
-    obj_acc::setZ(msg_ego_data_, msg->pose.pose.position.z + ego_shape_.dimensions[2] / 2.0); // Set z to the center of the object
-    obj_acc::setYawRate(msg_ego_data_.state, msg->twist.twist.angular.z);
-    obj_acc::setVelocityXYZYaw(msg_ego_data_.state, msg->twist.twist.linear, yaw);
-    obj_acc::setAccelerationXYZYaw(msg_ego_data_.state, ego_acceleration_.linear, yaw);
-    obj_acc::setSteeringAngleAck(msg_ego_data_.state, ego_steering_angle_);
-    obj_acc::setStandstill(msg_ego_data_.state, (msg->twist.twist.linear.x + msg->twist.twist.linear.y + msg->twist.twist.linear.z) == 0);
+    oa::initializeState(msg_ego_data_, pi::EGO::MODEL_ID);
+    oa::setPose(msg_ego_data_.state, msg->pose.pose);
+    oa::setZ(msg_ego_data_, msg->pose.pose.position.z + ego_shape_.dimensions[2] / 2.0); // Set z to the center of the object
+    oa::setYawRate(msg_ego_data_.state, msg->twist.twist.angular.z);
+    oa::setVelocityXYZYaw(msg_ego_data_.state, msg->twist.twist.linear, yaw);
+    oa::setAccelerationXYZYaw(msg_ego_data_.state, ego_acceleration_.linear, yaw);
+    oa::setSteeringAngleAck(msg_ego_data_.state, ego_steering_angle_);
+    oa::setStandstill(msg_ego_data_.state, (msg->twist.twist.linear.x + msg->twist.twist.linear.y + msg->twist.twist.linear.z) == 0);
 
     // reference point for object position
-    msg_ego_data_.state.reference_point.value = pin::ObjectReferencePoint::GEOMETRIC_CENTER;
+    msg_ego_data_.state.reference_point.value = pi::ObjectReferencePoint::GEOMETRIC_CENTER;
 
     // # classification incl. probabilities
     // ObjectClassification[] classifications 

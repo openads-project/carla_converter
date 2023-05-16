@@ -51,7 +51,7 @@ using Publisher = ros::Publisher;
 
 namespace dom = derived_object_msgs::msg;
 namespace nam = nav_msgs::msg;
-namespace pin = perception_interfaces::msg;
+namespace pi = perception_interfaces::msg;
 namespace gm = geometry_msgs::msg;
 namespace sm = shape_msgs::msg;
 namespace cm = carla_msgs::msg;
@@ -63,7 +63,7 @@ using Publisher = typename rclcpp::Publisher<T>::SharedPtr;
 
 #endif
 
-namespace obj_acc = perception_interfaces::object_access;
+namespace oa = perception_interfaces::object_access;
 
 
 namespace carla {
@@ -97,14 +97,14 @@ class ItsConverter : public rclcpp::Node {
     Subscriber<cm::CarlaEgoVehicleStatus> sub_vehicle_status_;
     Subscriber<cm::CarlaEgoVehicleInfo> sub_vehicle_info_;
 
-    Publisher<pin::ObjectList> pub_objects_carla_map_;
-    Publisher<pin::ObjectList> pub_objects_ego_vehicle_;
-    Publisher<pin::EgoData> pub_ego_data_;
+    Publisher<pi::ObjectList> pub_objects_carla_map_;
+    Publisher<pi::ObjectList> pub_objects_ego_vehicle_;
+    Publisher<pi::EgoData> pub_ego_data_;
 
     std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
 
-    pin::ObjectList msg_object_list_;
-    pin::EgoData msg_ego_data_;
+    pi::ObjectList msg_object_list_;
+    pi::EgoData msg_ego_data_;
 
     // ros parameters
     bool publish_ego_vehicle_;

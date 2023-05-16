@@ -34,9 +34,9 @@ This package contains the CarlaItsConverterNode - a simple ROS Node that convert
 
 | Topic | Type | Description |
 | --- | --- | --- |
-| `/carla_its_converter/objectList/carla_map` | `pin::ObjectList` | Object list in carla map frame |
-| `/carla_its_converter/objectList/ego_vehicle` | `pin::ObjectList` | Object list in ego vehicle frame |
-| `/carla_its_converter/egoData` | `pin::ObjectList` | Object list in ego vehicle frame |
+| `/carla_its_converter/objectList/carla_map` | `pi::ObjectList` | Object list in carla map frame |
+| `/carla_its_converter/objectList/ego_vehicle` | `pi::ObjectList` | Object list in ego vehicle frame |
+| `/carla_its_converter/egoData` | `pi::ObjectList` | Object list in ego vehicle frame |
 
 #### Parameters
 
