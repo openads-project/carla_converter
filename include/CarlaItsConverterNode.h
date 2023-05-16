@@ -84,6 +84,7 @@ class ItsConverter : public rclcpp::Node {
     void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg);
     void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg);
     bool loadParameters();
+
 #ifdef MODE_ROS1
     ros::NodeHandle private_node_handle_;
     tf2_ros::Buffer tf2_buffer_;
@@ -105,17 +106,16 @@ class ItsConverter : public rclcpp::Node {
     pin::ObjectList msg_object_list_;
     pin::EgoData msg_ego_data_;
 
-    bool publish_object_list_carla_map_frame_;
-    bool publish_object_list_ego_vehicle_frame_;
-    bool publish_ego_data_;
+    // ros parameters
+    bool publish_ego_vehicle_;
 
-    double fov_range_;
-    double center_to_baselink_;
-
+    // ego information
     int ego_id_;
     float ego_steering_angle_;
     gm::Accel ego_acceleration_;
     sm::SolidPrimitive ego_shape_;
+
+    // set flags
     bool ego_shape_set_ = false;
     bool ego_status_set_ = false;
     bool ego_id_set_ = false;
