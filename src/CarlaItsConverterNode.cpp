@@ -57,10 +57,10 @@ bool ItsConverter::loadParameters() {
     }
     v_parameter_bool.push_back(b_param);
 #elif MODE_ROS2
-    this->declare_parameter("publish." + parameter_str, rclcpp::ParameterType::PARAMETER_BOOL);
+    this->declare_parameter("publish." + parameter_str, false);
     try {
       v_parameter_bool.push_back(this->get_parameter("publish." + parameter_str).as_bool());
-    } catch (rclcpp::exceptions::ParameterUninitializedException&) {
+    } catch (rclcpp::exceptions::ParameterNotDeclaredException&) {
       std::string error_msg = "Parameter \'publish." + parameter_str + "\' is required";
       ROS_LOG_STREAM(ERROR, error_msg);
       return false;
@@ -74,7 +74,7 @@ bool ItsConverter::loadParameters() {
   return true;
 }
 
-void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr &msg) {
+void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
   // Map the objects from the CARLA format to the perception_interfaces format
   msg_object_list_.objects.clear();
   msg_object_list_.header = msg->header;

@@ -40,7 +40,7 @@ using Publisher = ros::Publisher;
 #include <perception_interfaces/object_access.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_perception_msgs/tf2_perception_msgs.hpp>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <geometry_msgs/msg/accel.hpp>
 #include <shape_msgs/msg/solid_primitive.hpp>
 #include <carla_msgs/msg/carla_ego_vehicle_status.hpp>
@@ -79,7 +79,7 @@ class ItsConverter : public rclcpp::Node {
     ItsConverter();
 
   private:
-    void objectsCallback(const dom::ObjectArray::ConstPtr &msg);
+    void objectsCallback(const dom::ObjectArray::ConstPtr msg);
     void odometryCallback(const nam::Odometry::ConstPtr msg);
     void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg);
     void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg);
