@@ -5,35 +5,37 @@ namespace carla {
 
 #ifdef MODE_ROS1
 ItsConverter::ItsConverter() {
+  tf2_buffer_.setUsingDedicatedThread(true);
+  tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(tf2_buffer_);
+
   sub_objects_ = private_node_handle_.subscribe("/carla/objects", 1, &ItsConverter::objectsCallback, this);
   sub_odometry_ = private_node_handle_.subscribe("/carla/ego_vehicle/odometry", 1, &ItsConverter::odometryCallback, this);
   sub_vehicle_status_ = private_node_handle_.subscribe("/carla/ego_vehicle/vehicle_status", 1, &ItsConverter::vehicleStatusCallback, this);
   sub_vehicle_info_ = private_node_handle_.subscribe("/carla/ego_vehicle/vehicle_info", 1, &ItsConverter::vehicleInfoCallback, this);
+  
   pub_objects_carla_map_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_converter/objectList/carla_map", 1);
   pub_objects_ego_vehicle_ = private_node_handle_.advertise<pin::ObjectList>("/carla_its_converter/objectList/ego_vehicle", 1);
   pub_ego_data_ = private_node_handle_.advertise<pin::EgoData>("/carla_its_converter/egoData", 1);
   
-  tf2_buffer_.setUsingDedicatedThread(true);
-  tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(tf2_buffer_);
-
 #elif MODE_ROS2
 ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
   tf2_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
-  sub_objects_ = this->create_subscription<dom::ObjectArray>("/carla/objects", 1, std::bind(&ItsConverter::objectsCallback, this, std::placeholders::_1));
-  sub_odometry_ = this->create_subscription<nam::Odometry>("/carla/ego_vehicle/odometry", 1, std::bind(&ItsConverter::odometryCallback, this, std::placeholders::_1));
-  sub_vehicle_status_ = this->create_subscription<cm::CarlaEgoVehicleStatus>("/carla/ego_vehicle/vehicle_status", 1, std::bind(&ItsConverter::vehicleStatusCallback, this, std::placeholders::_1));
+  tf2_buffer_->setUsingDedicatedThread(true);
+  tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
   
   rclcpp::QoS qosLatching = rclcpp::QoS(rclcpp::KeepLast(1));
   qosLatching.transient_local();
   qosLatching.reliable();
+  
+  sub_objects_ = this->create_subscription<dom::ObjectArray>("/carla/objects", 1, std::bind(&ItsConverter::objectsCallback, this, std::placeholders::_1));
+  sub_odometry_ = this->create_subscription<nam::Odometry>("/carla/ego_vehicle/odometry", 1, std::bind(&ItsConverter::odometryCallback, this, std::placeholders::_1));
+  sub_vehicle_status_ = this->create_subscription<cm::CarlaEgoVehicleStatus>("/carla/ego_vehicle/vehicle_status", 1, std::bind(&ItsConverter::vehicleStatusCallback, this, std::placeholders::_1));
   sub_vehicle_info_ = this->create_subscription<cm::CarlaEgoVehicleInfo>("/carla/ego_vehicle/vehicle_info", qosLatching, std::bind(&ItsConverter::vehicleInfoCallback, this, std::placeholders::_1));
 
   pub_objects_carla_map_ = this->create_publisher<pin::ObjectList>("/carla_its_converter/objectList/carla_map", 1);
   pub_objects_ego_vehicle_ = this->create_publisher<pin::ObjectList>("/carla_its_converter/objectList/ego_vehicle", 1);
   pub_ego_data_ = this->create_publisher<pin::EgoData>("/carla_its_converter/egoData", 1);
   
-  tf2_buffer_->setUsingDedicatedThread(true);
-  tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
 #endif
 
   // Load Parameters and if not successful, return
@@ -182,36 +184,36 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
 }
 
 void ItsConverter::odometryCallback(const nam::Odometry::ConstPtr msg) {
-  // Map the ego from the CARLA format to the perception_interfaces format
+  // map ego data from CARLA to the perception_interfaces format
   if(publish_ego_data_){ 
     if(ego_shape_set_ && ego_status_set_){
       msg_ego_data_.header = msg->header;
-      obj_acc::initializeState(msg_ego_data_, 1); //TODO constant instead of 1?
-      obj_acc::setPose(msg_ego_data_.state, msg->pose.pose);
-      obj_acc::setZ(msg_ego_data_, msg->pose.pose.position.z + ego_shape_.dimensions[2] / 2.0); // Set z to the center of the object
-      obj_acc::setYawRate(msg_ego_data_.state, msg->twist.twist.angular.z);
-
-      // get yaw angle
+      
+      // get euler angles
       double roll, pitch, yaw;
       tf2::Quaternion quat_tf;
       tf2::fromMsg(msg->pose.pose.orientation, quat_tf);
       tf2::Matrix3x3 matrix(quat_tf);
       matrix.getRPY(roll, pitch, yaw);
 
+      // fill state
+      obj_acc::initializeState(msg_ego_data_, pin::EGO::MODEL_ID);
+      obj_acc::setPose(msg_ego_data_.state, msg->pose.pose);
+      obj_acc::setZ(msg_ego_data_, msg->pose.pose.position.z + ego_shape_.dimensions[2] / 2.0); // Set z to the center of the object
+      obj_acc::setYawRate(msg_ego_data_.state, msg->twist.twist.angular.z);
       obj_acc::setVelocityXYZYaw(msg_ego_data_.state, msg->twist.twist.linear, yaw);
       obj_acc::setAccelerationXYZYaw(msg_ego_data_.state, ego_acceleration_.linear, yaw);
       obj_acc::setSteeringAngleAck(msg_ego_data_.state, ego_steering_angle_);
-      // obj_acc::setSteeringAngleRateAck(msg_ego_data_.state, msg); //TODO no data available
       obj_acc::setStandstill(msg_ego_data_.state, (msg->twist.twist.linear.x + msg->twist.twist.linear.y + msg->twist.twist.linear.z) == 0);
 
-      // # continuous state covariance matrix (N*N flattened)
-      // float64[] continuous_state_covariance
+      // # reference point for object position
+      msg_ego_data_.state.reference_point.value = pin::ObjectReferencePoint::GEOMETRIC_CENTER;
 
       // # classification incl. probabilities
-      // ObjectClassification[] classifications
-
-      // # reference point for object position
-      // ObjectReferencePoint reference_point
+      // ObjectClassification[] classifications 
+      
+      // # continuous state covariance matrix (N*N flattened)
+      // float64[] continuous_state_covariance
 
       // # Planned trajectory of the ego_vehicle
       // ObjectState[] trajectory_planned
@@ -222,6 +224,7 @@ void ItsConverter::odometryCallback(const nam::Odometry::ConstPtr msg) {
       // # Planned route of the ego_vehicle
       // geometry_msgs/Point[] route_planned
 
+      // fill ego data
       msg_ego_data_.vehicle_id = ego_id_;
       msg_ego_data_.length = ego_shape_.dimensions[0];
       msg_ego_data_.width = ego_shape_.dimensions[1];
@@ -238,14 +241,14 @@ void ItsConverter::odometryCallback(const nam::Odometry::ConstPtr msg) {
 }
 
 void ItsConverter::vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg){
-  // get steering_angle and acceleration form ego
+  // get steering_angle and acceleration form ego vehicle
   ego_steering_angle_ = msg->control.steer;
   ego_acceleration_ = msg->acceleration;
   ego_status_set_ = true;
 }
 
 void ItsConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg){
-  // get id from ego
+  // get id from ego vehicle
   ego_id_ = msg->id;
   ego_id_set_ = true;
 }
