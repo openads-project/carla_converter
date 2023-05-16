@@ -48,10 +48,8 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
 bool ItsConverter::loadParameters() {
   // load publish parameters
 #ifdef MODE_ROS1
-  bool b_param;
-  if (!private_node_handle_.getParam("publish_ego_vehicle", publish_ego_vehicle_)) {
-    ROS_LOG_STREAM(ERROR,  "Parameter \'publish_ego_vehicle\' is required");
-    return false;
+  if(!private_node_handle_.param("publish_ego_vehicle", publish_ego_vehicle_, false)) {
+    ROS_WARN("publish_ego_vehicle not set, defaulting to %d.", publish_ego_vehicle_);
   }
 #elif MODE_ROS2
   this->declare_parameter("publish_ego_vehicle", true);
