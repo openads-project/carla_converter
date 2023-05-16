@@ -28,7 +28,7 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
   qosLatching.reliable();
   
   sub_objects_ = this->create_subscription<dom::ObjectArray>("/carla/objects", 1, std::bind(&ItsConverter::objectsCallback, this, std::placeholders::_1));
-  sub_odometry_ = this->create_subscription<nam::Odometry>("/carla/ego_vehicle/odometry", 1, std::bind(&ItsConverter::odometryCallback, this, std::placeholders::_1));
+  sub_odometry_ = this->create_subscription<nm::Odometry>("/carla/ego_vehicle/odometry", 1, std::bind(&ItsConverter::odometryCallback, this, std::placeholders::_1));
   sub_vehicle_status_ = this->create_subscription<cm::CarlaEgoVehicleStatus>("/carla/ego_vehicle/vehicle_status", 1, std::bind(&ItsConverter::vehicleStatusCallback, this, std::placeholders::_1));
   sub_vehicle_info_ = this->create_subscription<cm::CarlaEgoVehicleInfo>("/carla/ego_vehicle/vehicle_info", qosLatching, std::bind(&ItsConverter::vehicleInfoCallback, this, std::placeholders::_1));
 
@@ -178,7 +178,7 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
   }
 }
 
-void ItsConverter::odometryCallback(const nam::Odometry::ConstPtr msg) {
+void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg) {
   // map ego data from CARLA to the perception_interfaces format
   if(ego_shape_set_ && ego_status_set_){
     msg_ego_data_.header = msg->header;

@@ -23,7 +23,7 @@
 #define ROS_LOG_STREAM(level, ...) ROS_##level(__VA_ARGS__)
 
 namespace dom = derived_object_msgs;
-namespace nam = nav_msgs;
+namespace nm = nav_msgs;
 namespace pin = perception_interfaces;
 namespace gm = geometry_msgs;
 namespace sm = shape_msgs;
@@ -50,7 +50,7 @@ using Publisher = ros::Publisher;
 #define ROS_LOG_STREAM(level, ...) RCLCPP_##level##_STREAM(this->get_logger(), __VA_ARGS__)
 
 namespace dom = derived_object_msgs::msg;
-namespace nam = nav_msgs::msg;
+namespace nm = nav_msgs::msg;
 namespace pi = perception_interfaces::msg;
 namespace gm = geometry_msgs::msg;
 namespace sm = shape_msgs::msg;
@@ -80,7 +80,7 @@ class ItsConverter : public rclcpp::Node {
 
   private:
     void objectsCallback(const dom::ObjectArray::ConstPtr msg);
-    void odometryCallback(const nam::Odometry::ConstPtr msg);
+    void odometryCallback(const nm::Odometry::ConstPtr msg);
     void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg);
     void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg);
     bool loadParameters();
@@ -93,7 +93,7 @@ class ItsConverter : public rclcpp::Node {
 #endif
 
     Subscriber<dom::ObjectArray> sub_objects_;
-    Subscriber<nam::Odometry> sub_odometry_;
+    Subscriber<nm::Odometry> sub_odometry_;
     Subscriber<cm::CarlaEgoVehicleStatus> sub_vehicle_status_;
     Subscriber<cm::CarlaEgoVehicleInfo> sub_vehicle_info_;
 

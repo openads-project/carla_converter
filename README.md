@@ -28,7 +28,7 @@ This package contains the CarlaItsConverterNode - a simple ROS Node that convert
 | `/carla/objects` | `dom::ObjectArray` | Objects in the carla environment |
 | `/carla/ego_vehicle/vehicle_info` | `cm::CarlaEgoVehicleInfo` | Object id of the ego vehicle |
 | `/carla/ego_vehicle/vehicle_status` | `cm::CarlaEgoVehicleStatus` | Steering angle and acceleration of the ego vehicle |
-| `/carla/ego_vehicle/odometry` | `nam::Odometry` | Odometry of the ego vehicle |
+| `/carla/ego_vehicle/odometry` | `nm::Odometry` | Odometry of the ego vehicle |
 
 #### Published Topics
 
