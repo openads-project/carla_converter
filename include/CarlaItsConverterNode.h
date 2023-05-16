@@ -24,7 +24,7 @@
 
 namespace dom = derived_object_msgs;
 namespace nm = nav_msgs;
-namespace pin = perception_interfaces;
+namespace pi = perception_interfaces;
 namespace gm = geometry_msgs;
 namespace sm = shape_msgs;
 namespace cm = carla_msgs;
