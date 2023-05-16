@@ -75,8 +75,11 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
     // only add classified objects
     if(!msg->objects[i].object_classified) continue;
     
-    // only get shape from ego vehicle if not set yet
-    if(ego_id_set_ && !ego_shape_set_ && ego_id_ == msg->objects[i].id){
+    // only continue if ego_id_set_ 
+    if (!ego_id_set_) continue;
+
+    // only get shape from ego vehicle
+    if(ego_id_ == msg->objects[i].id){
       ego_shape_ = msg->objects[i].shape;
       ego_shape_set_ = true;
       continue;
