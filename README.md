@@ -62,7 +62,7 @@ roslaunch carla_its_converter carla_its_converter_ros1.launch
 ```
 ##### ROS2
 ```bash
-ros2 launch carla_its_converter carla_its_converter_ros2.launch
+ros2 launch carla_its_converter carla_its_converter_ros2.launch.xml
 ```
 
 ### Launch Files
