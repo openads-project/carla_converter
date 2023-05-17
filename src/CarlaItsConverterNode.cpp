@@ -204,7 +204,6 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg) {
     // reference point for object position
     msg_ego_data_.state.reference_point.value = pi::ObjectReferencePoint::GEOMETRIC_CENTER;
 
-    // # classification incl. probabilities
     
     // # continuous state covariance matrix (N*N flattened)
     // float64[] continuous_state_covariance
