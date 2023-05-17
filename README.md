@@ -1,6 +1,6 @@
 # carla_its_converter
 
-This package contains the CarlaItsConverterNode - a simple ROS Node that converts incoming messages from the [carla-ros-bridge](https://gitlab.ika.rwth-aachen.de/fb-fi/simulation/carla/ros-bridge) and publishes some of the [fb-fi defined ros messages](https://gitlab.ika.rwth-aachen.de/fb-fi/definitions) for various its-applications. Moreover the node is capable to broadcast necessary tf's for different its-applications (e.g. carla_map->map).
+This package contains the CarlaItsConverterNode - a simple ROS Node that converts incoming messages from the [carla-ros-bridge](https://gitlab.ika.rwth-aachen.de/fb-fi/simulation/carla/ros-bridge) and publishes some of the [fb-fi defined ros messages](https://gitlab.ika.rwth-aachen.de/fb-fi/definitions) for various its-applications.
 
 - [Nodes](#nodes)
   - [carla_its_converter/CarlaItsConverterNode](#carla_its_convertercarlaitsConverternode)
