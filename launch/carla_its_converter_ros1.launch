@@ -1,7 +1,7 @@
 <launch>
-    <arg name="publish_ego_vehicle" default="True"/> 
+    <arg name="publish_ego_vehicle" default="true"/> 
 
-    <node pkg="carla_its_converter" type="CarlaItsConverterNode" name="ItsConverterNode" output="screen">
+    <node pkg="carla_its_converter" type="CarlaItsConverterNode" name="carla_its_converter" output="screen">
         <param name="publish_ego_vehicle" value="$(arg publish_ego_vehicle)"/>
     </node>
 </launch>

@@ -112,13 +112,14 @@ class ItsConverter : public rclcpp::Node {
     // ego information
     int ego_id_;
     float ego_steering_angle_;
+    double ego_steering_angle_max_;
     gm::Accel ego_acceleration_;
     sm::SolidPrimitive ego_shape_;
 
     // set flags
     bool ego_shape_set_ = false;
     bool ego_status_set_ = false;
-    bool ego_id_set_ = false;
+    bool ego_info_set_ = false;
 };
 
 

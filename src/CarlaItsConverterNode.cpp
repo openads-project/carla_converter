@@ -48,7 +48,7 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
 bool ItsConverter::loadParameters() {
   // load publish parameters
 #ifdef MODE_ROS1
-  if(!private_node_handle_.param("publish_ego_vehicle", publish_ego_vehicle_, false)) {
+  if(!private_node_handle_.param<bool>("/carla_its_converter/publish_ego_vehicle", publish_ego_vehicle_, false)) {
     ROS_WARN("publish_ego_vehicle not set, defaulting to %d.", publish_ego_vehicle_);
   }
 #elif MODE_ROS2
@@ -73,8 +73,8 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
     // only add classified objects
     if(!msg->objects[i].object_classified) continue;
     
-    // only continue if ego_id_set_ 
-    if (!ego_id_set_) continue;
+    // only continue if ego_info_set_ 
+    if (!ego_info_set_) continue;
 
     // only get shape from ego vehicle
     if(ego_id_ == msg->objects[i].id){
@@ -198,12 +198,11 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg) {
     oa::setYawRate(msg_ego_data_.state, msg->twist.twist.angular.z);
     oa::setVelocityXYZYaw(msg_ego_data_.state, msg->twist.twist.linear, yaw);
     oa::setAccelerationXYZYaw(msg_ego_data_.state, ego_acceleration_.linear, yaw);
-    oa::setSteeringAngleAck(msg_ego_data_.state, ego_steering_angle_);
-    oa::setStandstill(msg_ego_data_.state, (msg->twist.twist.linear.x + msg->twist.twist.linear.y + msg->twist.twist.linear.z) == 0);
+    oa::setSteeringAngleAck(msg_ego_data_.state, -ego_steering_angle_*(ego_steering_angle_max_ * (M_PI / 180)));
+    oa::setStandstill(msg_ego_data_.state, std::sqrt(pow(msg->twist.twist.linear.x, 2) + pow(msg->twist.twist.linear.y, 2) + pow(msg->twist.twist.linear.z, 2)) <= 0.01);
 
     // reference point for object position
     msg_ego_data_.state.reference_point.value = pi::ObjectReferencePoint::GEOMETRIC_CENTER;
-
     
     // # continuous state covariance matrix (N*N flattened)
     // float64[] continuous_state_covariance
@@ -242,7 +241,13 @@ void ItsConverter::vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstP
 void ItsConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg){
   // get id from ego vehicle
   ego_id_ = msg->id;
-  ego_id_set_ = true;
+  ego_steering_angle_max_=0.0;
+  for(int i=0; i<msg->wheels.size(); i++)
+  {
+    ego_steering_angle_max_ = std::max(ego_steering_angle_max_, (double)msg->wheels[i].max_steer_angle);
+  }
+
+  ego_info_set_ = true;
 }
 }  // end of namespace
 
