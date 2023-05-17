@@ -73,11 +73,6 @@ ros2 launch carla_its_converter carla_its_converter_ros2.launch.xml
 | `carla_its_converter` | `carla_its_converter_ros2.launch.xml` | `launch/` | Launches CarlaItsConverterNode for ROS2. |
 
 
-### Configuration Files
-
-| Package | File | Path | Description |
-| --- | --- | --- | --- |
-| `carla_its_converter` | `carla_its_converter_params.yaml` | `config/` | ROS parameters for the CarlaItsConverterNode |
 
 ### Additional Remarks
 
