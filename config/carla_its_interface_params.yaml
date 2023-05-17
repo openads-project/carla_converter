@@ -1,9 +1,0 @@
-ItsInterfaceNode:
-    ros__parameters:
-        publish:
-            carla_map: True
-            ego_vehicle: True
-            map: False
-            base_link: False
-        fov_range: 75.0
-        center_to_baselink: 1.2645

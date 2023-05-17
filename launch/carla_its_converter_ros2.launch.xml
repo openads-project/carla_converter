@@ -1,0 +1,8 @@
+<launch>
+  <arg name="publish_ego_vehicle" default="True"/> 
+
+  <node pkg="carla_its_converter" exec="carla_its_converter_node" name="ItsConverterNode" output="screen">       
+    <param name="publish_ego_vehicle" value="$(var publish_ego_vehicle)"/>
+  </node>
+
+</launch>

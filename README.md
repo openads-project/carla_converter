@@ -1,9 +1,9 @@
-# carla_its_interface
+# carla_its_converter
 
-This package contains the CarlaItsInterfaceNode - a simple ROS Node that converts incoming messages from the [carla-ros-bridge](https://gitlab.ika.rwth-aachen.de/fb-fi/simulation/carla/ros-bridge) and publishes some of the [fb-fi defined ros messages](https://gitlab.ika.rwth-aachen.de/fb-fi/definitions) for various its-applications. Moreover the node is capable to broadcast necessary tf's for different its-applications (e.g. carla_map->map).
+This package contains the CarlaItsConverterNode - a simple ROS Node that converts incoming messages from the [carla-ros-bridge](https://gitlab.ika.rwth-aachen.de/fb-fi/simulation/carla/ros-bridge) and publishes some of the [fb-fi defined ros messages](https://gitlab.ika.rwth-aachen.de/fb-fi/definitions) for various its-applications.
 
 - [Nodes](#nodes)
-  - [carla_its_interface/CarlaItsInterfaceNode](#carla_its_interfacecarlaitsinterfacenode)
+  - [carla_its_converter/CarlaItsConverterNode](#carla_its_convertercarlaitsConverternode)
 - [Usage of docker-ros Images](#usage-of-docker-ros-images)
   - [Available Images](#available-images)
   - [Default Command](#default-command)
@@ -17,36 +17,34 @@ This package contains the CarlaItsInterfaceNode - a simple ROS Node that convert
 
 | Package | Node | Description |
 | --- | --- | --- |
-| `carla_its_interface` | `CarlaItsInterfaceNode` | Converting carla-ros-messages to fb-fi defined its-messages |
+| `carla_its_converter` | `CarlaItsConverterNode` | Converting carla-ros-messages to fb-fi defined its-messages |
 
-### carla_its_interface/CarlaItsInterfaceNode
+### carla_its_converter/CarlaItsConverterNode
 
 #### Subscribed Topics
 
 | Topic | Type | Description | 
 | --- | --- | --- |
-| `/carla/ego_vehicle/objects` | `dom::ObjectArray` | Objects in the carla environment |
-| `/carla/ego_vehicle/odometry` | `nam::Odometry` | Odometry of the ego vehicle |
+| `/carla/objects` | `dom::ObjectArray` | Objects in the carla environment |
+| `/carla/ego_vehicle/vehicle_info` | `cm::CarlaEgoVehicleInfo` | Object id of the ego vehicle |
+| `/carla/ego_vehicle/vehicle_status` | `cm::CarlaEgoVehicleStatus` | Steering angle and acceleration of the ego vehicle |
+| `/carla/ego_vehicle/odometry` | `nm::Odometry` | Odometry of the ego vehicle |
 
 #### Published Topics
 
 | Topic | Type | Description |
 | --- | --- | --- |
-| `/carla_its_interface/objectList/carla_map` | `pin::ObjectList` | Object list in carla map frame |
-| `/carla_its_interface/objectList/ego_vehicle` | `pin::ObjectList` | Object list in ego vehicle frame |
-| `/carla_its_interface/objectList/map` | `pin::ObjectList` | Object list in map frame |
-| `/carla_its_interface/objectList/base_link` | `pin::ObjectList` | Object list in base link frame |
+| `/carla_its_converter/objectList/carla_map` | `perception_interfaces::msg::ObjectList` | Object list in carla map frame |
+| `/carla_its_converter/objectList/ego_vehicle` | `perception_interfaces::msg::ObjectList` | Object list in ego vehicle frame |
+| `/carla_its_converter/egoData` | `perception_interfaces::msg::EgoState` | Ego State of vehicle |
 
 #### Parameters
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| publish.carla_map | bool | Whether to publish object list in carla map frame or not. |
-| publish.ego_vehicle | bool | Whether to publish object list in ego vehicle frame or not. |
-| publish.map | bool | Whether to publish object list in map frame or not. |
-| publish.base_link | bool | Whether to publish object list in base link frame or not. |
-| fov_range | float | Maximum field of view range for objects in the base link frame. Only objects within the FOV will be published. |
-| center_to_baselink | float | Distance between center of the vehicle and its base link. |
+| publish.object_list_carla_map_frame | bool | Whether to publish object list in carla map frame or not. |
+| publish.object_list_ego_vehicle_frame | bool | Whether to publish object list in ego vehicle frame or not. |
+| publish.ego_data | bool | Whether to publish egodata information or not. |
 
 ## Usage of docker-ros Images
 
@@ -60,26 +58,21 @@ This package contains the CarlaItsInterfaceNode - a simple ROS Node that convert
 
 ##### ROS1
 ```bash
-roslaunch carla_its_interface carla_its_interface_ros1.launch
+roslaunch carla_its_converter carla_its_converter_ros1.launch
 ```
 ##### ROS2
 ```bash
-ros2 launch carla_its_interface carla_its_interface_ros2.launch
+ros2 launch carla_its_converter carla_its_converter_ros2.launch.xml
 ```
 
 ### Launch Files
 
 | Package | File | Path | Description |
 | --- | --- | --- | --- |
-| `carla_its_interface` | `carla_its_interface_ros1.launch` | `launch/` | Launches CarlaItsInterfaceNode for ROS1. |
-| `carla_its_interface` | `carla_its_interface_ros2.launch` | `launch/` | Launches CarlaItsInterfaceNode for ROS2. |
+| `carla_its_converter` | `carla_its_converter_ros1.launch` | `launch/` | Launches CarlaItsConverterNode for ROS1. |
+| `carla_its_converter` | `carla_its_converter_ros2.launch.xml` | `launch/` | Launches CarlaItsConverterNode for ROS2. |
 
 
-### Configuration Files
-
-| Package | File | Path | Description |
-| --- | --- | --- | --- |
-| `carla_its_interface` | `carla_its_interface_params.yaml` | `config/` | ROS parameters for the CarlaItsInterfaceNode |
 
 ### Additional Remarks
 

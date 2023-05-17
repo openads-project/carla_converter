@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12.0 FATAL_ERROR)
-project(carla_its_interface)
+project(carla_its_converter)
 
 find_package(ros_environment REQUIRED QUIET)
 set(ROS_VERSION $ENV{ROS_VERSION})
@@ -27,9 +27,11 @@ if(${ROS_VERSION} EQUAL 2)
   find_package(tf2_geometry_msgs REQUIRED)
   find_package(tf2_perception_msgs REQUIRED)
   find_package(tf2_ros REQUIRED)
+  find_package(shape_msgs REQUIRED)
+  find_package(carla_msgs REQUIRED)
 
 
-  add_executable(${PROJECT_NAME}_node src/CarlaItsInterfaceNode.cpp)
+  add_executable(${PROJECT_NAME}_node src/CarlaItsConverterNode.cpp)
 
   target_include_directories(${PROJECT_NAME}_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -46,6 +48,8 @@ if(${ROS_VERSION} EQUAL 2)
     tf2_geometry_msgs
     tf2_perception_msgs
     tf2_ros
+    shape_msgs
+    carla_msgs
   )
   ament_export_dependencies(
     derived_object_msgs
@@ -57,6 +61,8 @@ if(${ROS_VERSION} EQUAL 2)
     tf2_geometry_msgs
     tf2_perception_msgs
     tf2_ros
+    shape_msgs
+    carla_msgs
   )
 
   install(TARGETS
@@ -66,11 +72,6 @@ if(${ROS_VERSION} EQUAL 2)
 
   install(
     DIRECTORY launch
-    DESTINATION share/${PROJECT_NAME}
-  )
-
-  install(
-    DIRECTORY config
     DESTINATION share/${PROJECT_NAME}
   )
 
@@ -109,6 +110,7 @@ elseif(${ROS_VERSION} EQUAL 1)
     tf2
     tf2_perception_msgs
     tf2_ros
+    carla_msgs
   )
 
 
@@ -139,7 +141,7 @@ elseif(${ROS_VERSION} EQUAL 1)
     ${catkin_INCLUDE_DIRS}
   )
 
-  add_executable(${PROJECT_NAME}_node src/CarlaItsInterfaceNode.cpp)
+  add_executable(${PROJECT_NAME}_node src/CarlaItsConverterNode.cpp)
   ## EXECUTABLES END ##
 
   ## Rename C++ executable without prefix
@@ -151,7 +153,7 @@ elseif(${ROS_VERSION} EQUAL 1)
   ## TARGET PROPERTIES START ##
 
   #set_target_properties(${PROJECT_NAME}_SampleNodelet PROPERTIES OUTPUT_NAME SampleNodelet PREFIX lib)
-  set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME CarlaItsInterfaceNode)
+  set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME CarlaItsConverterNode)
   ## TARGET PROPERTIES END ##
 
   ## Add cmake target dependencies of the executable
