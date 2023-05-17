@@ -70,7 +70,7 @@ ros2 launch carla_its_converter carla_its_converter_ros2.launch.xml
 | Package | File | Path | Description |
 | --- | --- | --- | --- |
 | `carla_its_converter` | `carla_its_converter_ros1.launch` | `launch/` | Launches CarlaItsConverterNode for ROS1. |
-| `carla_its_converter` | `carla_its_converter_ros2.launch` | `launch/` | Launches CarlaItsConverterNode for ROS2. |
+| `carla_its_converter` | `carla_its_converter_ros2.launch.xml` | `launch/` | Launches CarlaItsConverterNode for ROS2. |
 
 
 ### Configuration Files
