@@ -234,7 +234,7 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg) {
 }
 
 void ItsConverter::vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg){
-  // get steering_angle and acceleration form ego vehicle
+  // get steering_angle and acceleration from ego vehicle
   ego_steering_angle_ = msg->control.steer;
   ego_acceleration_ = msg->acceleration;
   ego_status_set_ = true;
