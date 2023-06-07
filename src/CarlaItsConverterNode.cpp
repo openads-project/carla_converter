@@ -141,7 +141,7 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
     msg_object_list_.objects.push_back(objectTemp);
   }
 
-  // publish objectList in carla_map frame
+  // publish object_list in carla_map frame
 #ifdef MODE_ROS1
     pub_objects_carla_map_.publish(msg_object_list_);
 #elif MODE_ROS2
@@ -155,7 +155,7 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
     auto timeout = rclcpp::Duration::from_seconds(1.0);
 #endif
 
-    // transform the objectList from carla_map to ego_vehicle
+    // transform the object_list from carla_map to ego_vehicle
     pi::ObjectList msg_object_list_ego_vehicle;
     gm::TransformStamped carla_map_to_ego_vehicle_tf;
     try {
@@ -164,11 +164,11 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
 #elif MODE_ROS2
       carla_map_to_ego_vehicle_tf = tf2_buffer_->lookupTransform("ego_vehicle", "carla_map", msg_object_list_.header.stamp, timeout);
 #endif
-    } catch (tf2::TransformException& ex) {
-      ROS_LOG_STREAM(ERROR, "\"Exception caught: \" << ex.what()");
+      tf2::doTransform(msg_object_list_, msg_object_list_ego_vehicle, carla_map_to_ego_vehicle_tf);
+    } catch (tf2::TransformException& e) {
+      ROS_LOG_STREAM(WARN, "\"Exception caught: \"" << ex.what());
       return;
     }
-    tf2::doTransform(msg_object_list_, msg_object_list_ego_vehicle, carla_map_to_ego_vehicle_tf);
 
     // publish object list in ego_vehicle frame
 #ifdef MODE_ROS1
@@ -222,7 +222,7 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg) {
     msg_ego_data_.width = ego_shape_.dimensions[1];
     msg_ego_data_.height = ego_shape_.dimensions[2];
 
-    // publish egoData in carla_map frame
+    // publish ego_data in carla_map frame
 #ifdef MODE_ROS1
     pub_ego_data_.publish(msg_ego_data_);
 #elif MODE_ROS2
