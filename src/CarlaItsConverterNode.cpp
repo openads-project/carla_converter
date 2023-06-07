@@ -166,7 +166,7 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
 #endif
       tf2::doTransform(msg_object_list_, msg_object_list_ego_vehicle, carla_map_to_ego_vehicle_tf);
     } catch (tf2::TransformException& e) {
-      ROS_LOG_STREAM(WARN, "\"Exception caught: \"" << e.what());
+      ROS_LOG_STREAM(WARN, "Tranformation from 'carla_map' to 'ego_vehicle' is not available");
       return;
     }
 
