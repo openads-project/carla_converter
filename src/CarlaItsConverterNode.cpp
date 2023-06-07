@@ -13,9 +13,9 @@ ItsConverter::ItsConverter() {
   sub_vehicle_status_ = private_node_handle_.subscribe("/carla/ego_vehicle/vehicle_status", 1, &ItsConverter::vehicleStatusCallback, this);
   sub_vehicle_info_ = private_node_handle_.subscribe("/carla/ego_vehicle/vehicle_info", 1, &ItsConverter::vehicleInfoCallback, this);
   
-  pub_objects_carla_map_ = private_node_handle_.advertise<pi::ObjectList>("/carla_its_converter/objectList/carla_map", 1);
-  pub_objects_ego_vehicle_ = private_node_handle_.advertise<pi::ObjectList>("/carla_its_converter/objectList/ego_vehicle", 1);
-  pub_ego_data_ = private_node_handle_.advertise<pi::EgoData>("/carla_its_converter/egoData", 1);
+  pub_objects_carla_map_ = private_node_handle_.advertise<pi::ObjectList>("/carla_its_converter/object_list/carla_map", 1);
+  pub_objects_ego_vehicle_ = private_node_handle_.advertise<pi::ObjectList>("/carla_its_converter/object_list/ego_vehicle", 1);
+  pub_ego_data_ = private_node_handle_.advertise<pi::EgoData>("/carla_its_converter/ego_data", 1);
   
 #elif MODE_ROS2
 ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
@@ -32,9 +32,9 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
   sub_vehicle_status_ = this->create_subscription<cm::CarlaEgoVehicleStatus>("/carla/ego_vehicle/vehicle_status", 1, std::bind(&ItsConverter::vehicleStatusCallback, this, std::placeholders::_1));
   sub_vehicle_info_ = this->create_subscription<cm::CarlaEgoVehicleInfo>("/carla/ego_vehicle/vehicle_info", qosLatching, std::bind(&ItsConverter::vehicleInfoCallback, this, std::placeholders::_1));
 
-  pub_objects_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/objectList/carla_map", 1);
-  pub_objects_ego_vehicle_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/objectList/ego_vehicle", 1);
-  pub_ego_data_ = this->create_publisher<pi::EgoData>("/carla_its_converter/egoData", 1);
+  pub_objects_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/object_list/carla_map", 1);
+  pub_objects_ego_vehicle_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/object_list/ego_vehicle", 1);
+  pub_ego_data_ = this->create_publisher<pi::EgoData>("/carla_its_converter/ego_data", 1);
   
 #endif
 
