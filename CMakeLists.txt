@@ -3,6 +3,7 @@ project(carla_its_converter)
 
 find_package(ros_environment REQUIRED QUIET)
 set(ROS_VERSION $ENV{ROS_VERSION})
+set(ROS_DISTRO $ENV{ROS_DISTRO})
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
    add_compile_options(-Wall -Wextra -Wpedantic)
@@ -10,8 +11,25 @@ endif()
 
 # === ROS2 (AMENT) =============================================================
 if(${ROS_VERSION} EQUAL 2)
+
   # set compile definitions for ROS2
   add_compile_definitions(MODE_ROS2)
+
+  if(${ROS_DISTRO} STREQUAL "foxy")
+      add_compile_definitions(ROS_DISTRO_FOXY)
+  endif()
+
+  if(${ROS_DISTRO} STREQUAL "humble")
+      add_compile_definitions(ROS_DISTRO_HUMBLE)
+  endif()
+
+  if(${ROS_DISTRO} STREQUAL "iron")
+      add_compile_definitions(ROS_DISTRO_IRON)
+  endif() 
+  
+  if(${ROS_DISTRO} STREQUAL "rolling")
+      add_compile_definitions(ROS_DISTRO_ROLLING)
+  endif()
 
   # find dependencies
   find_package(ament_cmake REQUIRED)
@@ -93,6 +111,14 @@ if(${ROS_VERSION} EQUAL 2)
 elseif(${ROS_VERSION} EQUAL 1)
   # set compile definitions for ROS1
   add_compile_definitions(MODE_ROS1)
+
+  if(${ROS_DISTRO} STREQUAL "kinetic")
+      add_compile_definitions(ROS_DISTRO_KINETIC)
+  endif()
+
+  if(${ROS_DISTRO} STREQUAL "noetic")
+      add_compile_definitions(ROS_DISTRO_NOETIC)
+  endif()
   
   ## Compile as C++11, supported in ROS Kinetic and newer
   add_compile_options(-std=c++11)

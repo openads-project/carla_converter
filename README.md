@@ -34,9 +34,9 @@ This package contains the CarlaItsConverterNode - a simple ROS Node that convert
 
 | Topic | Type | Description |
 | --- | --- | --- |
-| `/carla_its_converter/objectList/carla_map` | `perception_interfaces::msg::ObjectList` | Object list in carla map frame |
-| `/carla_its_converter/objectList/ego_vehicle` | `perception_interfaces::msg::ObjectList` | Object list in ego vehicle frame |
-| `/carla_its_converter/egoData` | `perception_interfaces::msg::EgoState` | Ego State of vehicle |
+| `/carla_its_converter/object_list/carla_map` | `perception_interfaces::msg::ObjectList` | Object list in carla map frame |
+| `/carla_its_converter/object_list/ego_vehicle` | `perception_interfaces::msg::ObjectList` | Object list in ego vehicle frame |
+| `/carla_its_converter/ego_data` | `perception_interfaces::msg::EgoState` | Ego State of vehicle |
 
 #### Parameters
 
@@ -58,19 +58,19 @@ This package contains the CarlaItsConverterNode - a simple ROS Node that convert
 
 ##### ROS1
 ```bash
-roslaunch carla_its_converter carla_its_converter_ros1.launch
+roslaunch carla_its_converter carla_its_converter.launch
 ```
 ##### ROS2
 ```bash
-ros2 launch carla_its_converter carla_its_converter_ros2.launch.xml
+ros2 launch carla_its_converter carla_its_converter.launch.py
 ```
 
 ### Launch Files
 
 | Package | File | Path | Description |
 | --- | --- | --- | --- |
-| `carla_its_converter` | `carla_its_converter_ros1.launch` | `launch/` | Launches CarlaItsConverterNode for ROS1. |
-| `carla_its_converter` | `carla_its_converter_ros2.launch.xml` | `launch/` | Launches CarlaItsConverterNode for ROS2. |
+| `carla_its_converter` | `carla_its_converter.launch` | `launch/` | Launches CarlaItsConverterNode for ROS1. |
+| `carla_its_converter` | `carla_its_converter.launch.py` | `launch/` | Launches CarlaItsConverterNode for ROS2. |
 
 
 
