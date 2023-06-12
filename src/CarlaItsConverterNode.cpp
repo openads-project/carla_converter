@@ -163,27 +163,27 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
       if (tf2_buffer_._frameExists("ego_vehicle")){
         carla_map_to_ego_vehicle_tf = tf2_buffer_.lookupTransform("ego_vehicle", "carla_map", msg_object_list_.header.stamp, timeout);
       } else {
-        ROS_LOG_STREAM(WARN, "Tranformation from 'carla_map' to 'ego_vehicle' is not available");
-        show_next_transform_success_log_ = true;
+        ROS_LOG_STREAM(WARN, "Frame 'ego_vehicle' does not exist");
+        show_transform_success_ = true;
         return;
       }
 #elif MODE_ROS2
       if (tf2_buffer_->_frameExists("ego_vehicle")){
         carla_map_to_ego_vehicle_tf = tf2_buffer_->lookupTransform("ego_vehicle", "carla_map", msg_object_list_.header.stamp, timeout);
       } else {
-        ROS_LOG_STREAM(WARN, "Tranformation from 'carla_map' to 'ego_vehicle' is not available");
-        show_next_transform_success_log_ = true;
+        ROS_LOG_STREAM(WARN, "Frame 'ego_vehicle' does not exist");
+        show_transform_success_ = true;
         return;
       }
 #endif
       tf2::doTransform(msg_object_list_, msg_object_list_ego_vehicle, carla_map_to_ego_vehicle_tf);
-      if(show_next_transform_success_log_){
+      if(show_transform_success_){
         ROS_LOG_STREAM(INFO, "Tranformation from 'carla_map' to 'ego_vehicle' published successfully");
-        show_next_transform_success_log_ = false;
+        show_transform_success_ = false;
       } 
     } catch (tf2::TransformException& e) {
       ROS_LOG_STREAM(WARN, "Tranformation from 'carla_map' to 'ego_vehicle' is not available");
-      show_next_transform_success_log_ = true;
+      show_transform_success_ = true;
       return;
     }
 
