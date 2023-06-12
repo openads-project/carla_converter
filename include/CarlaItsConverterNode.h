@@ -120,6 +120,7 @@ class ItsConverter : public rclcpp::Node {
     bool ego_shape_set_ = false;
     bool ego_status_set_ = false;
     bool ego_info_set_ = false;
+    bool show_next_transform_success_log_ = true;
 };
 
 
