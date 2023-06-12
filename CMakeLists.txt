@@ -21,6 +21,10 @@ if(${ROS_VERSION} EQUAL 2)
 
   if(${ROS_DISTRO} STREQUAL "humble")
       add_compile_definitions(ROS_DISTRO_HUMBLE)
+  endif()
+
+  if(${ROS_DISTRO} STREQUAL "iron")
+      add_compile_definitions(ROS_DISTRO_IRON)
   endif() 
   
   if(${ROS_DISTRO} STREQUAL "rolling")
