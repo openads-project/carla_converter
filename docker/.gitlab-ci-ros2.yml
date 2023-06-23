@@ -2,7 +2,7 @@ include:
   - remote: 'https://raw.githubusercontent.com/ika-rwth-aachen/docker-ros/main/.gitlab-ci/docker-ros.yml'
 
 variables:
-  BASE_IMAGE: rwthika/ros:foxy
+  BASE_IMAGE: rwthika/ros2:foxy
   COMMAND: ros2 launch carla_its_converter carla_its_converter.launch.py
   TARGET: dev,run
   PLATFORM: amd64
