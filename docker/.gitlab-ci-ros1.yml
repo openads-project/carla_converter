@@ -1,10 +1,10 @@
 include:
-  - project: fb-fi/ops/docker-ros
-    ref: main
-    file: templates/.gitlab-ci.template.yml
+  - remote: 'https://raw.githubusercontent.com/ika-rwth-aachen/docker-ros/main/.gitlab-ci/docker-ros.yml'
 
 variables:
-  DISABLE_ARCH_ARM64: 'true'
-  DOCKER_COMPOSE_FILE: docker-compose-ros1.yml
-  IMAGE_DEV_TARGET: ${CI_REGISTRY_IMAGE}:ros1-dev
-  IMAGE_RUN_TARGET: ${CI_REGISTRY_IMAGE}:ros1
+  BASE_IMAGE: rwthika/ros:noetic
+  COMMAND: roslaunch carla_its_converter carla_its_converter.launch
+  TARGET: dev,run
+  PLATFORM: amd64
+  IMAGE_TAG: ros1
+  ENABLE_INDUSTRIAL_CI: 'true'
