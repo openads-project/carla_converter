@@ -108,6 +108,7 @@ class ItsConverter : public rclcpp::Node {
 
     // ros parameters
     bool publish_ego_vehicle_;
+    std::string role_name_;
 
     // ego information
     int ego_id_;
