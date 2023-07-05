@@ -12,6 +12,10 @@ def generate_launch_description():
         name='publish_ego_vehicle',
         default_value='True'
     )
+    role_names_launch_arg = launch.actions.DeclareLaunchArgument(
+        name='role_names',
+        default_value='ego_vehicle'
+    )
     role_name_launch_arg = launch.actions.DeclareLaunchArgument(
         name='role_name',
         default_value='ego_vehicle'
@@ -32,6 +36,7 @@ def generate_launch_description():
 
     return launch.LaunchDescription([
         publish_ego_vehicle_launch_arg,
+        role_names_launch_arg,
         role_name_launch_arg,
         carla_its_converter_node,
     ])

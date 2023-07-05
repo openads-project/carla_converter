@@ -40,10 +40,40 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
   sub_vehicle_info_ = this->create_subscription<cm::CarlaEgoVehicleInfo>("/carla/" + role_name_ +"/vehicle_info", qosLatching, std::bind(&ItsConverter::vehicleInfoCallback, this, std::placeholders::_1));
 
   pub_objects_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/object_list/carla_map", 1);
-  pub_objects_ego_vehicle_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/object_list/" + role_name_, 1);
-  pub_objects_ego_vehicle_fov_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/object_list/ego_vehicle_fov", 1);
-  pub_ego_data_ = this->create_publisher<pi::EgoData>("/carla_its_converter/ego_data/" + role_name_, 1);
   
+  auto odometryArgCallback = [this](const std::string & role_name) {
+    return [this, role_name](const nm::Odometry::ConstPtr msg) -> void {
+      ItsConverter::odometryCallback(msg, role_name);
+    };
+  };
+
+  auto vehicleStatusArgCallback = [this](const std::string & role_name) {
+    return [this, role_name](const cm::CarlaEgoVehicleStatus::ConstPtr msg) -> void {
+      ItsConverter::vehicleStatusCallback(msg, role_name);
+    };
+  };
+
+  auto vehicleInfoArgCallback = [this](const std::string & role_name) {
+    return [this, role_name](const cm::CarlaEgoVehicleInfo::ConstPtr msg) -> void {
+      ItsConverter::vehicleInfoCallback(msg, role_name);
+    };
+  };
+
+  std::string role_name;
+  std::stringstream ss(role_name_);
+  // std::istringstream iss(role_name_);
+
+  // while(std::getline(ss, role_name, ",")){  
+    sub_odometry_ = this->create_subscription<nm::Odometry>("/carla/" + role_name +"/odometry", 1, odometryArgCallback(role_name));
+    // std::function<void(const nm::Odometry::ConstPtr msg)> bound_callback_func = std::bind(&ItsConverter::odometryCallback, std::placeholders::_1, role_name);
+    // sub_odometry_ = this->create_subscription<nm::Odometry>("/carla/" + role_name +"/odometry", 1, std::bind(&ItsConverter::odometryCallback, role_name, this, std::placeholders::_1));
+    
+    sub_vehicle_status_ = this->create_subscription<cm::CarlaEgoVehicleStatus>("/carla/" + role_name +"/vehicle_status", 1, vehicleStatusArgCallback(role_name));
+    sub_vehicle_info_ = this->create_subscription<cm::CarlaEgoVehicleInfo>("/carla/" + role_name +"/vehicle_info", qosLatching, vehicleInfoArgCallback(role_name));
+  
+    pub_objects_ego_vehicle_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/object_list/" + role_name, 1);
+    pub_ego_data_ = this->create_publisher<pi::EgoData>("/carla_its_converter/ego_data/" + role_name, 1);
+  // }
 #endif
 
   ROS_LOG_STREAM(INFO, "CarlaItsConverter running...");  
@@ -56,6 +86,9 @@ bool ItsConverter::loadParameters() {
   if(!private_node_handle_.param<bool>("/carla_its_converter/publish_ego_vehicle", publish_ego_vehicle_, true)) {
     ROS_WARN("Parameter \'publish_ego_vehicle\' not set, defaulting to %d.", publish_ego_vehicle_);
   }
+  if(!private_node_handle_.param<std::string>("/carla_its_converter/role_names", role_names_, "ego_vehicle")) {
+    ROS_WARN("Parameter \'role_names\' not set, defaulting to %s.", role_names_);
+  }
   if(!private_node_handle_.param<std::string>("/carla_its_converter/role_name", role_name_, "ego_vehicle")) {
     ROS_WARN("Parameter \'role_name\' not set, defaulting to %s.", role_name_);
   }
@@ -64,13 +97,19 @@ bool ItsConverter::loadParameters() {
   try {
     publish_ego_vehicle_ = this->get_parameter("publish_ego_vehicle").as_bool();
   } catch (rclcpp::exceptions::ParameterNotDeclaredException&) {
-    ROS_LOG_STREAM(WARN, "Parameter \'publish_ego_vehicle\' not set, defaulting to %d.", publish_ego_vehicle_);
+    ROS_LOG_STREAM(WARN, "Parameter \'publish_ego_vehicle\' not set, defaulting to " << publish_ego_vehicle_);
+  }
+  this->declare_parameter("role_names", "ego_vehicle");
+  try {
+    role_names_ = this->get_parameter("role_names").as_string();
+  } catch (rclcpp::exceptions::ParameterNotDeclaredException&) {
+    ROS_LOG_STREAM(WARN, "Parameter \'role_names\' not set, defaulting to " << role_names_);
   }
   this->declare_parameter("role_name", "ego_vehicle");
   try {
-    publish_ego_vehicle_ = this->get_parameter("role_name").as_string();
+    role_name_ = this->get_parameter("role_name").as_string();
   } catch (rclcpp::exceptions::ParameterNotDeclaredException&) {
-    ROS_LOG_STREAM(WARN, "Parameter \'role_name\' not set, defaulting to %s.", role_name_);
+    ROS_LOG_STREAM(WARN, "Parameter \'role_name\' not set, defaulting to " << role_name_);
   }
 #endif
 
@@ -212,7 +251,7 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
   }
 }
 
-void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg) {
+void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::string role_name) {
   // map ego data from CARLA to the perception_interfaces format
   if(ego_shape_set_ && ego_status_set_){
     msg_ego_data_.header = msg->header;
@@ -264,14 +303,14 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg) {
   } 
 }
 
-void ItsConverter::vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg){
+void ItsConverter::vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg, std::string role_name){
   // get steering_angle and acceleration from ego vehicle
   ego_steering_angle_ = msg->control.steer;
   ego_acceleration_ = msg->acceleration;
   ego_status_set_ = true;
 }
 
-void ItsConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg){
+void ItsConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string role_name){
   // get id from ego vehicle
   ego_id_ = msg->id;
   ego_steering_angle_max_=0.0;

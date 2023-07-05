@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <sstream>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_listener.h>
@@ -80,9 +81,9 @@ class ItsConverter : public rclcpp::Node {
 
   private:
     void objectsCallback(const dom::ObjectArray::ConstPtr msg);
-    void odometryCallback(const nm::Odometry::ConstPtr msg);
-    void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg);
-    void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg);
+    void odometryCallback(const nm::Odometry::ConstPtr msg, std::string role_name);
+    void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg, std::string role_name);
+    void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string role_name);
     bool loadParameters();
 
 #ifdef MODE_ROS1
@@ -109,6 +110,7 @@ class ItsConverter : public rclcpp::Node {
     // ros parameters
     bool publish_ego_vehicle_;
     std::string role_name_;
+    std::string role_names_;
 
     // ego information
     int ego_id_;
