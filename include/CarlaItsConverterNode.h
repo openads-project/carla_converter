@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <sstream>
+#include <map>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_listener.h>
@@ -102,6 +103,9 @@ class ItsConverter : public rclcpp::Node {
     Publisher<pi::ObjectList> pub_objects_ego_vehicle_;
     Publisher<pi::EgoData> pub_ego_data_;
 
+    std::map<std::string, Publisher<pi::ObjectList>> pub_objects_ego_vehicle_map_;
+    std::map<std::string, Publisher<pi::EgoData>> pub_ego_data_map_;
+
     std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
 
     pi::ObjectList msg_object_list_;
@@ -110,7 +114,8 @@ class ItsConverter : public rclcpp::Node {
     // ros parameters
     bool publish_ego_vehicle_;
     std::string role_name_;
-    std::string role_names_;
+    std::string role_names_string_;
+    std::vector<std::string> role_names_;
 
     // ego information
     int ego_id_;
@@ -119,11 +124,21 @@ class ItsConverter : public rclcpp::Node {
     gm::Accel ego_acceleration_;
     sm::SolidPrimitive ego_shape_;
 
+    std::map<std::string, int> ego_id_map_;
+    std::map<std::string, float> ego_steering_angle_map_;
+    std::map<std::string, double> ego_steering_angle_max_map_;
+    std::map<std::string, gm::Accel> ego_acceleration_map_;
+    std::map<std::string, sm::SolidPrimitive> ego_shape_map_;
+
     // set flags
     bool ego_shape_set_ = false;
     bool ego_status_set_ = false;
     bool ego_info_set_ = false;
     bool show_transform_success_ = true;
+
+    std::map<std::string, bool> ego_shape_set_map_;
+    std::map<std::string, bool> ego_status_set_map_;
+    std::map<std::string, bool> ego_info_set_map_;
 };
 
 
