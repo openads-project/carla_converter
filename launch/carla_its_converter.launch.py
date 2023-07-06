@@ -16,10 +16,6 @@ def generate_launch_description():
         name='role_names',
         default_value='ego_vehicle'
     )
-    role_name_launch_arg = launch.actions.DeclareLaunchArgument(
-        name='role_name',
-        default_value='ego_vehicle'
-    )
 
     carla_its_converter_node = LifecycleNode(
         package="carla_its_converter",
@@ -31,7 +27,6 @@ def generate_launch_description():
         parameters=[{
             "publish_ego_vehicle": LaunchConfiguration('publish_ego_vehicle'),
             "role_names": LaunchConfiguration('role_names'),
-            "role_name": LaunchConfiguration('role_name'),
         }
         ],
     )
@@ -39,7 +34,6 @@ def generate_launch_description():
     return launch.LaunchDescription([
         publish_ego_vehicle_launch_arg,
         role_names_launch_arg,
-        role_name_launch_arg,
         carla_its_converter_node,
     ])
 

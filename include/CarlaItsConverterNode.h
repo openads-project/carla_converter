@@ -99,6 +99,10 @@ class ItsConverter : public rclcpp::Node {
     Subscriber<cm::CarlaEgoVehicleStatus> sub_vehicle_status_;
     Subscriber<cm::CarlaEgoVehicleInfo> sub_vehicle_info_;
 
+    std::map<std::string, Subscriber<nm::Odometry>> sub_odometry_map_;
+    std::map<std::string, Subscriber<cm::CarlaEgoVehicleStatus>> sub_vehicle_status_map_;
+    std::map<std::string, Subscriber<cm::CarlaEgoVehicleInfo>> sub_vehicle_info_map_;
+
     Publisher<pi::ObjectList> pub_objects_carla_map_;
     Publisher<pi::ObjectList> pub_objects_ego_vehicle_;
     Publisher<pi::EgoData> pub_ego_data_;
