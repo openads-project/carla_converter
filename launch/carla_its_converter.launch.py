@@ -20,9 +20,6 @@ def generate_launch_description():
         name='role_name',
         default_value='ego_vehicle'
     )
-    config = PathJoinSubstitution([
-        LaunchConfiguration('publish_ego_vehicle')
-    ])
 
     carla_its_converter_node = LifecycleNode(
         package="carla_its_converter",
@@ -31,7 +28,12 @@ def generate_launch_description():
         namespace="",
         output="screen",
         emulate_tty=True,
-        parameters=[config],
+        parameters=[{
+            "publish_ego_vehicle": LaunchConfiguration('publish_ego_vehicle'),
+            "role_names": LaunchConfiguration('role_names'),
+            "role_name": LaunchConfiguration('role_name'),
+        }
+        ],
     )
 
     return launch.LaunchDescription([
