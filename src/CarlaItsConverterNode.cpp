@@ -4,11 +4,11 @@
 namespace carla {
 
 #ifdef MODE_ROS1
-ItsConverter::ItsConverter() {
+  ItsConverter::ItsConverter()
 #elif MODE_ROS2
-  ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
+  ItsConverter::ItsConverter() : Node("CarlaItsConverter")
 #endif
-
+{
   // load Parameters and if not successful, return
   if(!loadParameters()) return;
 
