@@ -123,7 +123,7 @@ class ItsConverter : public rclcpp::Node {
     std::map<std::string, sm::SolidPrimitive> ego_shape_map_;
 
     // set flags
-    bool show_transform_success_ = true;
+    std::map<std::string, bool> show_transform_success_map_;
 
     std::map<std::string, bool> ego_shape_set_map_;
     std::map<std::string, bool> ego_status_set_map_;
