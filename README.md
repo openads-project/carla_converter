@@ -34,8 +34,8 @@ This package contains the CarlaItsConverterNode - a simple ROS Node that convert
 
 | Topic | Type | Description |
 | --- | --- | --- |
-| `/carla_its_converter/object_list/carla_map` | `perception_interfaces::msg::ObjectList` | Object list in carla map frame |
-| `/carla_its_converter/object_list/$(role_name)` | `perception_interfaces::msg::ObjectList` | Object list in `role_name` frame from list `role_names` (default: `ego_vehicle`) |
+| `/carla_its_converter/objects` | `perception_interfaces::msg::ObjectList` | Object list in carla map frame |
+| `/carla_its_converter/$(role_name)/objects` | `perception_interfaces::msg::ObjectList` | Object list in `role_name` frame from list `role_names` (default: `ego_vehicle`) |
 | `/carla_its_converter/$(role_name)/ego_data` | `perception_interfaces::msg::EgoState` | Ego State of `role_name` from list `role_names` (default: `ego_vehicle`)  |
 
 #### Parameters

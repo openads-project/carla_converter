@@ -41,7 +41,7 @@ namespace carla {
   
   // setup subscriber and publisher
   sub_objects_ = private_node_handle_.subscribe("/carla/objects", 1, &ItsConverter::objectsCallback, this);
-  pub_objects_carla_map_ = private_node_handle_.advertise<pi::ObjectList>("/carla_its_converter/object_list/carla_map", 1);
+  pub_objects_carla_map_ = private_node_handle_.advertise<pi::ObjectList>("/carla_its_converter/objects", 1);
 
   // setup subscriber and publisher depending on role_name
   do {
@@ -59,7 +59,7 @@ namespace carla {
     sub_vehicle_info_map_.insert({role_name, sub_vehicle_info_});
     
     // setup publisher depending on role_name
-    Publisher<pi::ObjectList> pub_objects_ego_vehicle = private_node_handle_.advertise<pi::ObjectList>("/carla_its_converter/object_list/" + role_name, 1);
+    Publisher<pi::ObjectList> pub_objects_ego_vehicle = private_node_handle_.advertise<pi::ObjectList>("/carla_its_converter/" + role_name + "/objects", 1);
     Publisher<pi::EgoData> pub_ego_data = private_node_handle_.advertise<pi::EgoData>("/carla_its_converter/" + role_name + "/ego_data", 1);
     
     // save publisher in map with role_name as key
@@ -82,7 +82,7 @@ namespace carla {
   
   // setup subscriber and publisher
   sub_objects_ = this->create_subscription<dom::ObjectArray>("/carla/objects", 1, std::bind(&ItsConverter::objectsCallback, this, std::placeholders::_1));
-  pub_objects_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/object_list/carla_map", 1);
+  pub_objects_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/objects", 1);
   
   // setup subscriber and publisher depending on role_name
   do { 
@@ -100,8 +100,8 @@ namespace carla {
     sub_vehicle_info_map_.insert({role_name, sub_vehicle_info});
 
     // setup publisher depending on role_name
-    Publisher<pi::ObjectList> pub_objects_ego_vehicle = this->create_publisher<pi::ObjectList>("/carla_its_converter/object_list/" + role_name, 1);
-    Publisher<pi::EgoData> pub_ego_data = this->create_publisher<pi::EgoData>("/carla_its_converter/ego_data/" + role_name, 1);
+    Publisher<pi::ObjectList> pub_objects_ego_vehicle = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + role_name + "/objects", 1);
+    Publisher<pi::EgoData> pub_ego_data = this->create_publisher<pi::EgoData>("/carla_its_converter/" + role_name + "/ego_data", 1);
 
     // save publisher in map with role_name as key
     pub_objects_ego_vehicle_map_.insert({role_name, pub_objects_ego_vehicle});
