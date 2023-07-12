@@ -1,6 +1,8 @@
 #pragma once
 
+#include <map>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/static_transform_broadcaster.h>
@@ -45,7 +47,6 @@ using Publisher = ros::Publisher;
 #include <shape_msgs/msg/solid_primitive.hpp>
 #include <carla_msgs/msg/carla_ego_vehicle_status.hpp>
 #include <carla_msgs/msg/carla_ego_vehicle_info.hpp>
-// #include <Matrix3x3.h>
 
 #define ROS_LOG_STREAM(level, ...) RCLCPP_##level##_STREAM(this->get_logger(), __VA_ARGS__)
 
@@ -69,20 +70,19 @@ namespace oa = perception_interfaces::object_access;
 namespace carla {
 
 #ifdef MODE_ROS1
-class ItsConverter {
+class ItsConverter
+#elif MODE_ROS2
+class ItsConverter : public rclcpp::Node
 #endif
-#ifdef MODE_ROS2
-class ItsConverter : public rclcpp::Node {
-#endif
-
+{
   public:
     ItsConverter();
 
   private:
     void objectsCallback(const dom::ObjectArray::ConstPtr msg);
-    void odometryCallback(const nm::Odometry::ConstPtr msg);
-    void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg);
-    void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg);
+    void odometryCallback(const nm::Odometry::ConstPtr msg, std::string role_name);
+    void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg, std::string role_name);
+    void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string role_name);
     bool loadParameters();
 
 #ifdef MODE_ROS1
@@ -93,13 +93,15 @@ class ItsConverter : public rclcpp::Node {
 #endif
 
     Subscriber<dom::ObjectArray> sub_objects_;
-    Subscriber<nm::Odometry> sub_odometry_;
-    Subscriber<cm::CarlaEgoVehicleStatus> sub_vehicle_status_;
-    Subscriber<cm::CarlaEgoVehicleInfo> sub_vehicle_info_;
+
+    std::map<std::string, Subscriber<nm::Odometry>> sub_odometry_map_;
+    std::map<std::string, Subscriber<cm::CarlaEgoVehicleStatus>> sub_vehicle_status_map_;
+    std::map<std::string, Subscriber<cm::CarlaEgoVehicleInfo>> sub_vehicle_info_map_;
 
     Publisher<pi::ObjectList> pub_objects_carla_map_;
-    Publisher<pi::ObjectList> pub_objects_ego_vehicle_;
-    Publisher<pi::EgoData> pub_ego_data_;
+
+    std::map<std::string, Publisher<pi::ObjectList>> pub_objects_map_;
+    std::map<std::string, Publisher<pi::EgoData>> pub_ego_data_map_;
 
     std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
 
@@ -107,20 +109,21 @@ class ItsConverter : public rclcpp::Node {
     pi::EgoData msg_ego_data_;
 
     // ros parameters
-    bool publish_ego_vehicle_;
+    std::vector<std::string> role_names_;
 
     // ego information
-    int ego_id_;
-    float ego_steering_angle_;
-    double ego_steering_angle_max_;
-    gm::Accel ego_acceleration_;
-    sm::SolidPrimitive ego_shape_;
+    std::map<std::string, int> ego_id_map_;
+    std::map<std::string, float> ego_steering_angle_map_;
+    std::map<std::string, double> ego_steering_angle_max_map_;
+    std::map<std::string, gm::Accel> ego_acceleration_map_;
+    std::map<std::string, sm::SolidPrimitive> ego_shape_map_;
 
     // set flags
-    bool ego_shape_set_ = false;
-    bool ego_status_set_ = false;
-    bool ego_info_set_ = false;
-    bool show_transform_success_ = true;
+    std::map<std::string, bool> show_transform_success_map_;
+
+    std::map<std::string, bool> ego_shape_set_map_;
+    std::map<std::string, bool> ego_status_set_map_;
+    std::map<std::string, bool> ego_info_set_map_;
 };
 
 

@@ -26,25 +26,23 @@ This package contains the CarlaItsConverterNode - a simple ROS Node that convert
 | Topic | Type | Description | 
 | --- | --- | --- |
 | `/carla/objects` | `dom::ObjectArray` | Objects in the carla environment |
-| `/carla/ego_vehicle/vehicle_info` | `cm::CarlaEgoVehicleInfo` | Object id of the ego vehicle |
-| `/carla/ego_vehicle/vehicle_status` | `cm::CarlaEgoVehicleStatus` | Steering angle and acceleration of the ego vehicle |
-| `/carla/ego_vehicle/odometry` | `nm::Odometry` | Odometry of the ego vehicle |
+| `/carla/$(role_name)/vehicle_info` | `cm::CarlaEgoVehicleInfo` | Object id of the `role_name` from list `role_names` (default: `ego_vehicle`) |
+| `/carla/$(role_name)/vehicle_status` | `cm::CarlaEgoVehicleStatus` | Steering angle and acceleration of the `role_name` from list `role_names` (default: `ego_vehicle`) |
+| `/carla/$(role_name)/odometry` | `nm::Odometry` | Odometry of the `role_name` from list `role_names` (default: `ego_vehicle`) |
 
 #### Published Topics
 
 | Topic | Type | Description |
 | --- | --- | --- |
-| `/carla_its_converter/object_list/carla_map` | `perception_interfaces::msg::ObjectList` | Object list in carla map frame |
-| `/carla_its_converter/object_list/ego_vehicle` | `perception_interfaces::msg::ObjectList` | Object list in ego vehicle frame |
-| `/carla_its_converter/ego_data` | `perception_interfaces::msg::EgoState` | Ego State of vehicle |
+| `/carla_its_converter/objects` | `perception_interfaces::msg::ObjectList` | Object list in carla map frame |
+| `/carla_its_converter/$(role_name)/objects` | `perception_interfaces::msg::ObjectList` | Object list in `role_name` frame from list `role_names` (default: `ego_vehicle`) |
+| `/carla_its_converter/$(role_name)/ego_data` | `perception_interfaces::msg::EgoState` | Ego State of `role_name` from list `role_names` (default: `ego_vehicle`)  |
 
 #### Parameters
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| publish.object_list_carla_map_frame | bool | Whether to publish object list in carla map frame or not. |
-| publish.object_list_ego_vehicle_frame | bool | Whether to publish object list in ego vehicle frame or not. |
-| publish.ego_data | bool | Whether to publish egodata information or not. |
+| role_names | string | List of strings separated with a comma, lists all role_names which should be subscribed and published (default: `ego_vehicle`) (example: `role_names:="hero, hero1"`). |
 
 ## Usage of docker-ros Images
 

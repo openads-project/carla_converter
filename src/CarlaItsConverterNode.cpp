@@ -4,21 +4,67 @@
 namespace carla {
 
 #ifdef MODE_ROS1
-ItsConverter::ItsConverter() {
+  ItsConverter::ItsConverter()
+#elif MODE_ROS2
+  ItsConverter::ItsConverter() : Node("CarlaItsConverter")
+#endif
+{
+  // load Parameters and if not successful, return
+  if(!loadParameters()) return;
+
+  auto odometryArgCallback = [this](const std::string & role_name) {
+    return [this, role_name](const nm::Odometry::ConstPtr msg) -> void {
+      ItsConverter::odometryCallback(msg, role_name);
+    };
+  };
+
+  auto vehicleStatusArgCallback = [this](const std::string & role_name) {
+    return [this, role_name](const cm::CarlaEgoVehicleStatus::ConstPtr msg) -> void {
+      ItsConverter::vehicleStatusCallback(msg, role_name);
+    };
+  };
+
+  auto vehicleInfoArgCallback = [this](const std::string & role_name) {
+    return [this, role_name](const cm::CarlaEgoVehicleInfo::ConstPtr msg) -> void {
+      ItsConverter::vehicleInfoCallback(msg, role_name);
+    };
+  };
+
+#ifdef MODE_ROS1
+  // setup buffer
   tf2_buffer_.setUsingDedicatedThread(true);
   tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(tf2_buffer_);
-
-  sub_objects_ = private_node_handle_.subscribe("/carla/objects", 1, &ItsConverter::objectsCallback, this);
-  sub_odometry_ = private_node_handle_.subscribe("/carla/ego_vehicle/odometry", 1, &ItsConverter::odometryCallback, this);
-  sub_vehicle_status_ = private_node_handle_.subscribe("/carla/ego_vehicle/vehicle_status", 1, &ItsConverter::vehicleStatusCallback, this);
-  sub_vehicle_info_ = private_node_handle_.subscribe("/carla/ego_vehicle/vehicle_info", 1, &ItsConverter::vehicleInfoCallback, this);
   
-  pub_objects_carla_map_ = private_node_handle_.advertise<pi::ObjectList>("/carla_its_converter/object_list/carla_map", 1);
-  pub_objects_ego_vehicle_ = private_node_handle_.advertise<pi::ObjectList>("/carla_its_converter/object_list/ego_vehicle", 1);
-  pub_ego_data_ = private_node_handle_.advertise<pi::EgoData>("/carla_its_converter/ego_data", 1);
+  // setup subscriber and publisher
+  sub_objects_ = private_node_handle_.subscribe("/carla/objects", 1, &ItsConverter::objectsCallback, this);
+  pub_objects_carla_map_ = private_node_handle_.advertise<pi::ObjectList>("/carla_its_converter/objects", 1);
+
+  // setup subscriber and publisher depending on role_name
+  for(std::string& role_name : role_names_) { 
+    // remove spaces from role_name
+    role_name.erase(std::remove_if(role_name.begin(), role_name.end(), isspace), role_name.end());
+
+    // setup subscriber depending on role_name
+    Subscriber<nm::Odometry> sub_odometry_ = private_node_handle_.subscribe<nm::Odometry>("/carla/" + role_name +"/odometry", 1, odometryArgCallback(role_name));
+    Subscriber<cm::CarlaEgoVehicleStatus> sub_vehicle_status_ = private_node_handle_.subscribe<cm::CarlaEgoVehicleStatus>("/carla/" + role_name +"/vehicle_status", 1, vehicleStatusArgCallback(role_name));
+    Subscriber<cm::CarlaEgoVehicleInfo> sub_vehicle_info_ = private_node_handle_.subscribe<cm::CarlaEgoVehicleInfo>("/carla/" + role_name +"/vehicle_info", 1, vehicleInfoArgCallback(role_name));
+
+    // save subscriber in map with role_name as key
+    sub_odometry_map_.insert({role_name, sub_odometry_});
+    sub_vehicle_status_map_.insert({role_name, sub_vehicle_status_});
+    sub_vehicle_info_map_.insert({role_name, sub_vehicle_info_});
+    
+    // setup publisher depending on role_name
+    Publisher<pi::ObjectList> pub_objects = private_node_handle_.advertise<pi::ObjectList>("/carla_its_converter/" + role_name + "/objects", 1);
+    Publisher<pi::EgoData> pub_ego_data = private_node_handle_.advertise<pi::EgoData>("/carla_its_converter/" + role_name + "/ego_data", 1);
+    
+    // save publisher in map with role_name as key
+    pub_objects_map_.insert({role_name, pub_objects});
+    pub_ego_data_map_.insert({role_name, pub_ego_data});
+  }
   
 #elif MODE_ROS2
-ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
+  // setup buffer
   tf2_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
   tf2_buffer_->setUsingDedicatedThread(true);
   tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
@@ -27,39 +73,65 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
   qosLatching.transient_local();
   qosLatching.reliable();
   
+  // setup subscriber and publisher
   sub_objects_ = this->create_subscription<dom::ObjectArray>("/carla/objects", 1, std::bind(&ItsConverter::objectsCallback, this, std::placeholders::_1));
-  sub_odometry_ = this->create_subscription<nm::Odometry>("/carla/ego_vehicle/odometry", 1, std::bind(&ItsConverter::odometryCallback, this, std::placeholders::_1));
-  sub_vehicle_status_ = this->create_subscription<cm::CarlaEgoVehicleStatus>("/carla/ego_vehicle/vehicle_status", 1, std::bind(&ItsConverter::vehicleStatusCallback, this, std::placeholders::_1));
-  sub_vehicle_info_ = this->create_subscription<cm::CarlaEgoVehicleInfo>("/carla/ego_vehicle/vehicle_info", qosLatching, std::bind(&ItsConverter::vehicleInfoCallback, this, std::placeholders::_1));
-
-  pub_objects_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/object_list/carla_map", 1);
-  pub_objects_ego_vehicle_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/object_list/ego_vehicle", 1);
-  pub_ego_data_ = this->create_publisher<pi::EgoData>("/carla_its_converter/ego_data", 1);
+  pub_objects_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/objects", 1);
   
+  // setup subscriber and publisher depending on role_name
+  for(std::string& role_name : role_names_) { 
+    // remove spaces from role_name
+    role_name.erase(std::remove_if(role_name.begin(), role_name.end(), isspace), role_name.end());
+
+    // setup subscriber depending on role_name    
+    Subscriber<nm::Odometry> sub_odometry = this->create_subscription<nm::Odometry>("/carla/" + role_name +"/odometry", 1, odometryArgCallback(role_name));
+    Subscriber<cm::CarlaEgoVehicleStatus> sub_vehicle_status = this->create_subscription<cm::CarlaEgoVehicleStatus>("/carla/" + role_name +"/vehicle_status", 1, vehicleStatusArgCallback(role_name));
+    Subscriber<cm::CarlaEgoVehicleInfo> sub_vehicle_info = this->create_subscription<cm::CarlaEgoVehicleInfo>("/carla/" + role_name +"/vehicle_info", qosLatching, vehicleInfoArgCallback(role_name));
+
+    // save subscriber in map with role_name as key
+    sub_odometry_map_.insert({role_name, sub_odometry});
+    sub_vehicle_status_map_.insert({role_name, sub_vehicle_status});
+    sub_vehicle_info_map_.insert({role_name, sub_vehicle_info});
+
+    // setup publisher depending on role_name
+    Publisher<pi::ObjectList> pub_objects = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + role_name + "/objects", 1);
+    Publisher<pi::EgoData> pub_ego_data = this->create_publisher<pi::EgoData>("/carla_its_converter/" + role_name + "/ego_data", 1);
+
+    // save publisher in map with role_name as key
+    pub_objects_map_.insert({role_name, pub_objects});
+    pub_ego_data_map_.insert({role_name, pub_ego_data});
+  }
+
 #endif
 
-  // load Parameters and if not successful, return
-  if(!loadParameters()) return;
-
-  ROS_LOG_STREAM(INFO, "CarlaItsConverter running...");  
+  ROS_LOG_STREAM(INFO, "carla_its_converter running...");  
 }
 
 
 bool ItsConverter::loadParameters() {
+  std::string role_names_string;
+
   // load publish parameters
 #ifdef MODE_ROS1
-  if(!private_node_handle_.param<bool>("/carla_its_converter/publish_ego_vehicle", publish_ego_vehicle_, false)) {
-    ROS_WARN("publish_ego_vehicle not set, defaulting to %d.", publish_ego_vehicle_);
+  if(!private_node_handle_.param<std::string>("/carla_its_converter/role_names", role_names_string, "ego_vehicle")) {
+    ROS_WARN("Parameter \'role_names\' not set, defaulting to %s.", role_names_string);
   }
 #elif MODE_ROS2
-  this->declare_parameter("publish_ego_vehicle", true);
+  this->declare_parameter("role_names", "ego_vehicle");
   try {
-    publish_ego_vehicle_ = this->get_parameter("publish_ego_vehicle").as_bool();
+    role_names_string = this->get_parameter("role_names").as_string();
   } catch (rclcpp::exceptions::ParameterNotDeclaredException&) {
-    ROS_LOG_STREAM(ERROR, "Parameter \'publish_ego_vehicle\' is required");
-    return false;
+    role_names_string = "ego_vehicle";
+    ROS_LOG_STREAM(WARN, "Parameter \'role_names\' not set, defaulting to " << role_names_string);
   }
 #endif
+
+  std::string role_name;
+  std::stringstream role_names_string_stream(role_names_string);
+
+  // save role_names in vector
+  while (std::getline(role_names_string_stream, role_name, ',')) {
+    role_names_.push_back(role_name);
+  }
 
   return true;
 }
@@ -73,14 +145,15 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
     // only add classified objects
     if(!msg->objects[i].object_classified) continue;
     
-    // only continue if ego_info_set_ 
-    if (!ego_info_set_) continue;
+    for(auto & role_name : role_names_){
+      // only continue if ego_info_set_ 
+      if (!ego_info_set_map_[role_name]) continue;
 
-    // only get shape from ego vehicle
-    if(ego_id_ == msg->objects[i].id){
-      ego_shape_ = msg->objects[i].shape;
-      ego_shape_set_ = true;
-      continue;
+      // get shape from role_name vehicle
+      if(ego_id_map_[role_name] == msg->objects[i].id){
+        ego_shape_map_[role_name] = msg->objects[i].shape;
+        ego_shape_set_map_[role_name] = true;
+      } 
     } 
     
     pi::Object objectTemp;
@@ -98,7 +171,6 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
     oa::initializeState(objectTemp, pi::ISCACTR::MODEL_ID);
     objectTemp.state.header = msg->objects[i].header;
     oa::setPose(objectTemp.state, msg->objects[i].pose);
-    oa::setZ(objectTemp, msg->objects[i].pose.position.z + msg->objects[i].shape.dimensions[2] / 2.0); // Set z to the center of the object
     oa::setVelocityXYZYaw(objectTemp.state, msg->objects[i].twist.linear, yaw);
     oa::setAccelerationXYZYaw(objectTemp.state, msg->objects[i].accel.linear, yaw);
     oa::setYawRate(objectTemp.state, msg->objects[i].twist.angular.z);
@@ -108,7 +180,7 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
 
     // classification for object state
     objectTemp.state.classifications.resize(1);
-    objectTemp.state.classifications[0].probability = 1.0; // Probability that the object is of this type is always 1.0 as source is CARLA
+    objectTemp.state.classifications[0].probability = 1.0; // probability that the object is of this type is always 1.0 as source is CARLA
     switch ((int) msg->objects[i].classification)
     {
       case dom::Object::CLASSIFICATION_PEDESTRIAN:
@@ -134,6 +206,11 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
       break;
     }
 
+    // set z for vehicles to center
+    if(objectTemp.state.classifications[0].type != pi::ObjectClassification::PEDESTRIAN){
+      oa::setZ(objectTemp, msg->objects[i].pose.position.z + msg->objects[i].shape.dimensions[2] / 2.0); // Set z to the center of the object
+    }
+
     // reference point for object state position
     objectTemp.state.reference_point.value = pi::ObjectReferencePoint::GEOMETRIC_CENTER;
 
@@ -148,57 +225,83 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
     pub_objects_carla_map_->publish(msg_object_list_);
 #endif
 
-  if(publish_ego_vehicle_){
+  // iterate over each role_name
+  for(std::string & role_name: role_names_){
 #ifdef MODE_ROS1
     auto timeout = ros::Duration(1.0);
 #elif MODE_ROS2
     auto timeout = rclcpp::Duration::from_seconds(1.0);
 #endif
+    pi::ObjectList msg_object_list_copy = msg_object_list_;
 
-    // transform the object_list from carla_map to ego_vehicle
-    pi::ObjectList msg_object_list_ego_vehicle;
-    gm::TransformStamped carla_map_to_ego_vehicle_tf;
-    try {
+    // remove element with the role_name id
+    msg_object_list_copy.objects.erase(std::remove_if(msg_object_list_copy.objects.begin(), msg_object_list_copy.objects.end(), [this, role_name](const pi::Object& obj) {
+      return obj.id == ego_id_map_[role_name];
+    }), msg_object_list_copy.objects.end());
+
+    // transform the object_list from carla_map to role_name frame
+    pi::ObjectList msg_object_list_role_name;
+    gm::TransformStamped carla_map_to_role_name_tf;
 #ifdef MODE_ROS1
-      if (tf2_buffer_._frameExists("ego_vehicle")){
-        carla_map_to_ego_vehicle_tf = tf2_buffer_.lookupTransform("ego_vehicle", "carla_map", msg_object_list_.header.stamp, timeout);
+    try {
+      // get transformation from carla_map to role_name
+      if (tf2_buffer_._frameExists(role_name)){
+        carla_map_to_role_name_tf = tf2_buffer_.lookupTransform(role_name, "carla_map", msg_object_list_copy.header.stamp, timeout);
       } else {
-        ROS_LOG_STREAM(WARN, "Frame 'ego_vehicle' does not exist");
-        show_transform_success_ = true;
-        return;
+        ROS_LOG_STREAM(WARN, "Frame '%s' does not exist", std::string(role_name).c_str());
+        show_transform_success_map_[role_name] = true;
+          continue;
       }
-#elif MODE_ROS2
-      if (tf2_buffer_->_frameExists("ego_vehicle")){
-        carla_map_to_ego_vehicle_tf = tf2_buffer_->lookupTransform("ego_vehicle", "carla_map", msg_object_list_.header.stamp, timeout);
-      } else {
-        ROS_LOG_STREAM(WARN, "Frame 'ego_vehicle' does not exist");
-        show_transform_success_ = true;
-        return;
-      }
-#endif
-      tf2::doTransform(msg_object_list_, msg_object_list_ego_vehicle, carla_map_to_ego_vehicle_tf);
-      if(show_transform_success_){
-        ROS_LOG_STREAM(INFO, "Tranformation from 'carla_map' to 'ego_vehicle' published successfully");
-        show_transform_success_ = false;
+
+      tf2::doTransform(msg_object_list_copy, msg_object_list_role_name, carla_map_to_role_name_tf);
+      
+      // log success once
+      if(!show_transform_success_map_.count(role_name) || show_transform_success_map_[role_name]){
+        ROS_LOG_STREAM(INFO, "Transformation from 'carla_map' to '%s' published successfully", std::string(role_name).c_str());
+        show_transform_success_map_[role_name] = false;
       } 
     } catch (tf2::TransformException& e) {
-      ROS_LOG_STREAM(WARN, "Tranformation from 'carla_map' to 'ego_vehicle' is not available");
-      show_transform_success_ = true;
-      return;
+      ROS_LOG_STREAM(WARN, "Transformation from 'carla_map' to '%s' is not available", role_name.c_str());
+      show_transform_success_map_[role_name] = true;
+        continue;
     }
-
-    // publish object list in ego_vehicle frame
-#ifdef MODE_ROS1
-    pub_objects_ego_vehicle_.publish(msg_object_list_ego_vehicle);
 #elif MODE_ROS2
-    pub_objects_ego_vehicle_->publish(msg_object_list_ego_vehicle);
+    try {
+      // get transformation from carla_map to role_name
+      if (tf2_buffer_->_frameExists(role_name)){
+        carla_map_to_role_name_tf = tf2_buffer_->lookupTransform(role_name, "carla_map", msg_object_list_copy.header.stamp, timeout);
+      } else {
+        ROS_LOG_STREAM(WARN, "Frame '"<< role_name << "' does not exist");
+        show_transform_success_map_[role_name] = true;
+          continue;
+      }
+
+      tf2::doTransform(msg_object_list_copy, msg_object_list_role_name, carla_map_to_role_name_tf);
+      
+      // log success once
+      if(!show_transform_success_map_.count(role_name) || show_transform_success_map_[role_name]){
+        ROS_LOG_STREAM(INFO, "Tranformation from 'carla_map' to '" << role_name << "' published successfully");
+        show_transform_success_map_[role_name] = false;
+      } 
+    } catch (tf2::TransformException& e) {
+      ROS_LOG_STREAM(WARN, "Tranformation from 'carla_map' to '" << role_name << "' is not available");
+      show_transform_success_map_[role_name] = true;
+        continue;
+    }
+#endif
+
+    // publish object list in role_name frame
+#ifdef MODE_ROS1
+    pub_objects_map_[role_name].publish(msg_object_list_role_name);
+#elif MODE_ROS2
+    pub_objects_map_[role_name]->publish(msg_object_list_role_name);
 #endif
   }
 }
 
-void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg) {
+void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::string role_name) {
   // map ego data from CARLA to the perception_interfaces format
-  if(ego_shape_set_ && ego_status_set_){
+  if(ego_shape_set_map_[role_name] && ego_status_set_map_[role_name]){
     msg_ego_data_.header = msg->header;
     
     // get euler angles
@@ -211,11 +314,11 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg) {
     // fill state
     oa::initializeState(msg_ego_data_, pi::EGO::MODEL_ID);
     oa::setPose(msg_ego_data_.state, msg->pose.pose);
-    oa::setZ(msg_ego_data_, msg->pose.pose.position.z + ego_shape_.dimensions[2] / 2.0); // Set z to the center of the object
+    oa::setZ(msg_ego_data_, msg->pose.pose.position.z + ego_shape_map_[role_name].dimensions[2] / 2.0); // Set z to the center of the object
     oa::setYawRate(msg_ego_data_.state, msg->twist.twist.angular.z);
     oa::setVelocityXYZYaw(msg_ego_data_.state, msg->twist.twist.linear, yaw);
-    oa::setAccelerationXYZYaw(msg_ego_data_.state, ego_acceleration_.linear, yaw);
-    oa::setSteeringAngleAck(msg_ego_data_.state, -ego_steering_angle_*(ego_steering_angle_max_ * (M_PI / 180)));
+    oa::setAccelerationXYZYaw(msg_ego_data_.state, ego_acceleration_map_[role_name].linear, yaw);
+    oa::setSteeringAngleAck(msg_ego_data_.state, -ego_steering_angle_map_[role_name]*(ego_steering_angle_max_map_[role_name] * (M_PI / 180)));
     oa::setStandstill(msg_ego_data_.state, std::sqrt(pow(msg->twist.twist.linear.x, 2) + pow(msg->twist.twist.linear.y, 2) + pow(msg->twist.twist.linear.z, 2)) <= 0.01);
 
     // reference point for object position
@@ -234,37 +337,36 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg) {
     // geometry_msgs/Point[] route_planned
 
     // fill ego data
-    msg_ego_data_.vehicle_id = ego_id_;
-    msg_ego_data_.length = ego_shape_.dimensions[0];
-    msg_ego_data_.width = ego_shape_.dimensions[1];
-    msg_ego_data_.height = ego_shape_.dimensions[2];
+    msg_ego_data_.vehicle_id = ego_id_map_[role_name];
+    msg_ego_data_.length = ego_shape_map_[role_name].dimensions[0];
+    msg_ego_data_.width = ego_shape_map_[role_name].dimensions[1];
+    msg_ego_data_.height = ego_shape_map_[role_name].dimensions[2];
 
     // publish ego_data in carla_map frame
 #ifdef MODE_ROS1
-    pub_ego_data_.publish(msg_ego_data_);
+    pub_ego_data_map_[role_name].publish(msg_ego_data_);
 #elif MODE_ROS2
-    pub_ego_data_->publish(msg_ego_data_);
+    pub_ego_data_map_[role_name]->publish(msg_ego_data_);
 #endif 
   } 
 }
 
-void ItsConverter::vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg){
-  // get steering_angle and acceleration from ego vehicle
-  ego_steering_angle_ = msg->control.steer;
-  ego_acceleration_ = msg->acceleration;
-  ego_status_set_ = true;
+void ItsConverter::vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg, std::string role_name){
+  // get steering_angle and acceleration from role_name vehicle
+  ego_steering_angle_map_[role_name] = msg->control.steer;
+  ego_acceleration_map_[role_name] = msg->acceleration;
+  ego_status_set_map_[role_name] = true;
 }
 
-void ItsConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg){
-  // get id from ego vehicle
-  ego_id_ = msg->id;
-  ego_steering_angle_max_=0.0;
-  for(int i=0; i<msg->wheels.size(); i++)
-  {
-    ego_steering_angle_max_ = std::max(ego_steering_angle_max_, (double)msg->wheels[i].max_steer_angle);
+void ItsConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string role_name){
+  // get id from role_name vehicle
+  ego_id_map_[role_name] = msg->id;
+  ego_steering_angle_max_map_[role_name] = 0.0;
+  for(int i=0; i<msg->wheels.size(); i++){
+    ego_steering_angle_max_map_[role_name] = std::max(ego_steering_angle_max_map_[role_name], (double)msg->wheels[i].max_steer_angle);
   }
 
-  ego_info_set_ = true;
+  ego_info_set_map_[role_name] = true;
 }
 }  // end of namespace
 
