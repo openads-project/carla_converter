@@ -1,18 +1,11 @@
-import os
-
 import launch
-from ament_index_python.packages import get_package_share_directory
-from launch.actions import DeclareLaunchArgument, GroupAction
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import LifecycleNode
 
 def generate_launch_description():
 
-    publish_ego_vehicle_launch_arg = DeclareLaunchArgument(
-        name='publish_ego_vehicle',
-        default_value='True'
-    )
-    role_names_launch_arg = launch.actions.DeclareLaunchArgument(
+    role_names_launch_arg = DeclareLaunchArgument(
         name='role_names',
         default_value='ego_vehicle'
     )
@@ -25,14 +18,12 @@ def generate_launch_description():
         output="screen",
         emulate_tty=True,
         parameters=[{
-            "publish_ego_vehicle": LaunchConfiguration('publish_ego_vehicle'),
             "role_names": LaunchConfiguration('role_names'),
         }
         ],
     )
 
     return launch.LaunchDescription([
-        publish_ego_vehicle_launch_arg,
         role_names_launch_arg,
         carla_its_converter_node,
     ])

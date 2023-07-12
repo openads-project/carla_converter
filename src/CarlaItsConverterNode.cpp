@@ -12,10 +12,6 @@ namespace carla {
   // load Parameters and if not successful, return
   if(!loadParameters()) return;
 
-  std::string role_name;
-  std::stringstream role_names_string_stream(role_names_string_);
-  std::getline(role_names_string_stream, role_name, ',');
-
   auto odometryArgCallback = [this](const std::string & role_name) {
     return [this, role_name](const nm::Odometry::ConstPtr msg) -> void {
       ItsConverter::odometryCallback(msg, role_name);
@@ -44,7 +40,7 @@ namespace carla {
   pub_objects_carla_map_ = private_node_handle_.advertise<pi::ObjectList>("/carla_its_converter/objects", 1);
 
   // setup subscriber and publisher depending on role_name
-  do {
+  for(std::string& role_name : role_names_) { 
     // remove spaces from role_name
     role_name.erase(std::remove_if(role_name.begin(), role_name.end(), isspace), role_name.end());
 
@@ -59,16 +55,13 @@ namespace carla {
     sub_vehicle_info_map_.insert({role_name, sub_vehicle_info_});
     
     // setup publisher depending on role_name
-    Publisher<pi::ObjectList> pub_objects_ego_vehicle = private_node_handle_.advertise<pi::ObjectList>("/carla_its_converter/" + role_name + "/objects", 1);
+    Publisher<pi::ObjectList> pub_objects = private_node_handle_.advertise<pi::ObjectList>("/carla_its_converter/" + role_name + "/objects", 1);
     Publisher<pi::EgoData> pub_ego_data = private_node_handle_.advertise<pi::EgoData>("/carla_its_converter/" + role_name + "/ego_data", 1);
     
     // save publisher in map with role_name as key
-    pub_objects_ego_vehicle_map_.insert({role_name, pub_objects_ego_vehicle});
+    pub_objects_map_.insert({role_name, pub_objects});
     pub_ego_data_map_.insert({role_name, pub_ego_data});
-    
-    // save role_names in vector
-    role_names_.push_back(role_name);
-  } while(std::getline(role_names_string_stream, role_name, ','));
+  }
   
 #elif MODE_ROS2
   // setup buffer
@@ -85,7 +78,7 @@ namespace carla {
   pub_objects_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/objects", 1);
   
   // setup subscriber and publisher depending on role_name
-  do { 
+  for(std::string& role_name : role_names_) { 
     // remove spaces from role_name
     role_name.erase(std::remove_if(role_name.begin(), role_name.end(), isspace), role_name.end());
 
@@ -100,16 +93,13 @@ namespace carla {
     sub_vehicle_info_map_.insert({role_name, sub_vehicle_info});
 
     // setup publisher depending on role_name
-    Publisher<pi::ObjectList> pub_objects_ego_vehicle = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + role_name + "/objects", 1);
+    Publisher<pi::ObjectList> pub_objects = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + role_name + "/objects", 1);
     Publisher<pi::EgoData> pub_ego_data = this->create_publisher<pi::EgoData>("/carla_its_converter/" + role_name + "/ego_data", 1);
 
     // save publisher in map with role_name as key
-    pub_objects_ego_vehicle_map_.insert({role_name, pub_objects_ego_vehicle});
+    pub_objects_map_.insert({role_name, pub_objects});
     pub_ego_data_map_.insert({role_name, pub_ego_data});
-
-    // save role_names in vector
-    role_names_.push_back(role_name);
-  } while(std::getline(role_names_string_stream, role_name, ','));
+  }
 
 #endif
 
@@ -118,30 +108,30 @@ namespace carla {
 
 
 bool ItsConverter::loadParameters() {
+  std::string role_names_string;
+
   // load publish parameters
 #ifdef MODE_ROS1
-  if(!private_node_handle_.param<bool>("/carla_its_converter/publish_ego_vehicle", publish_ego_vehicle_, true)) {
-    ROS_WARN("Parameter \'publish_ego_vehicle\' not set, defaulting to %d.", publish_ego_vehicle_);
-  }
-  if(!private_node_handle_.param<std::string>("/carla_its_converter/role_names", role_names_string_, "ego_vehicle")) {
-    ROS_WARN("Parameter \'role_names\' not set, defaulting to %s.", role_names_string_);
+  if(!private_node_handle_.param<std::string>("/carla_its_converter/role_names", role_names_string, "ego_vehicle")) {
+    ROS_WARN("Parameter \'role_names\' not set, defaulting to %s.", role_names_string);
   }
 #elif MODE_ROS2
-  this->declare_parameter("publish_ego_vehicle", true);
-  try {
-    publish_ego_vehicle_ = this->get_parameter("publish_ego_vehicle").as_bool();
-  } catch (rclcpp::exceptions::ParameterNotDeclaredException&) {
-    publish_ego_vehicle_ = true;
-    ROS_LOG_STREAM(WARN, "Parameter \'publish_ego_vehicle\' not set, defaulting to " << publish_ego_vehicle_);
-  }
   this->declare_parameter("role_names", "ego_vehicle");
   try {
-    role_names_string_ = this->get_parameter("role_names").as_string();
+    role_names_string = this->get_parameter("role_names").as_string();
   } catch (rclcpp::exceptions::ParameterNotDeclaredException&) {
-    role_names_string_ = "ego_vehicle";
-    ROS_LOG_STREAM(WARN, "Parameter \'role_names\' not set, defaulting to " << role_names_string_);
+    role_names_string = "ego_vehicle";
+    ROS_LOG_STREAM(WARN, "Parameter \'role_names\' not set, defaulting to " << role_names_string);
   }
 #endif
+
+  std::string role_name;
+  std::stringstream role_names_string_stream(role_names_string);
+
+  // save role_names in vector
+  while (std::getline(role_names_string_stream, role_name, ',')) {
+    role_names_.push_back(role_name);
+  }
 
   return true;
 }
@@ -190,7 +180,7 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
 
     // classification for object state
     objectTemp.state.classifications.resize(1);
-    objectTemp.state.classifications[0].probability = 1.0; // Probability that the object is of this type is always 1.0 as source is CARLA
+    objectTemp.state.classifications[0].probability = 1.0; // probability that the object is of this type is always 1.0 as source is CARLA
     switch ((int) msg->objects[i].classification)
     {
       case dom::Object::CLASSIFICATION_PEDESTRIAN:
@@ -235,79 +225,77 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
     pub_objects_carla_map_->publish(msg_object_list_);
 #endif
 
-  if(publish_ego_vehicle_){
-    // iterate over each role_name
-    for(std::string & role_name: role_names_){
+  // iterate over each role_name
+  for(std::string & role_name: role_names_){
 #ifdef MODE_ROS1
-      auto timeout = ros::Duration(1.0);
+    auto timeout = ros::Duration(1.0);
 #elif MODE_ROS2
-      auto timeout = rclcpp::Duration::from_seconds(1.0);
+    auto timeout = rclcpp::Duration::from_seconds(1.0);
 #endif
-      pi::ObjectList msg_object_list_copy = msg_object_list_;
+    pi::ObjectList msg_object_list_copy = msg_object_list_;
 
-      // remove element with the role_name id
-      msg_object_list_copy.objects.erase(std::remove_if(msg_object_list_copy.objects.begin(), msg_object_list_copy.objects.end(), [this, role_name](const pi::Object& obj) {
-        return obj.id == ego_id_map_[role_name];
-      }), msg_object_list_copy.objects.end());
+    // remove element with the role_name id
+    msg_object_list_copy.objects.erase(std::remove_if(msg_object_list_copy.objects.begin(), msg_object_list_copy.objects.end(), [this, role_name](const pi::Object& obj) {
+      return obj.id == ego_id_map_[role_name];
+    }), msg_object_list_copy.objects.end());
 
-      // transform the object_list from carla_map to ego_vehicle
-      pi::ObjectList msg_object_list_ego_vehicle;
-      gm::TransformStamped carla_map_to_ego_vehicle_tf;
+    // transform the object_list from carla_map to role_name frame
+    pi::ObjectList msg_object_list_role_name;
+    gm::TransformStamped carla_map_to_role_name_tf;
 #ifdef MODE_ROS1
-      try {
-        // get transformation from carla_map to role_name
-        if (tf2_buffer_._frameExists(role_name)){
-          carla_map_to_ego_vehicle_tf = tf2_buffer_.lookupTransform(role_name, "carla_map", msg_object_list_copy.header.stamp, timeout);
-        } else {
-          ROS_LOG_STREAM(WARN, "Frame '%s' does not exist", std::string(role_name).c_str());
-          show_transform_success_map_[role_name] = true;
-            continue;
-        }
-
-        tf2::doTransform(msg_object_list_copy, msg_object_list_ego_vehicle, carla_map_to_ego_vehicle_tf);
-        
-        // log success once
-        if(!show_transform_success_map_.count(role_name) || show_transform_success_map_[role_name]){
-          ROS_LOG_STREAM(INFO, "Transformation from 'carla_map' to '%s' published successfully", std::string(role_name).c_str());
-          show_transform_success_map_[role_name] = false;
-        } 
-      } catch (tf2::TransformException& e) {
-        ROS_LOG_STREAM(WARN, "Transformation from 'carla_map' to '%s' is not available", role_name.c_str());
+    try {
+      // get transformation from carla_map to role_name
+      if (tf2_buffer_._frameExists(role_name)){
+        carla_map_to_role_name_tf = tf2_buffer_.lookupTransform(role_name, "carla_map", msg_object_list_copy.header.stamp, timeout);
+      } else {
+        ROS_LOG_STREAM(WARN, "Frame '%s' does not exist", std::string(role_name).c_str());
         show_transform_success_map_[role_name] = true;
           continue;
       }
-#elif MODE_ROS2
-      try {
-        // get transformation from carla_map to role_name
-        if (tf2_buffer_->_frameExists(role_name)){
-          carla_map_to_ego_vehicle_tf = tf2_buffer_->lookupTransform(role_name, "carla_map", msg_object_list_copy.header.stamp, timeout);
-        } else {
-          ROS_LOG_STREAM(WARN, "Frame '"<< role_name << "' does not exist");
-          show_transform_success_map_[role_name] = true;
-            continue;
-        }
 
-        tf2::doTransform(msg_object_list_copy, msg_object_list_ego_vehicle, carla_map_to_ego_vehicle_tf);
-        
-        // log success once
-        if(!show_transform_success_map_.count(role_name) || show_transform_success_map_[role_name]){
-          ROS_LOG_STREAM(INFO, "Tranformation from 'carla_map' to '" << role_name << "' published successfully");
-          show_transform_success_map_[role_name] = false;
-        } 
-      } catch (tf2::TransformException& e) {
-        ROS_LOG_STREAM(WARN, "Tranformation from 'carla_map' to '" << role_name << "' is not available");
-        show_transform_success_map_[role_name] = true;
-          continue;
-      }
-#endif
-
-      // publish object list in role_name frame
-#ifdef MODE_ROS1
-      pub_objects_ego_vehicle_map_[role_name].publish(msg_object_list_ego_vehicle);
-#elif MODE_ROS2
-      pub_objects_ego_vehicle_map_[role_name]->publish(msg_object_list_ego_vehicle);
-#endif
+      tf2::doTransform(msg_object_list_copy, msg_object_list_role_name, carla_map_to_role_name_tf);
+      
+      // log success once
+      if(!show_transform_success_map_.count(role_name) || show_transform_success_map_[role_name]){
+        ROS_LOG_STREAM(INFO, "Transformation from 'carla_map' to '%s' published successfully", std::string(role_name).c_str());
+        show_transform_success_map_[role_name] = false;
+      } 
+    } catch (tf2::TransformException& e) {
+      ROS_LOG_STREAM(WARN, "Transformation from 'carla_map' to '%s' is not available", role_name.c_str());
+      show_transform_success_map_[role_name] = true;
+        continue;
     }
+#elif MODE_ROS2
+    try {
+      // get transformation from carla_map to role_name
+      if (tf2_buffer_->_frameExists(role_name)){
+        carla_map_to_role_name_tf = tf2_buffer_->lookupTransform(role_name, "carla_map", msg_object_list_copy.header.stamp, timeout);
+      } else {
+        ROS_LOG_STREAM(WARN, "Frame '"<< role_name << "' does not exist");
+        show_transform_success_map_[role_name] = true;
+          continue;
+      }
+
+      tf2::doTransform(msg_object_list_copy, msg_object_list_role_name, carla_map_to_role_name_tf);
+      
+      // log success once
+      if(!show_transform_success_map_.count(role_name) || show_transform_success_map_[role_name]){
+        ROS_LOG_STREAM(INFO, "Tranformation from 'carla_map' to '" << role_name << "' published successfully");
+        show_transform_success_map_[role_name] = false;
+      } 
+    } catch (tf2::TransformException& e) {
+      ROS_LOG_STREAM(WARN, "Tranformation from 'carla_map' to '" << role_name << "' is not available");
+      show_transform_success_map_[role_name] = true;
+        continue;
+    }
+#endif
+
+    // publish object list in role_name frame
+#ifdef MODE_ROS1
+    pub_objects_map_[role_name].publish(msg_object_list_role_name);
+#elif MODE_ROS2
+    pub_objects_map_[role_name]->publish(msg_object_list_role_name);
+#endif
   }
 }
 

@@ -1,9 +1,9 @@
 #pragma once
 
-#include <memory>
-#include <string>
-#include <sstream>
 #include <map>
+#include <memory>
+#include <sstream>
+#include <string>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_listener.h>
@@ -47,7 +47,6 @@ using Publisher = ros::Publisher;
 #include <shape_msgs/msg/solid_primitive.hpp>
 #include <carla_msgs/msg/carla_ego_vehicle_status.hpp>
 #include <carla_msgs/msg/carla_ego_vehicle_info.hpp>
-// #include <Matrix3x3.h>
 
 #define ROS_LOG_STREAM(level, ...) RCLCPP_##level##_STREAM(this->get_logger(), __VA_ARGS__)
 
@@ -71,12 +70,11 @@ namespace oa = perception_interfaces::object_access;
 namespace carla {
 
 #ifdef MODE_ROS1
-class ItsConverter {
+class ItsConverter
+#elif MODE_ROS2
+class ItsConverter : public rclcpp::Node
 #endif
-#ifdef MODE_ROS2
-class ItsConverter : public rclcpp::Node {
-#endif
-
+{
   public:
     ItsConverter();
 
@@ -102,7 +100,7 @@ class ItsConverter : public rclcpp::Node {
 
     Publisher<pi::ObjectList> pub_objects_carla_map_;
 
-    std::map<std::string, Publisher<pi::ObjectList>> pub_objects_ego_vehicle_map_;
+    std::map<std::string, Publisher<pi::ObjectList>> pub_objects_map_;
     std::map<std::string, Publisher<pi::EgoData>> pub_ego_data_map_;
 
     std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
@@ -111,8 +109,6 @@ class ItsConverter : public rclcpp::Node {
     pi::EgoData msg_ego_data_;
 
     // ros parameters
-    bool publish_ego_vehicle_;
-    std::string role_names_string_;
     std::vector<std::string> role_names_;
 
     // ego information
