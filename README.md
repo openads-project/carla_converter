@@ -42,7 +42,6 @@ This package contains the CarlaItsConverterNode - a simple ROS Node that convert
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| publish_ego_vehicle | bool | Whether to publish object list in `$(role_name)` frame or not. |
 | role_names | string | List of strings separated with a comma, lists all role_names which should be subscribed and published (default: `ego_vehicle`) (example: `role_names:="hero, hero1"`). |
 
 ## Usage of docker-ros Images
