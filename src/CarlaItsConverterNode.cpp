@@ -314,10 +314,13 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::strin
     // fill state
     oa::initializeState(msg_ego_data_, pi::EGO::MODEL_ID);
     oa::setPose(msg_ego_data_.state, msg->pose.pose);
-    oa::setZ(msg_ego_data_, msg->pose.pose.position.z + ego_shape_map_[role_name].dimensions[2] / 2.0); // Set z to the center of the object
-    oa::setYawRate(msg_ego_data_.state, msg->twist.twist.angular.z);
-    oa::setVelocityXYZYaw(msg_ego_data_.state, msg->twist.twist.linear, yaw);
-    oa::setAccelerationXYZYaw(msg_ego_data_.state, ego_acceleration_map_[role_name].linear, yaw);
+    oa::setZ(msg_ego_data_, msg->pose.pose.position.z + ego_shape_map_[role_name].dimensions[2] / 2.0); // set z to the center of the object
+    
+    // twist in 
+    oa::setYawRate(msg_ego_data_.state, msg->twist.twist.angular.z);  // twist is defined in child frame (no transformation needed)
+    oa::setVelocity(msg_ego_data_.state, msg->twist.twist.linear);    // twist is defined in child frame (no transformation needed)
+    oa::setAccelerationXYZYaw(msg_ego_data_.state, ego_acceleration_map_[role_name].linear, yaw); // accleration defined in carla_map frame (transformation needed)
+
     oa::setSteeringAngleAck(msg_ego_data_.state, -ego_steering_angle_map_[role_name]*(ego_steering_angle_max_map_[role_name] * (M_PI / 180)));
     oa::setStandstill(msg_ego_data_.state, std::sqrt(pow(msg->twist.twist.linear.x, 2) + pow(msg->twist.twist.linear.y, 2) + pow(msg->twist.twist.linear.z, 2)) <= 0.01);
 
@@ -336,7 +339,7 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::strin
     // # Planned route of the ego_vehicle
     // geometry_msgs/Point[] route_planned
 
-    // fill ego data
+    // set vehicle id and dimensions
     msg_ego_data_.vehicle_id = ego_id_map_[role_name];
     msg_ego_data_.length = ego_shape_map_[role_name].dimensions[0];
     msg_ego_data_.width = ego_shape_map_[role_name].dimensions[1];
