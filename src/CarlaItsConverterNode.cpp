@@ -116,19 +116,19 @@ bool ItsConverter::loadParameters() {
     ROS_WARN("Parameter \'role_names\' not set, defaulting to %s.", role_names_string);
   }
   if(!private_node_handle_.param<std::string>("/carla_its_converter/pos_variances", pos_variances_, perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
-    ROS_WARN("Parameter \'pos_variances\' not set, defaulting to %s.", pos_variances_);
+    ROS_WARN("Parameter \'pos_variances\' not set, defaulting to %f.", pos_variances_);
   }
   if(!private_node_handle_.param<std::string>("/carla_its_converter/vel_variances", vel_variances_, perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
-    ROS_WARN("Parameter \'vel_variances\' not set, defaulting to %s.", vel_variances_);
+    ROS_WARN("Parameter \'vel_variances\' not set, defaulting to %f.", vel_variances_);
   }
   if(!private_node_handle_.param<std::string>("/carla_its_converter/acc_variances", acc_variances_, perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
-    ROS_WARN("Parameter \'acc_variances\' not set, defaulting to %s.", acc_variances_);
+    ROS_WARN("Parameter \'acc_variances\' not set, defaulting to %f.", acc_variances_);
   }
   if(!private_node_handle_.param<std::string>("/carla_its_converter/yaw_variances", yaw_variances_, perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
-    ROS_WARN("Parameter \'yaw_variances\' not set, defaulting to %s.", yaw_variances_);
+    ROS_WARN("Parameter \'yaw_variances\' not set, defaulting to %f.", yaw_variances_);
   }
   if(!private_node_handle_.param<std::string>("/carla_its_converter/yaw_rate_variances", yaw_rate_variances_, perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
-    ROS_WARN("Parameter \'yaw_rate_variances\' not set, defaulting to %s.", yaw_rate_variances_);
+    ROS_WARN("Parameter \'yaw_rate_variances\' not set, defaulting to %f.", yaw_rate_variances_);
   }
 #elif MODE_ROS2
   this->declare_parameter("role_names", "ego_vehicle");
@@ -205,34 +205,34 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
 
     // Fill variances
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::msg::ISCACTR::X, pi::msg::ISCACTR::X, pos_variances_);
+      objectTemp, pi::ISCACTR::X, pi::ISCACTR::X, pos_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::msg::ISCACTR::Y, pi::msg::ISCACTR::Y, pos_variances_);
+      objectTemp, pi::ISCACTR::Y, pi::ISCACTR::Y, pos_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::msg::ISCACTR::Z, pi::msg::ISCACTR::Z, pos_variances_);
+      objectTemp, pi::ISCACTR::Z, pi::ISCACTR::Z, pos_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::msg::ISCACTR::VEL_LON, pi::msg::ISCACTR::VEL_LON,
+      objectTemp, pi::ISCACTR::VEL_LON, pi::ISCACTR::VEL_LON,
       vel_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::msg::ISCACTR::VEL_LAT, pi::msg::ISCACTR::VEL_LAT,
+      objectTemp, pi::ISCACTR::VEL_LAT, pi::ISCACTR::VEL_LAT,
       vel_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::msg::ISCACTR::ACC_LON, pi::msg::ISCACTR::ACC_LON,
+      objectTemp, pi::ISCACTR::ACC_LON, pi::ISCACTR::ACC_LON,
       acc_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::msg::ISCACTR::ACC_LAT, pi::msg::ISCACTR::ACC_LAT,
+      objectTemp, pi::ISCACTR::ACC_LAT, pi::ISCACTR::ACC_LAT,
       acc_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::msg::ISCACTR::YAW, pi::msg::ISCACTR::YAW, yaw_variances);
+      objectTemp, pi::ISCACTR::YAW, pi::ISCACTR::YAW, yaw_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::msg::ISCACTR::YAW_RATE, pi::msg::ISCACTR::YAW_RATE,
-      yaw_rate_variances);
+      objectTemp, pi::ISCACTR::YAW_RATE, pi::ISCACTR::YAW_RATE,
+      yaw_rate_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::msg::ISCACTR::LENGTH, pi::msg::ISCACTR::LENGTH, pos_variances_);
+      objectTemp, pi::ISCACTR::LENGTH, pi::ISCACTR::LENGTH, pos_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::msg::ISCACTR::WIDTH, pi::msg::ISCACTR::WIDTH, pos_variances_);
+      objectTemp, pi::ISCACTR::WIDTH, pi::ISCACTR::WIDTH, pos_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::msg::ISCACTR::HEIGHT, pi::msg::ISCACTR::HEIGHT, pos_variances_);
+      objectTemp, pi::ISCACTR::HEIGHT, pi::ISCACTR::HEIGHT, pos_variances_);
 
     // Global object list: Sensor ID 0
     objectTemp.state.sensor_id.push_back(0);
