@@ -115,19 +115,19 @@ bool ItsConverter::loadParameters() {
   if(!private_node_handle_.param<std::string>("/carla_its_converter/role_names", role_names_string, "ego_vehicle")) {
     ROS_WARN("Parameter \'role_names\' not set, defaulting to %s.", role_names_string);
   }
-  if(!private_node_handle_.param<std::string>("/carla_its_converter/pos_variances", pos_variances_, perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
+  if(!private_node_handle_.param<double>("/carla_its_converter/pos_variances", pos_variances_, perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
     ROS_WARN("Parameter \'pos_variances\' not set, defaulting to %f.", pos_variances_);
   }
-  if(!private_node_handle_.param<std::string>("/carla_its_converter/vel_variances", vel_variances_, perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
+  if(!private_node_handle_.param<double>("/carla_its_converter/vel_variances", vel_variances_, perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
     ROS_WARN("Parameter \'vel_variances\' not set, defaulting to %f.", vel_variances_);
   }
-  if(!private_node_handle_.param<std::string>("/carla_its_converter/acc_variances", acc_variances_, perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
+  if(!private_node_handle_.param<double>("/carla_its_converter/acc_variances", acc_variances_, perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
     ROS_WARN("Parameter \'acc_variances\' not set, defaulting to %f.", acc_variances_);
   }
-  if(!private_node_handle_.param<std::string>("/carla_its_converter/yaw_variances", yaw_variances_, perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
+  if(!private_node_handle_.param<double>("/carla_its_converter/yaw_variances", yaw_variances_, perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
     ROS_WARN("Parameter \'yaw_variances\' not set, defaulting to %f.", yaw_variances_);
   }
-  if(!private_node_handle_.param<std::string>("/carla_its_converter/yaw_rate_variances", yaw_rate_variances_, perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
+  if(!private_node_handle_.param<double>("/carla_its_converter/yaw_rate_variances", yaw_rate_variances_, perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
     ROS_WARN("Parameter \'yaw_rate_variances\' not set, defaulting to %f.", yaw_rate_variances_);
   }
 #elif MODE_ROS2
