@@ -10,24 +10,24 @@ def generate_launch_description():
         default_value='ego_vehicle'
     )
     pos_variances_launch_arg = DeclareLaunchArgument(
-        name='position_variances',
-        default_value=0.2
+        name='pos_variances',
+        default_value='0.2'
     )
     vel_variances_launch_arg = DeclareLaunchArgument(
-        name='velocity_variances',
-        default_value=-1
+        name='vel_variances',
+        default_value='-1.0'
     )
     acc_variances_launch_arg = DeclareLaunchArgument(
-        name='acceleration_variances',
-        default_value=-1
+        name='acc_variances',
+        default_value='-1.0'
     )
     yaw_variances_launch_arg = DeclareLaunchArgument(
         name='yaw_variances',
-        default_value=0.1
+        default_value='0.1'
     )
     yaw_rate_variances_launch_arg = DeclareLaunchArgument(
         name='yaw_rate_variances',
-        default_value=-1
+        default_value='-1.0'
     )
 
     carla_its_converter_node = LifecycleNode(
