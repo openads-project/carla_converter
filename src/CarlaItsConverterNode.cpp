@@ -115,6 +115,21 @@ bool ItsConverter::loadParameters() {
   if(!private_node_handle_.param<std::string>("/carla_its_converter/role_names", role_names_string, "ego_vehicle")) {
     ROS_WARN("Parameter \'role_names\' not set, defaulting to %s.", role_names_string);
   }
+  if(!private_node_handle_.param<double>("/carla_its_converter/pos_variances", pos_variances_, perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
+    ROS_WARN("Parameter \'pos_variances\' not set, defaulting to %f.", pos_variances_);
+  }
+  if(!private_node_handle_.param<double>("/carla_its_converter/vel_variances", vel_variances_, perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
+    ROS_WARN("Parameter \'vel_variances\' not set, defaulting to %f.", vel_variances_);
+  }
+  if(!private_node_handle_.param<double>("/carla_its_converter/acc_variances", acc_variances_, perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
+    ROS_WARN("Parameter \'acc_variances\' not set, defaulting to %f.", acc_variances_);
+  }
+  if(!private_node_handle_.param<double>("/carla_its_converter/yaw_variances", yaw_variances_, perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
+    ROS_WARN("Parameter \'yaw_variances\' not set, defaulting to %f.", yaw_variances_);
+  }
+  if(!private_node_handle_.param<double>("/carla_its_converter/yaw_rate_variances", yaw_rate_variances_, perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
+    ROS_WARN("Parameter \'yaw_rate_variances\' not set, defaulting to %f.", yaw_rate_variances_);
+  }
 #elif MODE_ROS2
   this->declare_parameter("role_names", "ego_vehicle");
   try {
@@ -123,6 +138,16 @@ bool ItsConverter::loadParameters() {
     role_names_string = "ego_vehicle";
     ROS_LOG_STREAM(WARN, "Parameter \'role_names\' not set, defaulting to " << role_names_string);
   }
+  this->declare_parameter("pos_variances", perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID);
+  pos_variances_ = this->get_parameter("pos_variances").as_double();
+  this->declare_parameter("vel_variances", perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID);
+  vel_variances_ = this->get_parameter("vel_variances").as_double();
+  this->declare_parameter("acc_variances", perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID);
+  acc_variances_ = this->get_parameter("acc_variances").as_double();
+  this->declare_parameter("yaw_variances", perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID);
+  yaw_variances_ = this->get_parameter("yaw_variances").as_double();
+  this->declare_parameter("yaw_rate_variances", perception_interfaces::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID);
+  yaw_rate_variances_ = this->get_parameter("yaw_rate_variances").as_double();
 #endif
 
   std::string role_name;
@@ -177,6 +202,40 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
     oa::setLength(objectTemp, msg->objects[i].shape.dimensions[0]);
     oa::setWidth(objectTemp, msg->objects[i].shape.dimensions[1]);
     oa::setHeight(objectTemp, msg->objects[i].shape.dimensions[2]);
+
+    // Fill variances
+    oa::setContinuousStateCovarianceAt(
+      objectTemp, pi::ISCACTR::X, pi::ISCACTR::X, pos_variances_);
+    oa::setContinuousStateCovarianceAt(
+      objectTemp, pi::ISCACTR::Y, pi::ISCACTR::Y, pos_variances_);
+    oa::setContinuousStateCovarianceAt(
+      objectTemp, pi::ISCACTR::Z, pi::ISCACTR::Z, pos_variances_);
+    oa::setContinuousStateCovarianceAt(
+      objectTemp, pi::ISCACTR::VEL_LON, pi::ISCACTR::VEL_LON,
+      vel_variances_);
+    oa::setContinuousStateCovarianceAt(
+      objectTemp, pi::ISCACTR::VEL_LAT, pi::ISCACTR::VEL_LAT,
+      vel_variances_);
+    oa::setContinuousStateCovarianceAt(
+      objectTemp, pi::ISCACTR::ACC_LON, pi::ISCACTR::ACC_LON,
+      acc_variances_);
+    oa::setContinuousStateCovarianceAt(
+      objectTemp, pi::ISCACTR::ACC_LAT, pi::ISCACTR::ACC_LAT,
+      acc_variances_);
+    oa::setContinuousStateCovarianceAt(
+      objectTemp, pi::ISCACTR::YAW, pi::ISCACTR::YAW, yaw_variances_);
+    oa::setContinuousStateCovarianceAt(
+      objectTemp, pi::ISCACTR::YAW_RATE, pi::ISCACTR::YAW_RATE,
+      yaw_rate_variances_);
+    oa::setContinuousStateCovarianceAt(
+      objectTemp, pi::ISCACTR::LENGTH, pi::ISCACTR::LENGTH, pos_variances_);
+    oa::setContinuousStateCovarianceAt(
+      objectTemp, pi::ISCACTR::WIDTH, pi::ISCACTR::WIDTH, pos_variances_);
+    oa::setContinuousStateCovarianceAt(
+      objectTemp, pi::ISCACTR::HEIGHT, pi::ISCACTR::HEIGHT, pos_variances_);
+
+    // Global object list: Sensor ID 0
+    objectTemp.state.sensor_id.push_back(0);
 
     // classification for object state
     objectTemp.state.classifications.resize(1);
@@ -233,6 +292,12 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
     auto timeout = rclcpp::Duration::from_seconds(1.0);
 #endif
     pi::ObjectList msg_object_list_copy = msg_object_list_;
+
+    // Set increasing sensor ID per role name. As `role_names_` doesnt change, this assigns a fixed sensor ID to each role.
+    for (auto &object: msg_object_list_copy.objects)
+    {
+      object.state.sensor_id[0] = ego_id_map_[role_name];
+    }
 
     // remove element with the role_name id
     msg_object_list_copy.objects.erase(std::remove_if(msg_object_list_copy.objects.begin(), msg_object_list_copy.objects.end(), [this, role_name](const pi::Object& obj) {

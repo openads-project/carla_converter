@@ -110,6 +110,11 @@ class ItsConverter : public rclcpp::Node
 
     // ros parameters
     std::vector<std::string> role_names_;
+    double pos_variances_;
+    double vel_variances_;
+    double acc_variances_;
+    double yaw_variances_;
+    double yaw_rate_variances_;
 
     // ego information
     std::map<std::string, int> ego_id_map_;
