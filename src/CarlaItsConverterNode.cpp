@@ -284,10 +284,8 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
     pub_objects_carla_map_->publish(msg_object_list_);
 #endif
 
-  uint64_t sensor_id = 0;
   // iterate over each role_name
   for(std::string & role_name: role_names_){
-    ++sensor_id;
 #ifdef MODE_ROS1
     auto timeout = ros::Duration(1.0);
 #elif MODE_ROS2
@@ -298,7 +296,7 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
     // Set increasing sensor ID per role name. As `role_names_` doesnt change, this assigns a fixed sensor ID to each role.
     for (auto &object: msg_object_list_copy.objects)
     {
-      object.state.sensor_id[0] = sensor_id;
+      object.state.sensor_id[0] = ego_id_map_[role_name];
     }
 
     // remove element with the role_name id
