@@ -8,4 +8,4 @@ variables:
   PLATFORM: amd64
   IMAGE_TAG: ros2
   ENABLE_INDUSTRIAL_CI: 'true'
-  PUSH_AS_LATEST: 'true'
+  ENABLE_PUSH_AS_LATEST: 'true'
