@@ -5,6 +5,10 @@ from launch_ros.actions import LifecycleNode
 
 def generate_launch_description():
 
+    use_sim_time_lauch_arg = DeclareLaunchArgument(
+        name='use_sim_time',
+        default_value='True'
+    )
     role_names_launch_arg = DeclareLaunchArgument(
         name='role_names',
         default_value='ego_vehicle'
@@ -37,18 +41,23 @@ def generate_launch_description():
         namespace="",
         output="screen",
         emulate_tty=True,
-        parameters=[{
-            "role_names": LaunchConfiguration('role_names'),
-            "pos_variances": LaunchConfiguration('pos_variances'),
-            "vel_variances": LaunchConfiguration('vel_variances'),
-            "acc_variances": LaunchConfiguration('acc_variances'),
-            "yaw_variances": LaunchConfiguration('yaw_variances'),
-            "yaw_rate_variances": LaunchConfiguration('yaw_rate_variances'),
-        }
+        parameters=[
+            {
+                "role_names": LaunchConfiguration('role_names'),
+                "pos_variances": LaunchConfiguration('pos_variances'),
+                "vel_variances": LaunchConfiguration('vel_variances'),
+                "acc_variances": LaunchConfiguration('acc_variances'),
+                "yaw_variances": LaunchConfiguration('yaw_variances'),
+                "yaw_rate_variances": LaunchConfiguration('yaw_rate_variances')
+            },
+            {
+                "use_sim_time": LaunchConfiguration('use_sim_time'),
+            },
         ],
     )
 
     return launch.LaunchDescription([
+        use_sim_time_lauch_arg,
         role_names_launch_arg,
         pos_variances_launch_arg,
         vel_variances_launch_arg,
