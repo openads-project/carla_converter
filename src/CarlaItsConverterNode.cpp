@@ -378,6 +378,7 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::strin
 
     // fill state
     oa::initializeState(msg_ego_data_, pi::EGO::MODEL_ID);
+    msg_ego_data_.state.header = msg_ego_data_.header;
     oa::setPose(msg_ego_data_.state, msg->pose.pose);
     oa::setZ(msg_ego_data_, msg->pose.pose.position.z + ego_shape_map_[role_name].dimensions[2] / 2.0); // set z to the center of the object
     
