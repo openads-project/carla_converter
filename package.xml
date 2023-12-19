@@ -55,7 +55,7 @@
   <!-- Common -->
   <depend>derived_object_msgs</depend>
   <depend>geometry_msgs</depend>
-  <depend>perception_interfaces</depend>
+  <depend>perception_msgs</depend>
   <depend>std_msgs</depend>
   <depend>tf2_perception_msgs</depend>
   <depend>tf2_ros</depend>
