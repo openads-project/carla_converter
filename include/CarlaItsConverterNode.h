@@ -64,7 +64,7 @@ using Publisher = typename rclcpp::Publisher<T>::SharedPtr;
 
 #endif
 
-namespace oa = perception_msgs_utils::object_access;
+namespace oa = perception_msgs::object_access;
 
 
 namespace carla {
