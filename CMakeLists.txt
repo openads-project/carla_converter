@@ -40,6 +40,7 @@ if(${ROS_VERSION} EQUAL 2)
   find_package(geometry_msgs REQUIRED)
   find_package(nav_msgs REQUIRED)
   find_package(perception_msgs REQUIRED)
+  find_package(perception_msgs_utils REQUIRED)
   find_package(rclcpp REQUIRED)
   find_package(tf2 REQUIRED)
   find_package(tf2_geometry_msgs REQUIRED)
@@ -61,6 +62,7 @@ if(${ROS_VERSION} EQUAL 2)
     geometry_msgs
     nav_msgs
     perception_msgs
+    perception_msgs_utils
     rclcpp
     tf2
     tf2_geometry_msgs
@@ -74,6 +76,7 @@ if(${ROS_VERSION} EQUAL 2)
     geometry_msgs
     nav_msgs
     perception_msgs
+    perception_msgs_utils
     rclcpp
     tf2
     tf2_geometry_msgs
@@ -130,6 +133,7 @@ elseif(${ROS_VERSION} EQUAL 1)
     derived_object_msgs
     geometry_msgs
     perception_msgs
+    perception_msgs_utils
     roscpp
     roslaunch
     std_msgs
@@ -152,7 +156,7 @@ elseif(${ROS_VERSION} EQUAL 1)
   catkin_package(
   #  INCLUDE_DIRS include
   #  LIBRARIES hx_testmanager
-    CATKIN_DEPENDS roscpp std_msgs derived_object_msgs perception_msgs tf2_perception_msgs tf2_ros tf2 geometry_msgs
+    CATKIN_DEPENDS roscpp std_msgs derived_object_msgs perception_msgs perception_msgs_utils tf2_perception_msgs tf2_ros tf2 geometry_msgs
   #  DEPENDS system_lib
   )
 
