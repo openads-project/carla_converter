@@ -115,19 +115,19 @@ bool ItsConverter::loadParameters() {
   if(!private_node_handle_.param<std::string>("/carla_its_converter/role_names", role_names_string, "ego_vehicle")) {
     ROS_WARN("Parameter \'role_names\' not set, defaulting to %s.", role_names_string);
   }
-  if(!private_node_handle_.param<double>("/carla_its_converter/pos_variances", pos_variances_, oa::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
+  if(!private_node_handle_.param<double>("/carla_its_converter/pos_variances", pos_variances_, perception_msgs::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
     ROS_WARN("Parameter \'pos_variances\' not set, defaulting to %f.", pos_variances_);
   }
-  if(!private_node_handle_.param<double>("/carla_its_converter/vel_variances", vel_variances_, oa::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
+  if(!private_node_handle_.param<double>("/carla_its_converter/vel_variances", vel_variances_, perception_msgs::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
     ROS_WARN("Parameter \'vel_variances\' not set, defaulting to %f.", vel_variances_);
   }
-  if(!private_node_handle_.param<double>("/carla_its_converter/acc_variances", acc_variances_, oa::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
+  if(!private_node_handle_.param<double>("/carla_its_converter/acc_variances", acc_variances_, perception_msgs::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
     ROS_WARN("Parameter \'acc_variances\' not set, defaulting to %f.", acc_variances_);
   }
-  if(!private_node_handle_.param<double>("/carla_its_converter/yaw_variances", yaw_variances_, oa::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
+  if(!private_node_handle_.param<double>("/carla_its_converter/yaw_variances", yaw_variances_, perception_msgs::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
     ROS_WARN("Parameter \'yaw_variances\' not set, defaulting to %f.", yaw_variances_);
   }
-  if(!private_node_handle_.param<double>("/carla_its_converter/yaw_rate_variances", yaw_rate_variances_, oa::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
+  if(!private_node_handle_.param<double>("/carla_its_converter/yaw_rate_variances", yaw_rate_variances_, perception_msgs::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
     ROS_WARN("Parameter \'yaw_rate_variances\' not set, defaulting to %f.", yaw_rate_variances_);
   }
 #elif MODE_ROS2
@@ -138,15 +138,15 @@ bool ItsConverter::loadParameters() {
     role_names_string = "ego_vehicle";
     ROS_LOG_STREAM(WARN, "Parameter \'role_names\' not set, defaulting to " << role_names_string);
   }
-  this->declare_parameter("pos_variances", oa::CONTINUOUS_STATE_COVARIANCE_INVALID);
+  this->declare_parameter("pos_variances", perception_msgs::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID);
   pos_variances_ = this->get_parameter("pos_variances").as_double();
-  this->declare_parameter("vel_variances", oa::CONTINUOUS_STATE_COVARIANCE_INVALID);
+  this->declare_parameter("vel_variances", perception_msgs::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID);
   vel_variances_ = this->get_parameter("vel_variances").as_double();
-  this->declare_parameter("acc_variances", oa::CONTINUOUS_STATE_COVARIANCE_INVALID);
+  this->declare_parameter("acc_variances", perception_msgs::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID);
   acc_variances_ = this->get_parameter("acc_variances").as_double();
-  this->declare_parameter("yaw_variances", oa::CONTINUOUS_STATE_COVARIANCE_INVALID);
+  this->declare_parameter("yaw_variances", perception_msgs::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID);
   yaw_variances_ = this->get_parameter("yaw_variances").as_double();
-  this->declare_parameter("yaw_rate_variances", oa::CONTINUOUS_STATE_COVARIANCE_INVALID);
+  this->declare_parameter("yaw_rate_variances", perception_msgs::object_access::CONTINUOUS_STATE_COVARIANCE_INVALID);
   yaw_rate_variances_ = this->get_parameter("yaw_rate_variances").as_double();
 #endif
 
