@@ -12,9 +12,9 @@
 #ifdef MODE_ROS1
 #include <derived_object_msgs/ObjectArray.h>
 #include <nav_msgs/Odometry.h>
-#include <perception_interfaces/ISCACTR.h>
-#include <perception_interfaces/object_access.h>
-#include <perception_interfaces/ObjectList.h>
+#include <perception_msgs/ISCACTR.h>
+#include <perception_msgs_utils/object_access.h>
+#include <perception_msgs/ObjectList.h>
 #include <ros/ros.h>
 #include <tf2_perception_msgs/tf2_perception_msgs.h>
 #include <geometry_msgs/Accel.h>
@@ -26,7 +26,7 @@
 
 namespace dom = derived_object_msgs;
 namespace nm = nav_msgs;
-namespace pi = perception_interfaces;
+namespace pi = perception_msgs;
 namespace gm = geometry_msgs;
 namespace sm = shape_msgs;
 namespace cm = carla_msgs;
@@ -39,7 +39,7 @@ using Publisher = ros::Publisher;
 #elif MODE_ROS2
 #include <derived_object_msgs/msg/object_array.hpp>
 #include <nav_msgs/msg/odometry.hpp>
-#include <perception_interfaces/object_access.hpp>
+#include <perception_msgs_utils/object_access.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_perception_msgs/tf2_perception_msgs.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
@@ -52,7 +52,7 @@ using Publisher = ros::Publisher;
 
 namespace dom = derived_object_msgs::msg;
 namespace nm = nav_msgs::msg;
-namespace pi = perception_interfaces::msg;
+namespace pi = perception_msgs::msg;
 namespace gm = geometry_msgs::msg;
 namespace sm = shape_msgs::msg;
 namespace cm = carla_msgs::msg;
@@ -64,7 +64,7 @@ using Publisher = typename rclcpp::Publisher<T>::SharedPtr;
 
 #endif
 
-namespace oa = perception_interfaces::object_access;
+namespace oa = perception_msgs::object_access;
 
 
 namespace carla {
