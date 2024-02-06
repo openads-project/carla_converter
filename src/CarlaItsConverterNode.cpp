@@ -3,9 +3,9 @@
 
 namespace carla {
 
-#ifdef MODE_ROS1
+#ifdef ROS1
   ItsConverter::ItsConverter()
-#elif MODE_ROS2
+#else
   ItsConverter::ItsConverter() : Node("CarlaItsConverter")
 #endif
 {
@@ -30,7 +30,13 @@ namespace carla {
     };
   };
 
-#ifdef MODE_ROS1
+  auto gnssArgCallback = [this](const std::string & role_name) {
+    return [this, role_name](const ssm::NavSatFix::ConstPtr msg) -> void {
+      ItsConverter::gnssCallback(msg, role_name);
+    };
+  };
+
+#ifdef ROS1
   // setup buffer
   tf2_buffer_.setUsingDedicatedThread(true);
   tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(tf2_buffer_);
@@ -48,22 +54,26 @@ namespace carla {
     Subscriber<nm::Odometry> sub_odometry_ = private_node_handle_.subscribe<nm::Odometry>("/carla/" + role_name +"/odometry", 1, odometryArgCallback(role_name));
     Subscriber<cm::CarlaEgoVehicleStatus> sub_vehicle_status_ = private_node_handle_.subscribe<cm::CarlaEgoVehicleStatus>("/carla/" + role_name +"/vehicle_status", 1, vehicleStatusArgCallback(role_name));
     Subscriber<cm::CarlaEgoVehicleInfo> sub_vehicle_info_ = private_node_handle_.subscribe<cm::CarlaEgoVehicleInfo>("/carla/" + role_name +"/vehicle_info", 1, vehicleInfoArgCallback(role_name));
+    Subscriber<ssm::NavSatFix> sub_gnss_ = private_node_handle_.subscribe<ssm::NavSatFix>("/carla/" + role_name +"/gnss", 1, gnssArgCallback(role_name));
 
     // save subscriber in map with role_name as key
     sub_odometry_map_.insert({role_name, sub_odometry_});
     sub_vehicle_status_map_.insert({role_name, sub_vehicle_status_});
     sub_vehicle_info_map_.insert({role_name, sub_vehicle_info_});
+    sub_gnss_map_.insert({role_name, sub_gnss_});
     
     // setup publisher depending on role_name
     Publisher<pi::ObjectList> pub_objects = private_node_handle_.advertise<pi::ObjectList>("/carla_its_converter/" + role_name + "/objects", 1);
     Publisher<pi::EgoData> pub_ego_data = private_node_handle_.advertise<pi::EgoData>("/carla_its_converter/" + role_name + "/ego_data", 1);
+    Publisher<etsi_cam::CAM> pub_etsi_cam = private_node_handle_.advertise<etsi_cam::CAM>("/carla_its_converter/" + role_name + "/etsi_its/cam", 1);
     
     // save publisher in map with role_name as key
     pub_objects_map_.insert({role_name, pub_objects});
     pub_ego_data_map_.insert({role_name, pub_ego_data});
+    pub_etsi_cam_map_.insert({role_name, pub_etsi_cam});
   }
   
-#elif MODE_ROS2
+#else
   // setup buffer
   tf2_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
   tf2_buffer_->setUsingDedicatedThread(true);
@@ -86,19 +96,23 @@ namespace carla {
     Subscriber<nm::Odometry> sub_odometry = this->create_subscription<nm::Odometry>("/carla/" + role_name +"/odometry", 1, odometryArgCallback(role_name));
     Subscriber<cm::CarlaEgoVehicleStatus> sub_vehicle_status = this->create_subscription<cm::CarlaEgoVehicleStatus>("/carla/" + role_name +"/vehicle_status", 1, vehicleStatusArgCallback(role_name));
     Subscriber<cm::CarlaEgoVehicleInfo> sub_vehicle_info = this->create_subscription<cm::CarlaEgoVehicleInfo>("/carla/" + role_name +"/vehicle_info", qosLatching, vehicleInfoArgCallback(role_name));
+    Subscriber<ssm::NavSatFix> sub_gnss = this->create_subscription<ssm::NavSatFix>("/carla/" + role_name +"/gnss", 1, gnssArgCallback(role_name));
 
     // save subscriber in map with role_name as key
     sub_odometry_map_.insert({role_name, sub_odometry});
     sub_vehicle_status_map_.insert({role_name, sub_vehicle_status});
     sub_vehicle_info_map_.insert({role_name, sub_vehicle_info});
+    sub_gnss_map_.insert({role_name, sub_gnss});
 
     // setup publisher depending on role_name
     Publisher<pi::ObjectList> pub_objects = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + role_name + "/objects", 1);
     Publisher<pi::EgoData> pub_ego_data = this->create_publisher<pi::EgoData>("/carla_its_converter/" + role_name + "/ego_data", 1);
+    Publisher<etsi_cam::CAM> pub_etsi_cam = this->create_publisher<etsi_cam::CAM>("/carla_its_converter/" + role_name + "/etsi_its/cam", 1);
 
     // save publisher in map with role_name as key
     pub_objects_map_.insert({role_name, pub_objects});
     pub_ego_data_map_.insert({role_name, pub_ego_data});
+    pub_etsi_cam_map_.insert({role_name, pub_etsi_cam});
   }
 
 #endif
@@ -111,7 +125,7 @@ bool ItsConverter::loadParameters() {
   std::string role_names_string;
 
   // load publish parameters
-#ifdef MODE_ROS1
+#ifdef ROS1
   if(!private_node_handle_.param<std::string>("/carla_its_converter/role_names", role_names_string, "ego_vehicle")) {
     ROS_WARN("Parameter \'role_names\' not set, defaulting to %s.", role_names_string);
   }
@@ -130,7 +144,7 @@ bool ItsConverter::loadParameters() {
   if(!private_node_handle_.param<double>("/carla_its_converter/yaw_rate_variances", yaw_rate_variances_, oa::CONTINUOUS_STATE_COVARIANCE_INVALID)) {
     ROS_WARN("Parameter \'yaw_rate_variances\' not set, defaulting to %f.", yaw_rate_variances_);
   }
-#elif MODE_ROS2
+#else
   this->declare_parameter("role_names", "ego_vehicle");
   try {
     role_names_string = this->get_parameter("role_names").as_string();
@@ -159,6 +173,12 @@ bool ItsConverter::loadParameters() {
   }
 
   return true;
+}
+
+void ItsConverter::gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string role_name) {
+  // get gnss position from role_name vehicle
+  ego_gnss_map_[role_name] = *msg;
+  ego_gnss_set_map_[role_name] = true;
 }
 
 void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
@@ -278,17 +298,17 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
   }
 
   // publish object_list in carla_map frame
-#ifdef MODE_ROS1
+#ifdef ROS1
     pub_objects_carla_map_.publish(msg_object_list_);
-#elif MODE_ROS2
+#else
     pub_objects_carla_map_->publish(msg_object_list_);
 #endif
 
   // iterate over each role_name
   for(std::string & role_name: role_names_){
-#ifdef MODE_ROS1
+#ifdef ROS1
     auto timeout = ros::Duration(1.0);
-#elif MODE_ROS2
+#else
     auto timeout = rclcpp::Duration::from_seconds(1.0);
 #endif
     pi::ObjectList msg_object_list_copy = msg_object_list_;
@@ -307,7 +327,7 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
     // transform the object_list from carla_map to role_name frame
     pi::ObjectList msg_object_list_role_name;
     gm::TransformStamped carla_map_to_role_name_tf;
-#ifdef MODE_ROS1
+#ifdef ROS1
     try {
       // get transformation from carla_map to role_name
       if (tf2_buffer_._frameExists(role_name)){
@@ -330,7 +350,7 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
       show_transform_success_map_[role_name] = true;
         continue;
     }
-#elif MODE_ROS2
+#else
     try {
       // get transformation from carla_map to role_name
       if (tf2_buffer_->_frameExists(role_name)){
@@ -356,9 +376,9 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
 #endif
 
     // publish object list in role_name frame
-#ifdef MODE_ROS1
+#ifdef ROS1
     pub_objects_map_[role_name].publish(msg_object_list_role_name);
-#elif MODE_ROS2
+#else
     pub_objects_map_[role_name]->publish(msg_object_list_role_name);
 #endif
   }
@@ -411,12 +431,25 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::strin
     msg_ego_data_.width = ego_shape_map_[role_name].dimensions[1];
     msg_ego_data_.height = ego_shape_map_[role_name].dimensions[2];
 
+
     // publish ego_data in carla_map frame
-#ifdef MODE_ROS1
+#ifdef ROS1
     pub_ego_data_map_[role_name].publish(msg_ego_data_);
-#elif MODE_ROS2
+#else
     pub_ego_data_map_[role_name]->publish(msg_ego_data_);
 #endif 
+
+    // additionally publish etsi_cam
+    if (ego_gnss_set_map_[role_name]) {
+      etsi_cam::CAM msg_cam = convertToEtsiCam(msg_ego_data_, ego_gnss_map_[role_name]);
+
+#ifdef ROS1
+      pub_etsi_cam_map_[role_name].publish(msg_cam);
+#else
+      pub_etsi_cam_map_[role_name]->publish(msg_cam);
+#endif 
+    }
+
   } 
 }
 
@@ -437,16 +470,48 @@ void ItsConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr m
 
   ego_info_set_map_[role_name] = true;
 }
+
+etsi_cam::CAM ItsConverter::convertToEtsiCam(const pi::EgoData &ego_data, ssm::NavSatFix gnss) {
+  
+  etsi_cam::CAM cam;
+  
+  ca::setItsPduHeader(cam, ego_data.vehicle_id);
+  
+#ifdef ROS1
+  uint64_t nns = ego_data.header.stamp.sec * 1e9 + ego_data.header.stamp.nsec;
+#else
+  uint64_t nns = ego_data.header.stamp.sec * 1e9 + ego_data.header.stamp.nanosec;
+#endif
+    
+  ca::setGenerationDeltaTime(cam, nns, etsi_its_msgs::getLeapSecondInsertionsSince2004((uint64_t)ego_data.header.stamp.sec));
+  
+  ca::setReferencePosition(cam, gnss.latitude, gnss.longitude, gnss.altitude + ego_data.height/2);
+  
+  // convert and crop heading to etsi range [0,360]
+  double heading = 90 - oa::getYawInDeg(ego_data);
+  if (heading > 360) heading -= 360;
+  if (heading < 0) heading += 360;
+  ca::setHeading(cam, heading);
+
+  ca::setVehicleDimensions(cam, ego_data.length, ego_data.width);
+  
+  ca::setSpeed(cam, oa::getVelocityMagnitude(ego_data));
+  ca::setLongitudinalAcceleration(cam, oa::getAccLon(ego_data));
+  ca::setLateralAcceleration(cam, oa::getAccLat(ego_data));
+
+  return cam;
+}
+
 }  // end of namespace
 
 
 int main(int argc, char **argv)
 {
-#ifdef MODE_ROS1
+#ifdef ROS1
   ros::init(argc, argv, "CarlaItsConverter");
   carla::ItsConverter node;
   ros::spin();
-#elif MODE_ROS2
+#else
   rclcpp::init(argc, argv);
   rclcpp::spin(std::make_shared<carla::ItsConverter>());
   rclcpp::shutdown();

@@ -12,9 +12,6 @@ endif()
 # === ROS2 (AMENT) =============================================================
 if(${ROS_VERSION} EQUAL 2)
 
-  # set compile definitions for ROS2
-  add_compile_definitions(MODE_ROS2)
-
   if(${ROS_DISTRO} STREQUAL "foxy")
       add_compile_definitions(ROS_DISTRO_FOXY)
   endif()
@@ -39,16 +36,19 @@ if(${ROS_VERSION} EQUAL 2)
   find_package(derived_object_msgs REQUIRED)
   find_package(geometry_msgs REQUIRED)
   find_package(nav_msgs REQUIRED)
-  find_package(perception_msgs REQUIRED)
-  find_package(perception_msgs_utils REQUIRED)
   find_package(rclcpp REQUIRED)
+  find_package(sensor_msgs REQUIRED)
+  find_package(shape_msgs REQUIRED)
   find_package(tf2 REQUIRED)
   find_package(tf2_geometry_msgs REQUIRED)
   find_package(tf2_perception_msgs REQUIRED)
   find_package(tf2_ros REQUIRED)
-  find_package(shape_msgs REQUIRED)
-  find_package(carla_msgs REQUIRED)
 
+  find_package(carla_msgs REQUIRED)
+  find_package(etsi_its_msgs REQUIRED)
+  find_package(etsi_its_msgs_utils REQUIRED)
+  find_package(perception_msgs REQUIRED)
+  find_package(perception_msgs_utils REQUIRED)
 
   add_executable(${PROJECT_NAME}_node src/CarlaItsConverterNode.cpp)
 
@@ -61,29 +61,37 @@ if(${ROS_VERSION} EQUAL 2)
     derived_object_msgs
     geometry_msgs
     nav_msgs
-    perception_msgs
-    perception_msgs_utils
     rclcpp
+    sensor_msgs
+    shape_msgs
     tf2
     tf2_geometry_msgs
     tf2_perception_msgs
     tf2_ros
-    shape_msgs
+
     carla_msgs
+    etsi_its_msgs
+    etsi_its_msgs_utils
+    perception_msgs
+    perception_msgs_utils
   )
   ament_export_dependencies(
     derived_object_msgs
     geometry_msgs
     nav_msgs
-    perception_msgs
-    perception_msgs_utils
     rclcpp
+    sensor_msgs
+    shape_msgs
     tf2
     tf2_geometry_msgs
     tf2_perception_msgs
     tf2_ros
-    shape_msgs
+
     carla_msgs
+    etsi_its_msgs
+    etsi_its_msgs_utils
+    perception_msgs
+    perception_msgs_utils
   )
 
   install(TARGETS
@@ -113,8 +121,7 @@ if(${ROS_VERSION} EQUAL 2)
 # === ROS1 (CATKIN) ============================================================
 elseif(${ROS_VERSION} EQUAL 1)
   # set compile definitions for ROS1
-  add_compile_definitions(MODE_ROS1)
-
+  add_compile_definitions(ROS1)
   if(${ROS_DISTRO} STREQUAL "kinetic")
       add_compile_definitions(ROS_DISTRO_KINETIC)
   endif()
@@ -132,15 +139,22 @@ elseif(${ROS_VERSION} EQUAL 1)
   find_package(catkin REQUIRED COMPONENTS
     derived_object_msgs
     geometry_msgs
-    perception_msgs
-    perception_msgs_utils
+    nav_msgs
     roscpp
     roslaunch
     std_msgs
+    sensor_msgs
+    shape_msgs
     tf2
+    tf2_geometry_msgs
     tf2_perception_msgs
     tf2_ros
+
     carla_msgs
+    etsi_its_msgs
+    etsi_its_msgs_utils
+    perception_msgs
+    perception_msgs_utils
   )
 
 
@@ -156,7 +170,7 @@ elseif(${ROS_VERSION} EQUAL 1)
   catkin_package(
   #  INCLUDE_DIRS include
   #  LIBRARIES hx_testmanager
-    CATKIN_DEPENDS roscpp std_msgs derived_object_msgs perception_msgs perception_msgs_utils tf2_perception_msgs tf2_ros tf2 geometry_msgs
+    CATKIN_DEPENDS roscpp std_msgs derived_object_msgs perception_msgs perception_msgs_utils tf2_perception_msgs tf2_ros tf2 geometry_msgs etsi_its_msgs etsi_its_msgs_utils
   #  DEPENDS system_lib
   )
 

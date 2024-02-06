@@ -1,7 +1,7 @@
 import launch
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import LifecycleNode
+from launch_ros.actions import LifecycleNode, Node
 
 def generate_launch_description():
 
@@ -56,6 +56,27 @@ def generate_launch_description():
         ],
     )
 
+    transform_utm_31N = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        arguments = ['-166021.443', '0', '0', '0', '0', '0', 'carla_map', 'utm_31N']
+    )
+    transform_utm_31S = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        arguments = ['-166021.443', '-10000000.000', '0', '0', '0', '0', 'carla_map', 'utm_31S']
+    )
+    transform_utm_30N = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        arguments = ['-833978.557', '0', '0', '0', '0', '0', 'carla_map', 'utm_30N']
+    )
+    transform_utm_30S = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        arguments = ['-833978.557', '-10000000.000', '0', '0', '0', '0',  'carla_map', 'utm_30S']
+    )
+
     return launch.LaunchDescription([
         use_sim_time_lauch_arg,
         role_names_launch_arg,
@@ -65,6 +86,10 @@ def generate_launch_description():
         yaw_variances_launch_arg,
         yaw_rate_variances_launch_arg,
         carla_its_converter_node,
+        transform_utm_31N,
+        transform_utm_31S,
+        transform_utm_30N,
+        transform_utm_30S
     ])
 
 
