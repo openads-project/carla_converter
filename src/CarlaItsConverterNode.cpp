@@ -36,6 +36,12 @@ namespace carla {
     };
   };
 
+  auto visibleObjectsArgCallback = [this](const std::string & role_name) {
+    return [this, role_name](const dom::ObjectArray::ConstPtr msg) -> void {
+      ItsConverter::visibleObjectsCallback(msg, role_name);
+    };
+  };
+
 #ifdef ROS1
   // setup buffer
   tf2_buffer_.setUsingDedicatedThread(true);
@@ -97,22 +103,29 @@ namespace carla {
     Subscriber<cm::CarlaEgoVehicleStatus> sub_vehicle_status = this->create_subscription<cm::CarlaEgoVehicleStatus>("/carla/" + role_name +"/vehicle_status", 1, vehicleStatusArgCallback(role_name));
     Subscriber<cm::CarlaEgoVehicleInfo> sub_vehicle_info = this->create_subscription<cm::CarlaEgoVehicleInfo>("/carla/" + role_name +"/vehicle_info", qosLatching, vehicleInfoArgCallback(role_name));
     Subscriber<ssm::NavSatFix> sub_gnss = this->create_subscription<ssm::NavSatFix>("/carla/" + role_name +"/gnss", 1, gnssArgCallback(role_name));
+    Subscriber<dom::ObjectArray> sub_visible_objects = this->create_subscription<dom::ObjectArray>("/carla/" + role_name +"/visible_objects", 1, odometryArgCallback(role_name));
+
 
     // save subscriber in map with role_name as key
     sub_odometry_map_.insert({role_name, sub_odometry});
     sub_vehicle_status_map_.insert({role_name, sub_vehicle_status});
     sub_vehicle_info_map_.insert({role_name, sub_vehicle_info});
     sub_gnss_map_.insert({role_name, sub_gnss});
+    sub_visible_objects_map_.insert({role_name, sub_visible_objects});
+
 
     // setup publisher depending on role_name
     Publisher<pi::ObjectList> pub_objects = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + role_name + "/objects", 1);
     Publisher<pi::EgoData> pub_ego_data = this->create_publisher<pi::EgoData>("/carla_its_converter/" + role_name + "/ego_data", 1);
     Publisher<etsi_cam::CAM> pub_etsi_cam = this->create_publisher<etsi_cam::CAM>("/carla_its_converter/" + role_name + "/etsi_its/cam", 1);
+    Publisher<pi::ObjectList> pub_visible_objects = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + role_name + "/visible_objects", 1);
+
 
     // save publisher in map with role_name as key
     pub_objects_map_.insert({role_name, pub_objects});
     pub_ego_data_map_.insert({role_name, pub_ego_data});
     pub_etsi_cam_map_.insert({role_name, pub_etsi_cam});
+    pub_visible_objects_map_.insert({role_name, pub_visible_objects});
   }
 
 #endif
@@ -180,6 +193,8 @@ void ItsConverter::gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string 
   ego_gnss_map_[role_name] = *msg;
   ego_gnss_set_map_[role_name] = true;
 }
+
+void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
 
 void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
   // map the objects from the CARLA format to the perception_msgs format
