@@ -314,6 +314,7 @@ pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr
     msg_object_list_.objects.push_back(objectTemp);
   }
   return msg_object_list_
+}
 
 void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
   pi::ObjectList msg_object_list_ = ItsConverter::convertObjectArray(msg);
@@ -410,9 +411,9 @@ void ItsConverter::visibleObjectsCallback(const nm::Odometry::ConstPtr msg, std:
 
     // publish visible object list in role_name frame
 #ifdef ROS1
-    pub_ego_data_map_[role_name].publish(msg_object_list_);
+    pub_visible_objects_map_[role_name].publish(msg_object_list_);
 #else
-    pub_ego_data_map_[role_name]->publish(msg_object_list_);
+    pub_visible_objects_map_[role_name]->publish(msg_object_list_);
 #endif 
 }
 
