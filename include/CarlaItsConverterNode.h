@@ -95,12 +95,14 @@ class ItsConverter : public rclcpp::Node
   private:
     void gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string role_name);
     void objectsCallback(const dom::ObjectArray::ConstPtr msg);
+    void visibleObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string role_name);
     void odometryCallback(const nm::Odometry::ConstPtr msg, std::string role_name);
     void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg, std::string role_name);
     void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string role_name);
     bool loadParameters();
 
     etsi_cam::CAM convertToEtsiCam(const pi::EgoData& ego_data, ssm::NavSatFix gnss);
+    pi::ObjectList convertObjectArray(const dom::ObjectArray::ConstPtr msg);
 
 #ifdef ROS1
     ros::NodeHandle private_node_handle_;
@@ -115,12 +117,13 @@ class ItsConverter : public rclcpp::Node
     std::map<std::string, Subscriber<nm::Odometry>> sub_odometry_map_;
     std::map<std::string, Subscriber<cm::CarlaEgoVehicleStatus>> sub_vehicle_status_map_;
     std::map<std::string, Subscriber<cm::CarlaEgoVehicleInfo>> sub_vehicle_info_map_;
+    std::map<std::string, Subscriber<dom::ObjectArray>> sub_visible_objects_map_;
 
     Publisher<pi::ObjectList> pub_objects_carla_map_;
     std::map<std::string, Publisher<pi::ObjectList>> pub_objects_map_;
     std::map<std::string, Publisher<pi::EgoData>> pub_ego_data_map_;
     std::map<std::string, Publisher<etsi_cam::CAM>> pub_etsi_cam_map_;
-
+    std::map<std::string, Publisher<pi::ObjectList>> pub_visible_objects_map_;
     std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
 
     pi::ObjectList msg_object_list_;

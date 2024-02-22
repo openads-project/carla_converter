@@ -7,5 +7,5 @@ variables:
   TARGET: dev
   PLATFORM: amd64
   IMAGE_TAG: ros2
-  ENABLE_INDUSTRIAL_CI: 'true'
+  ENABLE_INDUSTRIAL_CI: 'false'
   ENABLE_PUSH_AS_LATEST: 'true'

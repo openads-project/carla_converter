@@ -406,7 +406,7 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
   }
 }
 
-void ItsConverter::visibleObjectsCallback(const nm::Odometry::ConstPtr msg, std::string role_name) {
+void ItsConverter::visibleObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string role_name) {
   pi::ObjectList msg_object_list_ = ItsConverter::convertObjectArray(msg);
 
     // publish visible object list in role_name frame
