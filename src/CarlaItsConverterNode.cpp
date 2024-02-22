@@ -200,7 +200,7 @@ void ItsConverter::gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string 
 
 pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr msg) {
   // map the objects from the CARLA format to the perception_msgs format
-  msg_object_list_.objects.clear();
+  pi::ObjectList msg_object_list_;
   msg_object_list_.header = msg->header;
 
   for (size_t i = 0; i < msg->objects.size(); i++) {

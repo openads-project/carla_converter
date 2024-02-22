@@ -126,7 +126,6 @@ class ItsConverter : public rclcpp::Node
     std::map<std::string, Publisher<pi::ObjectList>> pub_visible_objects_map_;
     std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
 
-    pi::ObjectList msg_object_list_;
     pi::EgoData msg_ego_data_;
 
     // ros parameters
