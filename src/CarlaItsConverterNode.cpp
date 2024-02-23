@@ -313,7 +313,7 @@ pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr
     // add object to object list
     msg_object_list_.objects.push_back(objectTemp);
   }
-  return msg_object_list_
+  return msg_object_list_;
 }
 
 void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
