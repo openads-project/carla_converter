@@ -4,6 +4,6 @@ include:
 variables:
   BASE_IMAGE: rwthika/ros:noetic
   COMMAND: roslaunch carla_its_converter carla_its_converter.launch
-  TARGET: dev
+  TARGET: dev, run
   PLATFORM: amd64
   IMAGE_TAG: ros1
