@@ -82,6 +82,27 @@ namespace carla {
     pub_etsi_cam_map_.insert({role_name, pub_etsi_cam});
     pub_ideal_objects_map_.insert({role_name, pub_ideal_objects});
   }
+
+  // setup subscriber and publisher depending on its_station
+  for(std::string& its_station : its_stations_) { 
+    // remove spaces from its_station
+    its_station.erase(std::remove_if(its_station.begin(), its_station.end(), isspace), its_station.end());
+
+    // setup subscriber depending on its_station    
+    Subscriber<dom::ObjectArray> sub_ideal_objects = private_node_handle_.subscribe<dom::ObjectArray>("/carla/" + its_station +"/ideal_objects", 1, idealObjectsArgCallback(its_station));
+
+
+    // save subscriber in map with its_station as key
+    sub_ideal_objects_map_.insert({its_station, sub_ideal_objects});
+
+
+    // setup publisher depending on its_station
+    Publisher<pi::ObjectList> pub_ideal_objects = private_node_handle_.advertise<pi::ObjectList>("/carla_its_converter/" + its_station + "/ideal_objects", 1);
+
+
+    // save publisher in map with its_station as key
+    pub_ideal_objects_map_.insert({its_station, pub_ideal_objects});
+  }
   
 #else
   // setup buffer
@@ -132,6 +153,27 @@ namespace carla {
     pub_ideal_objects_map_.insert({role_name, pub_ideal_objects});
   }
 
+  // setup subscriber and publisher depending on its_station
+  for(std::string& its_station : its_stations_) { 
+    // remove spaces from its_station
+    its_station.erase(std::remove_if(its_station.begin(), its_station.end(), isspace), its_station.end());
+
+    // setup subscriber depending on its_station    
+    Subscriber<dom::ObjectArray> sub_ideal_objects = this->create_subscription<dom::ObjectArray>("/carla/" + its_station +"/ideal_objects", 1, idealObjectsArgCallback(its_station));
+
+
+    // save subscriber in map with its_station as key
+    sub_ideal_objects_map_.insert({its_station, sub_ideal_objects});
+
+
+    // setup publisher depending on its_station
+    Publisher<pi::ObjectList> pub_ideal_objects = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + its_station + "/ideal_objects", 1);
+
+
+    // save publisher in map with its_station as key
+    pub_ideal_objects_map_.insert({its_station, pub_ideal_objects});
+  }
+
 #endif
 
   ROS_LOG_STREAM(INFO, "carla_its_converter running...");  
@@ -140,6 +182,7 @@ namespace carla {
 
 bool ItsConverter::loadParameters() {
   std::string role_names_string;
+  std::string its_stations_string;
 
   // load publish parameters
 #ifdef ROS1
@@ -169,6 +212,8 @@ bool ItsConverter::loadParameters() {
     role_names_string = "ego_vehicle";
     ROS_LOG_STREAM(WARN, "Parameter \'role_names\' not set, defaulting to " << role_names_string);
   }
+  this->declare_parameter("its_stations", "ego_vehicle");
+  its_stations_string = this->get_parameter("its_stations").as_string();
   this->declare_parameter("pos_variances", oa::CONTINUOUS_STATE_COVARIANCE_INVALID);
   pos_variances_ = this->get_parameter("pos_variances").as_double();
   this->declare_parameter("vel_variances", oa::CONTINUOUS_STATE_COVARIANCE_INVALID);
@@ -187,6 +232,14 @@ bool ItsConverter::loadParameters() {
   // save role_names in vector
   while (std::getline(role_names_string_stream, role_name, ',')) {
     role_names_.push_back(role_name);
+  }
+
+  std::string its_station;
+  std::stringstream its_stations_string_stream(its_stations_string);
+
+  // save role_names in vector
+  while (std::getline(its_stations_string_stream, its_station, ',')) {
+    its_stations_.push_back(its_station);
   }
 
   return true;

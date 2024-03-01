@@ -130,6 +130,7 @@ class ItsConverter : public rclcpp::Node
 
     // ros parameters
     std::vector<std::string> role_names_;
+    std::vector<std::string> its_stations_;
     double pos_variances_;
     double vel_variances_;
     double acc_variances_;
