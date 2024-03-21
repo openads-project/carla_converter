@@ -237,7 +237,7 @@ bool ItsConverter::loadParameters() {
   std::string its_station;
   std::stringstream its_stations_string_stream(its_stations_string);
 
-  // save role_names in vector
+  // save its_stations in vector
   while (std::getline(its_stations_string_stream, its_station, ',')) {
     its_stations_.push_back(its_station);
   }
