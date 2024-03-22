@@ -1,0 +1,2 @@
+Invoking command in '/docker-ros/ws/src/target/build/carla_its_converter': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /docker-ros/ws/src/target -DCMAKE_INSTALL_PREFIX=/docker-ros/ws/src/target/install/carla_its_converter
+Invoked command in '/docker-ros/ws/src/target/build/carla_its_converter' returned '1': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /docker-ros/ws/src/target -DCMAKE_INSTALL_PREFIX=/docker-ros/ws/src/target/install/carla_its_converter

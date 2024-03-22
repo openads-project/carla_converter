@@ -1,0 +1,81 @@
+[0.000000] (-) TimerEvent: {}
+[0.000813] (carla_its_converter) JobQueued: {'identifier': 'carla_its_converter', 'dependencies': OrderedDict()}
+[0.000861] (carla_its_converter) JobStarted: {'identifier': 'carla_its_converter'}
+[0.009462] (carla_its_converter) JobProgress: {'identifier': 'carla_its_converter', 'progress': 'cmake'}
+[0.009605] (carla_its_converter) Command: {'cmd': ['/usr/bin/cmake', '/docker-ros/ws/src/target', '-DCMAKE_INSTALL_PREFIX=/docker-ros/ws/src/target/install/carla_its_converter'], 'cwd': '/docker-ros/ws/src/target/build/carla_its_converter', 'env': OrderedDict([('LESSOPEN', '| /usr/bin/lesspipe %s'), ('DOCKER_GID', '12294'), ('HOSTNAME', '66521b26b0aa'), ('GIT_ASKPASS', '/vscode/vscode-server/bin/linux-x64/863d2581ecda6849923a2118d93a088b0745d9d6/extensions/git/dist/askpass.sh'), ('SHLVL', '2'), ('LD_LIBRARY_PATH', '/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib'), ('BROWSER', '/vscode/vscode-server/bin/linux-x64/863d2581ecda6849923a2118d93a088b0745d9d6/bin/helpers/browser.sh'), ('HOME', '/home/dockeruser'), ('TERM_PROGRAM_VERSION', '1.87.2'), ('VSCODE_IPC_HOOK_CLI', '/tmp/vscode-ipc-ba1e302c-5b05-40ec-b8ae-cf092115e63f.sock'), ('ROS_PYTHON_VERSION', '3'), ('VSCODE_GIT_ASKPASS_MAIN', '/vscode/vscode-server/bin/linux-x64/863d2581ecda6849923a2118d93a088b0745d9d6/extensions/git/dist/askpass-main.js'), ('VSCODE_GIT_ASKPASS_NODE', '/vscode/vscode-server/bin/linux-x64/863d2581ecda6849923a2118d93a088b0745d9d6/node'), ('LC_CTYPE', 'C.UTF-8'), ('COLORTERM', 'truecolor'), ('REMOTE_CONTAINERS', 'true'), ('WORKSPACE', '/docker-ros/ws'), ('ROS_DISTRO', 'humble'), ('REMOTE_CONTAINERS_IPC', '/tmp/vscode-remote-containers-ipc-902dc6d1-28ad-403f-aa2f-b257e113f899.sock'), ('DOCKER_UID', '16882'), ('_', '/usr/bin/colcon'), ('ROS_VERSION', '2'), ('TERM', 'xterm-256color'), ('TARGETARCH', 'amd64'), ('ROS_LOCALHOST_ONLY', '0'), ('PATH', '/vscode/vscode-server/bin/linux-x64/863d2581ecda6849923a2118d93a088b0745d9d6/bin/remote-cli:/opt/ros/humble/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'), ('REMOTE_CONTAINERS_SOCKETS', '["/tmp/vscode-ssh-auth-902dc6d1-28ad-403f-aa2f-b257e113f899.sock","/tmp/.X11-unix/X0","/home/dockeruser/.gnupg/S.gpg-agent"]'), ('DISPLAY', ':0'), ('LANG', 'en_US.UTF-8'), ('RMW_IMPLEMENTATION', 'rmw_cyclonedds_cpp'), ('LS_COLORS', 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:'), ('VSCODE_GIT_IPC_HANDLE', '/tmp/vscode-git-e3a63ecd3c.sock'), ('TERM_PROGRAM', 'vscode'), ('SSH_AUTH_SOCK', '/tmp/vscode-ssh-auth-902dc6d1-28ad-403f-aa2f-b257e113f899.sock'), ('AMENT_PREFIX_PATH', '/opt/ros/humble'), ('REMOTE_CONTAINERS_DISPLAY_SOCK', '/tmp/.X11-unix/X0'), ('SHELL', '/bin/bash'), ('LESSCLOSE', '/usr/bin/lesspipe %s %s'), ('DOCKER_USER', 'dockeruser'), ('VSCODE_GIT_ASKPASS_EXTRA_ARGS', ''), ('PWD', '/docker-ros/ws/src/target/build/carla_its_converter'), ('DOCKER_ROS', '1'), ('RCUTILS_COLORIZED_OUTPUT', '1'), ('PYTHONPATH', '/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages'), ('COLCON', '1'), ('COLCON_HOME', '/docker-ros/ws/.colcon'), ('CMAKE_PREFIX_PATH', '/opt/ros/humble')]), 'shell': False}
+[0.092732] (carla_its_converter) StdoutLine: {'line': b'-- The C compiler identification is GNU 11.4.0\n'}
+[0.099746] (-) TimerEvent: {}
+[0.163391] (carla_its_converter) StdoutLine: {'line': b'-- The CXX compiler identification is GNU 11.4.0\n'}
+[0.173979] (carla_its_converter) StdoutLine: {'line': b'-- Detecting C compiler ABI info\n'}
+[0.199825] (-) TimerEvent: {}
+[0.248889] (carla_its_converter) StdoutLine: {'line': b'-- Detecting C compiler ABI info - done\n'}
+[0.258263] (carla_its_converter) StdoutLine: {'line': b'-- Check for working C compiler: /usr/bin/cc - skipped\n'}
+[0.258595] (carla_its_converter) StdoutLine: {'line': b'-- Detecting C compile features\n'}
+[0.259096] (carla_its_converter) StdoutLine: {'line': b'-- Detecting C compile features - done\n'}
+[0.261982] (carla_its_converter) StdoutLine: {'line': b'-- Detecting CXX compiler ABI info\n'}
+[0.299907] (-) TimerEvent: {}
+[0.338556] (carla_its_converter) StdoutLine: {'line': b'-- Detecting CXX compiler ABI info - done\n'}
+[0.349509] (carla_its_converter) StdoutLine: {'line': b'-- Check for working CXX compiler: /usr/bin/c++ - skipped\n'}
+[0.349736] (carla_its_converter) StdoutLine: {'line': b'-- Detecting CXX compile features\n'}
+[0.350111] (carla_its_converter) StdoutLine: {'line': b'-- Detecting CXX compile features - done\n'}
+[0.356357] (carla_its_converter) StdoutLine: {'line': b'-- Found ament_cmake: 1.3.5 (/opt/ros/humble/share/ament_cmake/cmake)\n'}
+[0.400036] (-) TimerEvent: {}
+[0.495767] (carla_its_converter) StdoutLine: {'line': b'-- Found Python3: /usr/bin/python3.10 (found version "3.10.12") found components: Interpreter \n'}
+[0.500108] (-) TimerEvent: {}
+[0.579010] (carla_its_converter) StdoutLine: {'line': b'-- Found derived_object_msgs: 4.0.0 (/opt/ros/humble/share/derived_object_msgs/cmake)\n'}
+[0.600196] (-) TimerEvent: {}
+[0.614366] (carla_its_converter) StdoutLine: {'line': b'-- Found rosidl_generator_c: 3.1.5 (/opt/ros/humble/share/rosidl_generator_c/cmake)\n'}
+[0.619172] (carla_its_converter) StdoutLine: {'line': b'-- Found rosidl_adapter: 3.1.5 (/opt/ros/humble/share/rosidl_adapter/cmake)\n'}
+[0.627949] (carla_its_converter) StdoutLine: {'line': b'-- Found rosidl_generator_cpp: 3.1.5 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)\n'}
+[0.643034] (carla_its_converter) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c\n'}
+[0.662101] (carla_its_converter) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp\n'}
+[0.700276] (-) TimerEvent: {}
+[0.800472] (-) TimerEvent: {}
+[0.900661] (-) TimerEvent: {}
+[0.925661] (carla_its_converter) StdoutLine: {'line': b'-- Found nav_msgs: 4.2.3 (/opt/ros/humble/share/nav_msgs/cmake)\n'}
+[1.000778] (-) TimerEvent: {}
+[1.002328] (carla_its_converter) StdoutLine: {'line': b'-- Found rclcpp: 16.0.5 (/opt/ros/humble/share/rclcpp/cmake)\n'}
+[1.061610] (carla_its_converter) StdoutLine: {'line': b'-- Found rmw_implementation_cmake: 6.1.1 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)\n'}
+[1.065467] (carla_its_converter) StdoutLine: {'line': b'-- Found rmw_cyclonedds_cpp: 1.3.4 (/opt/ros/humble/share/rmw_cyclonedds_cpp/cmake)\n'}
+[1.100854] (-) TimerEvent: {}
+[1.102290] (carla_its_converter) StdoutLine: {'line': b"-- Using RMW implementation 'rmw_cyclonedds_cpp' as default\n"}
+[1.112128] (carla_its_converter) StdoutLine: {'line': b'-- Looking for pthread.h\n'}
+[1.183425] (carla_its_converter) StdoutLine: {'line': b'-- Looking for pthread.h - found\n'}
+[1.183761] (carla_its_converter) StdoutLine: {'line': b'-- Performing Test CMAKE_HAVE_LIBC_PTHREAD\n'}
+[1.200925] (-) TimerEvent: {}
+[1.261632] (carla_its_converter) StdoutLine: {'line': b'-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success\n'}
+[1.263010] (carla_its_converter) StdoutLine: {'line': b'-- Found Threads: TRUE  \n'}
+[1.300994] (-) TimerEvent: {}
+[1.387705] (carla_its_converter) StdoutLine: {'line': b'-- Found sensor_msgs: 4.2.3 (/opt/ros/humble/share/sensor_msgs/cmake)\n'}
+[1.401072] (-) TimerEvent: {}
+[1.468165] (carla_its_converter) StdoutLine: {'line': b'-- Found tf2: 0.25.3 (/opt/ros/humble/share/tf2/cmake)\n'}
+[1.480408] (carla_its_converter) StdoutLine: {'line': b'-- Found tf2_geometry_msgs: 0.25.3 (/opt/ros/humble/share/tf2_geometry_msgs/cmake)\n'}
+[1.491730] (carla_its_converter) StdoutLine: {'line': b'-- Found eigen3_cmake_module: 0.1.1 (/opt/ros/humble/share/eigen3_cmake_module/cmake)\n'}
+[1.493065] (carla_its_converter) StdoutLine: {'line': b'-- Found Eigen3: TRUE (found version "3.4.0") \n'}
+[1.493216] (carla_its_converter) StdoutLine: {'line': b'-- Ensuring Eigen3 include directory is part of orocos-kdl CMake target\n'}
+[1.501144] (-) TimerEvent: {}
+[1.601365] (-) TimerEvent: {}
+[1.701697] (-) TimerEvent: {}
+[1.801981] (-) TimerEvent: {}
+[1.819890] (carla_its_converter) StderrLine: {'line': b'\x1b[31mCMake Error at CMakeLists.txt:44 (find_package):\n'}
+[1.820080] (carla_its_converter) StderrLine: {'line': b'  By not providing "Findtf2_perception_msgs.cmake" in CMAKE_MODULE_PATH this\n'}
+[1.820179] (carla_its_converter) StderrLine: {'line': b'  project has asked CMake to find a package configuration file provided by\n'}
+[1.820268] (carla_its_converter) StderrLine: {'line': b'  "tf2_perception_msgs", but CMake did not find one.\n'}
+[1.820355] (carla_its_converter) StderrLine: {'line': b'\n'}
+[1.820443] (carla_its_converter) StderrLine: {'line': b'  Could not find a package configuration file provided by\n'}
+[1.820531] (carla_its_converter) StderrLine: {'line': b'  "tf2_perception_msgs" with any of the following names:\n'}
+[1.820618] (carla_its_converter) StderrLine: {'line': b'\n'}
+[1.820704] (carla_its_converter) StderrLine: {'line': b'    tf2_perception_msgsConfig.cmake\n'}
+[1.820791] (carla_its_converter) StderrLine: {'line': b'    tf2_perception_msgs-config.cmake\n'}
+[1.820878] (carla_its_converter) StderrLine: {'line': b'\n'}
+[1.820964] (carla_its_converter) StderrLine: {'line': b'  Add the installation prefix of "tf2_perception_msgs" to CMAKE_PREFIX_PATH\n'}
+[1.821051] (carla_its_converter) StderrLine: {'line': b'  or set "tf2_perception_msgs_DIR" to a directory containing one of the above\n'}
+[1.821138] (carla_its_converter) StderrLine: {'line': b'  files.  If "tf2_perception_msgs" provides a separate development package or\n'}
+[1.821224] (carla_its_converter) StderrLine: {'line': b'  SDK, be sure it has been installed.\n'}
+[1.821310] (carla_its_converter) StderrLine: {'line': b'\n'}
+[1.821397] (carla_its_converter) StderrLine: {'line': b'\x1b[0m\n'}
+[1.821483] (carla_its_converter) StdoutLine: {'line': b'-- Configuring incomplete, errors occurred!\n'}
+[1.821577] (carla_its_converter) StdoutLine: {'line': b'See also "/docker-ros/ws/src/target/build/carla_its_converter/CMakeFiles/CMakeOutput.log".\n'}
+[1.825485] (carla_its_converter) CommandEnded: {'returncode': 1}
+[1.849308] (carla_its_converter) JobEnded: {'identifier': 'carla_its_converter', 'rc': 1}
+[1.859638] (-) EventReactorShutdown: {}
