@@ -369,51 +369,27 @@ pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr
   return msg_object_list_;
 }
 
-void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
-  pi::ObjectList msg_object_list_ = ItsConverter::convertObjectArray(msg);
-
-  // publish object_list in carla_map frame
-#ifdef ROS1
-    pub_objects_carla_map_.publish(msg_object_list_);
-#else
-    pub_objects_carla_map_->publish(msg_object_list_);
-#endif
-
-  // iterate over each role_name
-  for(std::string & role_name: role_names_){
+pi::ObjectList ItsConverter::transformFrame(pi::ObjectList& msg_object_list, std::string role_name) {
 #ifdef ROS1
     auto timeout = ros::Duration(1.0);
 #else
     auto timeout = rclcpp::Duration::from_seconds(1.0);
 #endif
-    pi::ObjectList msg_object_list_copy = msg_object_list_;
 
-    // Set increasing sensor ID per role name. As `role_names_` doesnt change, this assigns a fixed sensor ID to each role.
-    for (auto &object: msg_object_list_copy.objects)
-    {
-      object.state.sensor_id[0] = ego_id_map_[role_name];
-    }
-
-    // remove element with the role_name id
-    msg_object_list_copy.objects.erase(std::remove_if(msg_object_list_copy.objects.begin(), msg_object_list_copy.objects.end(), [this, role_name](const pi::Object& obj) {
-      return obj.id == ego_id_map_[role_name];
-    }), msg_object_list_copy.objects.end());
-
-    // transform the object_list from carla_map to role_name frame
     pi::ObjectList msg_object_list_role_name;
     gm::TransformStamped carla_map_to_role_name_tf;
 #ifdef ROS1
     try {
       // get transformation from carla_map to role_name
       if (tf2_buffer_._frameExists(role_name)){
-        carla_map_to_role_name_tf = tf2_buffer_.lookupTransform(role_name, "carla_map", msg_object_list_copy.header.stamp, timeout);
+        carla_map_to_role_name_tf = tf2_buffer_.lookupTransform(role_name, "carla_map", msg_object_list.header.stamp, timeout);
       } else {
         ROS_LOG_STREAM(WARN, "Frame '%s' does not exist", std::string(role_name).c_str());
         show_transform_success_map_[role_name] = true;
           continue;
       }
 
-      tf2::doTransform(msg_object_list_copy, msg_object_list_role_name, carla_map_to_role_name_tf);
+      tf2::doTransform(msg_object_list, msg_object_list_role_name, carla_map_to_role_name_tf);
       
       // log success once
       if(!show_transform_success_map_.count(role_name) || show_transform_success_map_[role_name]){
@@ -429,14 +405,14 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
     try {
       // get transformation from carla_map to role_name
       if (tf2_buffer_->_frameExists(role_name)){
-        carla_map_to_role_name_tf = tf2_buffer_->lookupTransform(role_name, "carla_map", msg_object_list_copy.header.stamp, timeout);
+        carla_map_to_role_name_tf = tf2_buffer_->lookupTransform(role_name, "carla_map", msg_object_list.header.stamp, timeout);
       } else {
         ROS_LOG_STREAM(WARN, "Frame '"<< role_name << "' does not exist");
         show_transform_success_map_[role_name] = true;
-          continue;
+        throw std::runtime_error(""); 
       }
 
-      tf2::doTransform(msg_object_list_copy, msg_object_list_role_name, carla_map_to_role_name_tf);
+      tf2::doTransform(msg_object_list, msg_object_list_role_name, carla_map_to_role_name_tf);
       
       // log success once
       if(!show_transform_success_map_.count(role_name) || show_transform_success_map_[role_name]){
@@ -446,9 +422,44 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
     } catch (tf2::TransformException& e) {
       ROS_LOG_STREAM(WARN, "Tranformation from 'carla_map' to '" << role_name << "' is not available");
       show_transform_success_map_[role_name] = true;
-        continue;
+      throw std::runtime_error(""); 
     }
 #endif
+  return msg_object_list_role_name;
+}
+
+void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
+  pi::ObjectList msg_object_list_ = ItsConverter::convertObjectArray(msg);
+
+  // publish object_list in carla_map frame
+#ifdef ROS1
+    pub_objects_carla_map_.publish(msg_object_list_);
+#else
+    pub_objects_carla_map_->publish(msg_object_list_);
+#endif
+
+  // iterate over each role_name
+  for(std::string & role_name: role_names_){
+    pi::ObjectList msg_object_list_copy = msg_object_list_;
+
+    // Set increasing sensor ID per role name. As `role_names_` doesnt change, this assigns a fixed sensor ID to each role.
+    for (auto &object: msg_object_list_copy.objects)
+    {
+      object.state.sensor_id[0] = ego_id_map_[role_name];
+    }
+
+    // remove element with the role_name id
+    msg_object_list_copy.objects.erase(std::remove_if(msg_object_list_copy.objects.begin(), msg_object_list_copy.objects.end(), [this, role_name](const pi::Object& obj) {
+      return obj.id == ego_id_map_[role_name];
+    }), msg_object_list_copy.objects.end());
+
+    // transform the object_list from carla_map to role_name frame
+    pi::ObjectList msg_object_list_role_name;
+    try {
+      msg_object_list_role_name = ItsConverter::transformFrame(msg_object_list_copy, role_name);
+    } catch (const std::runtime_error& e) {
+        continue;
+    }
 
     // publish object list in role_name frame
 #ifdef ROS1
@@ -462,11 +473,19 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
 void ItsConverter::idealObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string role_name) {
   pi::ObjectList msg_object_list_ = ItsConverter::convertObjectArray(msg);
 
-    // publish ideal object list in role_name frame
+  // transform the object_list from carla_map to role_name frame
+  pi::ObjectList msg_object_list_role_name;
+  try {
+    pi::ObjectList msg_object_list_role_name = ItsConverter::transformFrame(msg_object_list_, role_name);
+  } catch (const std::runtime_error& e) {
+    return;
+  }
+
+  // publish ideal object list in role_name frame
 #ifdef ROS1
-    pub_ideal_objects_map_[role_name].publish(msg_object_list_);
+  pub_ideal_objects_map_[role_name].publish(msg_object_list_);
 #else
-    pub_ideal_objects_map_[role_name]->publish(msg_object_list_);
+  pub_ideal_objects_map_[role_name]->publish(msg_object_list_);
 #endif 
 }
 

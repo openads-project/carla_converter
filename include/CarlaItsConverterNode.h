@@ -103,6 +103,7 @@ class ItsConverter : public rclcpp::Node
 
     etsi_cam::CAM convertToEtsiCam(const pi::EgoData& ego_data, ssm::NavSatFix gnss);
     pi::ObjectList convertObjectArray(const dom::ObjectArray::ConstPtr msg);
+    pi::ObjectList transformFrame(pi::ObjectList& msg_object_list, std::string role_name);
 
 #ifdef ROS1
     ros::NodeHandle private_node_handle_;
