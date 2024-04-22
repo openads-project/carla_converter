@@ -369,65 +369,6 @@ pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr
   return msg_object_list_;
 }
 
-pi::ObjectList ItsConverter::transformFrame(pi::ObjectList& msg_object_list, std::string role_name) {
-#ifdef ROS1
-    auto timeout = ros::Duration(1.0);
-#else
-    auto timeout = rclcpp::Duration::from_seconds(1.0);
-#endif
-
-    pi::ObjectList msg_object_list_role_name;
-    gm::TransformStamped carla_map_to_role_name_tf;
-#ifdef ROS1
-    try {
-      // get transformation from carla_map to role_name
-      if (tf2_buffer_._frameExists(role_name)){
-        carla_map_to_role_name_tf = tf2_buffer_.lookupTransform(role_name, "carla_map", msg_object_list.header.stamp, timeout);
-      } else {
-        ROS_LOG_STREAM(WARN, "Frame '%s' does not exist", std::string(role_name).c_str());
-        show_transform_success_map_[role_name] = true;
-          continue;
-      }
-
-      tf2::doTransform(msg_object_list, msg_object_list_role_name, carla_map_to_role_name_tf);
-      
-      // log success once
-      if(!show_transform_success_map_.count(role_name) || show_transform_success_map_[role_name]){
-        ROS_LOG_STREAM(INFO, "Transformation from 'carla_map' to '%s' published successfully", std::string(role_name).c_str());
-        show_transform_success_map_[role_name] = false;
-      } 
-    } catch (tf2::TransformException& e) {
-      ROS_LOG_STREAM(WARN, "Transformation from 'carla_map' to '%s' is not available", role_name.c_str());
-      show_transform_success_map_[role_name] = true;
-        continue;
-    }
-#else
-    try {
-      // get transformation from carla_map to role_name
-      if (tf2_buffer_->_frameExists(role_name)){
-        carla_map_to_role_name_tf = tf2_buffer_->lookupTransform(role_name, "carla_map", msg_object_list.header.stamp, timeout);
-      } else {
-        ROS_LOG_STREAM(WARN, "Frame '"<< role_name << "' does not exist");
-        show_transform_success_map_[role_name] = true;
-        throw std::runtime_error(""); 
-      }
-
-      tf2::doTransform(msg_object_list, msg_object_list_role_name, carla_map_to_role_name_tf);
-      
-      // log success once
-      if(!show_transform_success_map_.count(role_name) || show_transform_success_map_[role_name]){
-        ROS_LOG_STREAM(INFO, "Tranformation from 'carla_map' to '" << role_name << "' published successfully");
-        show_transform_success_map_[role_name] = false;
-      } 
-    } catch (tf2::TransformException& e) {
-      ROS_LOG_STREAM(WARN, "Tranformation from 'carla_map' to '" << role_name << "' is not available");
-      show_transform_success_map_[role_name] = true;
-      throw std::runtime_error(""); 
-    }
-#endif
-  return msg_object_list_role_name;
-}
-
 void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
   pi::ObjectList msg_object_list_ = ItsConverter::convertObjectArray(msg);
 
@@ -440,6 +381,11 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
 
   // iterate over each role_name
   for(std::string & role_name: role_names_){
+#ifdef ROS1
+    auto timeout = ros::Duration(1.0);
+#else
+    auto timeout = rclcpp::Duration::from_seconds(1.0);
+#endif
     pi::ObjectList msg_object_list_copy = msg_object_list_;
 
     // Set increasing sensor ID per role name. As `role_names_` doesnt change, this assigns a fixed sensor ID to each role.
@@ -455,11 +401,54 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
 
     // transform the object_list from carla_map to role_name frame
     pi::ObjectList msg_object_list_role_name;
+    gm::TransformStamped carla_map_to_role_name_tf;
+#ifdef ROS1
     try {
-      msg_object_list_role_name = ItsConverter::transformFrame(msg_object_list_copy, role_name);
-    } catch (const std::runtime_error& e) {
+      // get transformation from carla_map to role_name
+      if (tf2_buffer_._frameExists(role_name)){
+        carla_map_to_role_name_tf = tf2_buffer_.lookupTransform(role_name, "carla_map", msg_object_list_copy.header.stamp, timeout);
+      } else {
+        ROS_LOG_STREAM(WARN, "Frame '%s' does not exist", std::string(role_name).c_str());
+        show_transform_success_map_[role_name] = true;
+          continue;
+      }
+
+      tf2::doTransform(msg_object_list_copy, msg_object_list_role_name, carla_map_to_role_name_tf);
+      
+      // log success once
+      if(!show_transform_success_map_.count(role_name) || show_transform_success_map_[role_name]){
+        ROS_LOG_STREAM(INFO, "Transformation from 'carla_map' to '%s' published successfully", std::string(role_name).c_str());
+        show_transform_success_map_[role_name] = false;
+      } 
+    } catch (tf2::TransformException& e) {
+      ROS_LOG_STREAM(WARN, "Transformation from 'carla_map' to '%s' is not available", role_name.c_str());
+      show_transform_success_map_[role_name] = true;
         continue;
     }
+#else
+    try {
+      // get transformation from carla_map to role_name
+      if (tf2_buffer_->_frameExists(role_name)){
+        carla_map_to_role_name_tf = tf2_buffer_->lookupTransform(role_name, "carla_map", msg_object_list_copy.header.stamp, timeout);
+      } else {
+        ROS_LOG_STREAM(WARN, "Frame '"<< role_name << "' does not exist");
+        show_transform_success_map_[role_name] = true;
+          continue;
+      }
+
+      tf2::doTransform(msg_object_list_copy, msg_object_list_role_name, carla_map_to_role_name_tf);
+      
+      // log success once
+      if(!show_transform_success_map_.count(role_name) || show_transform_success_map_[role_name]){
+        ROS_LOG_STREAM(INFO, "Tranformation from 'carla_map' to '" << role_name << "' published successfully");
+        show_transform_success_map_[role_name] = false;
+      } 
+    } catch (tf2::TransformException& e) {
+      ROS_LOG_STREAM(WARN, "Tranformation from 'carla_map' to '" << role_name << "' is not available");
+      show_transform_success_map_[role_name] = true;
+        continue;
+    }
+#endif
 
     // publish object list in role_name frame
 #ifdef ROS1
@@ -473,19 +462,11 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
 void ItsConverter::idealObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string role_name) {
   pi::ObjectList msg_object_list_ = ItsConverter::convertObjectArray(msg);
 
-  // transform the object_list from carla_map to role_name frame
-  pi::ObjectList msg_object_list_role_name;
-  try {
-    pi::ObjectList msg_object_list_role_name = ItsConverter::transformFrame(msg_object_list_, role_name);
-  } catch (const std::runtime_error& e) {
-    return;
-  }
-
-  // publish ideal object list in role_name frame
+    // publish ideal object list in role_name frame
 #ifdef ROS1
-  pub_ideal_objects_map_[role_name].publish(msg_object_list_);
+    pub_ideal_objects_map_[role_name].publish(msg_object_list_);
 #else
-  pub_ideal_objects_map_[role_name]->publish(msg_object_list_);
+    pub_ideal_objects_map_[role_name]->publish(msg_object_list_);
 #endif 
 }
 
