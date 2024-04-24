@@ -386,7 +386,7 @@ pi::ObjectList ItsConverter::transformFrame(pi::ObjectList& msg_object_list, std
       } else {
         ROS_LOG_STREAM(WARN, "Frame '%s' does not exist", std::string(role_name).c_str());
         show_transform_success_map_[role_name] = true;
-          continue;
+        throw std::runtime_error("");
       }
 
       tf2::doTransform(msg_object_list, msg_object_list_role_name, carla_map_to_role_name_tf);
@@ -399,7 +399,7 @@ pi::ObjectList ItsConverter::transformFrame(pi::ObjectList& msg_object_list, std
     } catch (tf2::TransformException& e) {
       ROS_LOG_STREAM(WARN, "Transformation from 'carla_map' to '%s' is not available", role_name.c_str());
       show_transform_success_map_[role_name] = true;
-        continue;
+      throw std::runtime_error("");
     }
 #else
     try {
