@@ -407,7 +407,9 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::strin
     oa::setVelocity(msg_ego_data_.state, msg->twist.twist.linear);    // twist is defined in child frame (no transformation needed)
     oa::setAccelerationXYZYaw(msg_ego_data_.state, ego_acceleration_map_[role_name].linear, yaw); // accleration defined in carla_map frame (transformation needed)
 
-    oa::setSteeringAngleAck(msg_ego_data_.state, -ego_steering_angle_map_[role_name]*(ego_steering_angle_max_map_[role_name] * (M_PI / 180)));
+    // SteeringAngleMax is given in rad (contrary to the description in the documentation)
+    // https://github.com/carla-simulator/ros-bridge/blob/e9063d97ff5a724f76adbb1b852dc71da1dcfeec/carla_ros_bridge/src/carla_ros_bridge/ego_vehicle.py#L145C46-L145C81
+    oa::setSteeringAngleAck(msg_ego_data_.state, -ego_steering_angle_map_[role_name]*ego_steering_angle_max_map_[role_name]);
     oa::setStandstill(msg_ego_data_.state, std::sqrt(pow(msg->twist.twist.linear.x, 2) + pow(msg->twist.twist.linear.y, 2) + pow(msg->twist.twist.linear.z, 2)) <= 0.01);
 
     // reference point for object position
