@@ -57,10 +57,8 @@ def generate_launch_description():
                 "vel_variances": LaunchConfiguration('vel_variances'),
                 "acc_variances": LaunchConfiguration('acc_variances'),
                 "yaw_variances": LaunchConfiguration('yaw_variances'),
-                "yaw_rate_variances": LaunchConfiguration('yaw_rate_variances')
-            },
-            {
-                "use_sim_time": LaunchConfiguration('use_sim_time'),
+                "yaw_rate_variances": LaunchConfiguration('yaw_rate_variances'),
+                "use_sim_time": LaunchConfiguration('use_sim_time')
             },
         ],
     )

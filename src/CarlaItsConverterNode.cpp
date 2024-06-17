@@ -399,7 +399,8 @@ pi::ObjectList ItsConverter::transformFrame(pi::ObjectList& msg_object_list, std
       tf2::doTransform(msg_object_list, msg_object_list_role_name, carla_map_to_role_name_tf);
       
     } catch (tf2::TransformException& e) {
-      ROS_LOG_STREAM(WARN, "Tranformation from 'carla_map' to '" << actor_name << "' is not available");
+      ROS_LOG_STREAM(WARN, "Transformation from 'carla_map' to '" << actor_name << "' is not available");
+      ROS_LOG_STREAM(WARN, e.what());
     }
   return msg_object_list_role_name;
 }
