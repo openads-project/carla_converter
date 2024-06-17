@@ -1,14 +1,11 @@
-stages:
-  - Build
+include:
+  - remote: 'https://raw.githubusercontent.com/ika-rwth-aachen/docker-ros/main/.gitlab-ci/docker-ros.yml'
 
-ros1:
-  stage: Build
-  trigger:
-    include: docker/.gitlab-ci-ros1.yml
-    strategy: depend
-
-ros2:
-  stage: Build
-  trigger:
-    include: docker/.gitlab-ci-ros2.yml
-    strategy: depend
+variables:
+  BASE_IMAGE: rwthika/ros2:humble
+  COMMAND: ros2 launch carla_its_converter carla_its_converter.launch.py
+  TARGET: dev, run
+  PLATFORM: amd64
+  IMAGE_TAG: ros2
+  ENABLE_INDUSTRIAL_CI: 'false'
+  ENABLE_PUSH_AS_LATEST: 'true'

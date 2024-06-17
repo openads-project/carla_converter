@@ -130,8 +130,8 @@ class ItsConverter : public rclcpp::Node
     pi::EgoData msg_ego_data_;
 
     // ros parameters
-    std::vector<std::string> role_names_;
-    std::vector<std::string> its_stations_;
+    std::vector<std::string> ego_data_actors_;
+    std::vector<std::string> object_data_actors_;
     double pos_variances_;
     double vel_variances_;
     double acc_variances_;
@@ -147,8 +147,6 @@ class ItsConverter : public rclcpp::Node
     std::map<std::string, ssm::NavSatFix> ego_gnss_map_;
 
     // set flags
-    std::map<std::string, bool> show_transform_success_map_;
-
     std::map<std::string, bool> ego_shape_set_map_;
     std::map<std::string, bool> ego_status_set_map_;
     std::map<std::string, bool> ego_gnss_set_map_;
