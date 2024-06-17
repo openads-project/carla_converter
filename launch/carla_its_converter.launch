@@ -1,8 +1,0 @@
-<launch>
-    <arg name="ego_data_actors" default="ego_vehicle"/>
-
-    <node pkg="carla_its_converter" type="CarlaItsConverterNode" name="carla_its_converter" output="screen">
-        <param name="ego_data_actors" value="$(arg ego_data_actors)"/>
-    </node>
-</launch>
-

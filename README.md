@@ -42,7 +42,9 @@ This package contains the CarlaItsConverterNode - a simple ROS Node that convert
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| ego_data_actors | string | List of strings separated with a comma, lists all ego_data_actors which should be subscribed and published (default: `ego_vehicle`) (example: `ego_data_actors:="hero, hero1"`). |
+| ego_data_actors | string | List of actors which should be used to generate ego information. `EgoData` is published for every actor. Alongside, additional `CAM` messages are published if GNSS information are available. (default: `ego_vehicle`) (example: `ego_data_actors:="hero, hero1"`). |
+| object_data_actors | string | List of actors which should be used to generate object information.
+The global `ObjectList` is converted and published within the actors frame. Same applies to potential ideal `ObjectList`. (default: `ego_vehicle`) (example: `object_data_actors:="hero, hero1"`). |
 
 ## Usage of docker-ros Images
 
@@ -62,7 +64,7 @@ ros2 launch carla_its_converter carla_its_converter.launch.py
 
 | Package | File | Path | Description |
 | --- | --- | --- | --- |
-| `carla_its_converter` | `carla_its_converter.launch.py` | `launch/` | Launches CarlaItsConverterNode for ROS2. |
+| `carla_its_converter` | `carla_its_converter.launch.py` | `launch/` | Launches CarlaItsConverterNode |
 
 
 
