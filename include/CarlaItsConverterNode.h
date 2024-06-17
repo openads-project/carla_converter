@@ -8,42 +8,6 @@
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_listener.h>
 
-
-#ifdef ROS1
-#include <ros/ros.h>
-
-#include <derived_object_msgs/ObjectArray.h>
-#include <geometry_msgs/Accel.h>
-#include <nav_msgs/Odometry.h>
-#include <sensor_msgs/NavSatFix.h>
-#include <shape_msgs/SolidPrimitive.h>
-#include <tf2_perception_msgs/tf2_perception_msgs.h>
-
-#include <carla_msgs/CarlaEgoVehicleStatus.h>
-#include <carla_msgs/CarlaEgoVehicleInfo.h>
-#include <etsi_its_msgs_utils/cam_access.h>
-#include <perception_msgs_utils/object_access.h>
-
-#define ROS_LOG_STREAM(level, ...) ROS_##level(__VA_ARGS__)
-
-namespace dom = derived_object_msgs;
-namespace gm = geometry_msgs;
-namespace nm = nav_msgs;
-namespace pi = perception_msgs;
-namespace sm = shape_msgs;
-namespace ssm = sensor_msgs;
-
-namespace cm = carla_msgs;
-namespace etsi_cam = etsi_its_cam_msgs;
-namespace ca = etsi_its_cam_msgs::access;
-
-template<typename T>
-using Subscriber = ros::Subscriber;
-template<typename T>
-using Publisher = ros::Publisher;
-
-#else
-
 #include <rclcpp/rclcpp.hpp>
 
 #include <derived_object_msgs/msg/object_array.hpp>
@@ -76,18 +40,12 @@ using Subscriber = typename rclcpp::Subscription<T>::SharedPtr;
 template<typename T>
 using Publisher = typename rclcpp::Publisher<T>::SharedPtr;
 
-#endif
-
 namespace oa = perception_msgs::object_access;
 namespace ca = etsi_its_cam_msgs::access;
 
 namespace carla {
 
-#ifdef ROS1
-class ItsConverter
-#else
 class ItsConverter : public rclcpp::Node
-#endif
 {
   public:
     ItsConverter();
@@ -105,12 +63,7 @@ class ItsConverter : public rclcpp::Node
     pi::ObjectList convertObjectArray(const dom::ObjectArray::ConstPtr msg);
     pi::ObjectList transformFrame(pi::ObjectList& msg_object_list, std::string actor_name);
 
-#ifdef ROS1
-    ros::NodeHandle private_node_handle_;
-    tf2_ros::Buffer tf2_buffer_;
-#else
     std::unique_ptr<tf2_ros::Buffer> tf2_buffer_;
-#endif
 
     Subscriber<dom::ObjectArray> sub_objects_;
 
