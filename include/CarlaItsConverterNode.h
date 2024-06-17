@@ -93,17 +93,17 @@ class ItsConverter : public rclcpp::Node
     ItsConverter();
 
   private:
-    void gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string role_name);
+    void gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string actor_name);
     void objectsCallback(const dom::ObjectArray::ConstPtr msg);
-    void idealObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string role_name);
-    void odometryCallback(const nm::Odometry::ConstPtr msg, std::string role_name);
-    void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg, std::string role_name);
-    void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string role_name);
+    void idealObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string actor_name);
+    void odometryCallback(const nm::Odometry::ConstPtr msg, std::string actor_name);
+    void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg, std::string actor_name);
+    void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string actor_name);
     bool loadParameters();
 
     etsi_cam::CAM convertToEtsiCam(const pi::EgoData& ego_data, ssm::NavSatFix gnss);
     pi::ObjectList convertObjectArray(const dom::ObjectArray::ConstPtr msg);
-    pi::ObjectList transformFrame(pi::ObjectList& msg_object_list, std::string role_name);
+    pi::ObjectList transformFrame(pi::ObjectList& msg_object_list, std::string actor_name);
 
 #ifdef ROS1
     ros::NodeHandle private_node_handle_;

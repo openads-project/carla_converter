@@ -26,17 +26,17 @@ This package contains the CarlaItsConverterNode - a simple ROS Node that convert
 | Topic | Type | Description | 
 | --- | --- | --- |
 | `/carla/objects` | `dom::ObjectArray` | Objects in the carla environment |
-| `/carla/$(role_name)/vehicle_info` | `cm::CarlaEgoVehicleInfo` | Object id of the `role_name` from list `ego_data_actors` (default: `ego_vehicle`) |
-| `/carla/$(role_name)/vehicle_status` | `cm::CarlaEgoVehicleStatus` | Steering angle and acceleration of the `role_name` from list `ego_data_actors` (default: `ego_vehicle`) |
-| `/carla/$(role_name)/odometry` | `nm::Odometry` | Odometry of the `role_name` from list `ego_data_actors` (default: `ego_vehicle`) |
+| `/carla/$(actor_name)/vehicle_info` | `cm::CarlaEgoVehicleInfo` | Object id of the `actor_name` from list `ego_data_actors` (default: `ego_vehicle`) |
+| `/carla/$(actor_name)/vehicle_status` | `cm::CarlaEgoVehicleStatus` | Steering angle and acceleration of the `actor_name` from list `ego_data_actors` (default: `ego_vehicle`) |
+| `/carla/$(actor_name)/odometry` | `nm::Odometry` | Odometry of the `actor_name` from list `ego_data_actors` (default: `ego_vehicle`) |
 
 #### Published Topics
 
 | Topic | Type | Description |
 | --- | --- | --- |
 | `/carla_its_converter/objects` | `perception_msgs::msg::ObjectList` | Object list in carla map frame |
-| `/carla_its_converter/$(role_name)/objects` | `perception_msgs::msg::ObjectList` | Object list in `role_name` frame from list `ego_data_actors` (default: `ego_vehicle`) |
-| `/carla_its_converter/$(role_name)/ego_data` | `perception_msgs::msg::EgoState` | Ego State of `role_name` from list `ego_data_actors` (default: `ego_vehicle`)  |
+| `/carla_its_converter/$(actor_name)/objects` | `perception_msgs::msg::ObjectList` | Object list in `actor_name` frame from list `ego_data_actors` (default: `ego_vehicle`) |
+| `/carla_its_converter/$(actor_name)/ego_data` | `perception_msgs::msg::EgoState` | Ego State of `actor_name` from list `ego_data_actors` (default: `ego_vehicle`)  |
 
 #### Parameters
 
