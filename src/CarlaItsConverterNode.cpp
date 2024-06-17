@@ -450,12 +450,8 @@ void ItsConverter::idealObjectsCallback(const dom::ObjectArray::ConstPtr msg, st
     return;
   }
 
-  // publish ideal object list in role_name frame
-#ifdef ROS1
-  pub_ideal_objects_map_[role_name].publish(msg_object_list_);
-#else
-  pub_ideal_objects_map_[role_name]->publish(msg_object_list_);
-#endif 
+  // publish ideal object list in actor_name frame
+  pub_ideal_objects_map_[actor_name]->publish(msg_object_list_);
 }
 
 }  // end of namespace
