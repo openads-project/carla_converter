@@ -79,9 +79,11 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
   for(std::string& actor_name : object_data_actors_) { 
     
     // setup subscriber depending on actor_name    
+    Subscriber<cm::CarlaEgoVehicleInfo> sub_vehicle_info = this->create_subscription<cm::CarlaEgoVehicleInfo>("/carla/" + actor_name +"/vehicle_info", qosLatching, vehicleInfoArgCallback(actor_name));
     Subscriber<dom::ObjectArray> sub_ideal_objects = this->create_subscription<dom::ObjectArray>("/carla/" + actor_name +"/ideal_objects", 1, idealObjectsArgCallback(actor_name));
 
     // save subscriber in map with actor_name as key
+    sub_vehicle_info_map_.insert({actor_name, sub_vehicle_info});
     sub_ideal_objects_map_.insert({actor_name, sub_ideal_objects});
 
     // setup publisher depending on actor_name
