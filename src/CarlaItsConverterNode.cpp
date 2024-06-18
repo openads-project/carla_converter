@@ -384,10 +384,9 @@ pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr
   return msg_object_list_;
 }
 
-pi::ObjectList ItsConverter::transformFrame(pi::ObjectList& msg_object_list, std::string actor_name) {
+bool ItsConverter::transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_role_name, std::string actor_name) {
     auto timeout = rclcpp::Duration::from_seconds(1.0);
 
-    pi::ObjectList msg_object_list_role_name;
     gm::TransformStamped carla_map_to_role_name_tf;
     try {
       // get transformation from carla_map to actor_name
@@ -395,7 +394,7 @@ pi::ObjectList ItsConverter::transformFrame(pi::ObjectList& msg_object_list, std
         carla_map_to_role_name_tf = tf2_buffer_->lookupTransform(actor_name, "carla_map", msg_object_list.header.stamp, timeout);
       } else {
         ROS_LOG_STREAM(WARN, "Frame '"<< actor_name << "' does not exist");
-        throw std::runtime_error(""); 
+        return false; 
       }
 
       tf2::doTransform(msg_object_list, msg_object_list_role_name, carla_map_to_role_name_tf);
@@ -403,8 +402,9 @@ pi::ObjectList ItsConverter::transformFrame(pi::ObjectList& msg_object_list, std
     } catch (tf2::TransformException& e) {
       ROS_LOG_STREAM(WARN, "Transformation from 'carla_map' to '" << actor_name << "' is not available");
       ROS_LOG_STREAM(WARN, e.what());
+      return false;
     }
-  return msg_object_list_role_name;
+  return true;
 }
 
 void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
@@ -430,14 +430,10 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
 
     // transform the object_list from carla_map to actor_name frame
     pi::ObjectList msg_object_list_role_name;
-    try {
-      msg_object_list_role_name = ItsConverter::transformFrame(msg_object_list_copy, actor_name);
-    } catch (const std::runtime_error& e) {
-        continue;
-    }
-
-    // publish object list in actor_name frame
-    pub_objects_map_[actor_name]->publish(msg_object_list_role_name);
+    if (ItsConverter::transformFrame(msg_object_list_, msg_object_list_role_name, actor_name)) {  
+      // publish ideal object list in actor_name frame
+      pub_ideal_objects_map_[actor_name]->publish(msg_object_list_role_name);
+    };
   }
 }
 
@@ -446,14 +442,10 @@ void ItsConverter::idealObjectsCallback(const dom::ObjectArray::ConstPtr msg, st
 
   // transform the object_list from carla_map to actor_name frame
   pi::ObjectList msg_object_list_role_name;
-  try {
-    pi::ObjectList msg_object_list_role_name = ItsConverter::transformFrame(msg_object_list_, actor_name);
-  } catch (const std::runtime_error& e) {
-    return;
-  }
-
-  // publish ideal object list in actor_name frame
-  pub_ideal_objects_map_[actor_name]->publish(msg_object_list_);
+  if (ItsConverter::transformFrame(msg_object_list_, msg_object_list_role_name, actor_name)) {  
+    // publish ideal object list in actor_name frame
+    pub_ideal_objects_map_[actor_name]->publish(msg_object_list_role_name);
+  };
 }
 
 }  // end of namespace
