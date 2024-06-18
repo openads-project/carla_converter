@@ -384,7 +384,7 @@ pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr
   return msg_object_list_;
 }
 
-bool ItsConverter::transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_role_name, std::string actor_name) {
+bool ItsConverter::transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed, std::string actor_name) {
     auto timeout = rclcpp::Duration::from_seconds(1.0);
 
     gm::TransformStamped carla_map_to_role_name_tf;
@@ -397,7 +397,7 @@ bool ItsConverter::transformFrame(const pi::ObjectList& msg_object_list, pi::Obj
         return false; 
       }
 
-      tf2::doTransform(msg_object_list, msg_object_list_role_name, carla_map_to_role_name_tf);
+      tf2::doTransform(msg_object_list, msg_object_list_transformed, carla_map_to_role_name_tf);
       
     } catch (tf2::TransformException& e) {
       ROS_LOG_STREAM(WARN, "Transformation from 'carla_map' to '" << actor_name << "' is not available");
@@ -429,10 +429,10 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
     }), msg_object_list_copy.objects.end());
 
     // transform the object_list from carla_map to actor_name frame
-    pi::ObjectList msg_object_list_role_name;
-    if (ItsConverter::transformFrame(msg_object_list_, msg_object_list_role_name, actor_name)) {  
+    pi::ObjectList msg_object_list_transformed;
+    if (ItsConverter::transformFrame(msg_object_list_, msg_object_list_transformed, actor_name)) {  
       // publish ideal object list in actor_name frame
-      pub_ideal_objects_map_[actor_name]->publish(msg_object_list_role_name);
+      pub_ideal_objects_map_[actor_name]->publish(msg_object_list_transformed);
     };
   }
 }
@@ -441,10 +441,10 @@ void ItsConverter::idealObjectsCallback(const dom::ObjectArray::ConstPtr msg, st
   pi::ObjectList msg_object_list_ = ItsConverter::convertObjectArray(msg);
 
   // transform the object_list from carla_map to actor_name frame
-  pi::ObjectList msg_object_list_role_name;
-  if (ItsConverter::transformFrame(msg_object_list_, msg_object_list_role_name, actor_name)) {  
+  pi::ObjectList msg_object_list_transformed;
+  if (ItsConverter::transformFrame(msg_object_list_, msg_object_list_transformed, actor_name)) {  
     // publish ideal object list in actor_name frame
-    pub_ideal_objects_map_[actor_name]->publish(msg_object_list_role_name);
+    pub_ideal_objects_map_[actor_name]->publish(msg_object_list_transformed);
   };
 }
 
