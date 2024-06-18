@@ -61,7 +61,7 @@ class ItsConverter : public rclcpp::Node
 
     etsi_cam::CAM convertToEtsiCam(const pi::EgoData& ego_data, ssm::NavSatFix gnss);
     pi::ObjectList convertObjectArray(const dom::ObjectArray::ConstPtr msg);
-    bool transformFrame(const pi::ObjectList& msg_object_list, pi::Objectlist& msg_object_list_role_name, std::string actor_name);
+    pi::ObjectList transformFrame(pi::ObjectList& msg_object_list, std::string actor_name);
 
     std::unique_ptr<tf2_ros::Buffer> tf2_buffer_;
 
