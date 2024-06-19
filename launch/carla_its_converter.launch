@@ -1,8 +1,0 @@
-<launch>
-    <arg name="role_names" default="ego_vehicle"/>
-
-    <node pkg="carla_its_converter" type="CarlaItsConverterNode" name="carla_its_converter" output="screen">
-        <param name="role_names" value="$(arg role_names)"/>
-    </node>
-</launch>
-

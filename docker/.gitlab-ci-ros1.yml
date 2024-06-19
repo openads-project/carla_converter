@@ -1,9 +1,0 @@
-include:
-  - remote: 'https://raw.githubusercontent.com/ika-rwth-aachen/docker-ros/main/.gitlab-ci/docker-ros.yml'
-
-variables:
-  BASE_IMAGE: rwthika/ros:noetic
-  COMMAND: roslaunch carla_its_converter carla_its_converter.launch
-  TARGET: dev,run
-  PLATFORM: amd64
-  IMAGE_TAG: ros1

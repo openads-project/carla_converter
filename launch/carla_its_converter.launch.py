@@ -13,8 +13,12 @@ def generate_launch_description():
         name='use_sim_time',
         default_value='True'
     )
-    role_names_launch_arg = DeclareLaunchArgument(
-        name='role_names',
+    ego_data_actors_launch_arg = DeclareLaunchArgument(
+        name='ego_data_actors',
+        default_value='ego_vehicle'
+    )
+    object_data_actors_launch_arg = DeclareLaunchArgument(
+        name='object_data_actors',
         default_value='ego_vehicle'
     )
     pos_variances_launch_arg = DeclareLaunchArgument(
@@ -47,15 +51,14 @@ def generate_launch_description():
         emulate_tty=True,
         parameters=[
             {
-                "role_names": LaunchConfiguration('role_names'),
+                "ego_data_actors": LaunchConfiguration('ego_data_actors'),
+                "object_data_actors": LaunchConfiguration('object_data_actors'),
                 "pos_variances": LaunchConfiguration('pos_variances'),
                 "vel_variances": LaunchConfiguration('vel_variances'),
                 "acc_variances": LaunchConfiguration('acc_variances'),
                 "yaw_variances": LaunchConfiguration('yaw_variances'),
-                "yaw_rate_variances": LaunchConfiguration('yaw_rate_variances')
-            },
-            {
-                "use_sim_time": LaunchConfiguration('use_sim_time'),
+                "yaw_rate_variances": LaunchConfiguration('yaw_rate_variances'),
+                "use_sim_time": LaunchConfiguration('use_sim_time')
             },
         ],
     )
@@ -69,7 +72,8 @@ def generate_launch_description():
 
     return launch.LaunchDescription([
         use_sim_time_lauch_arg,
-        role_names_launch_arg,
+        ego_data_actors_launch_arg,
+        object_data_actors_launch_arg,
         pos_variances_launch_arg,
         vel_variances_launch_arg,
         acc_variances_launch_arg,
