@@ -432,7 +432,7 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
     pi::ObjectList msg_object_list_transformed;
     if (ItsConverter::transformFrame(msg_object_list_copy, msg_object_list_transformed, actor_name)) {  
       // publish ideal object list in actor_name frame
-      pub_ideal_objects_map_[actor_name]->publish(msg_object_list_transformed);
+      pub_objects_map_[actor_name]->publish(msg_object_list_transformed);
     };
   }
 }
