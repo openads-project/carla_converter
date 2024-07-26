@@ -22,6 +22,8 @@
 #include <etsi_its_msgs_utils/cam_access.hpp>
 #include <perception_msgs_utils/object_access.hpp>
 
+#include <stdlib.h>
+
 #define ROS_LOG_STREAM(level, ...) RCLCPP_##level##_STREAM(this->get_logger(), __VA_ARGS__)
 
 namespace dom = derived_object_msgs::msg;

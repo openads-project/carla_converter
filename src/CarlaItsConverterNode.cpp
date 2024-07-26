@@ -99,6 +99,18 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
 }
 
 bool ItsConverter::loadParameters() {
+
+  sleep(1);
+  std::map<std::string, std::vector<std::string> > topics;
+  topics = this->get_topic_names_and_types();
+  
+  auto it = topics.begin();
+
+  while (it != topics.end()) {
+    std::cout << it->first << std::endl;
+    ++it;
+  }
+
   std::string ego_data_actors_string;
   std::string object_data_actors_string;
 
