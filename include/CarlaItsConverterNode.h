@@ -9,6 +9,7 @@
 #include <tf2_ros/transform_listener.h>
 
 #include <rclcpp/rclcpp.hpp>
+#include <regex>
 
 #include <derived_object_msgs/msg/object_array.hpp>
 #include <geometry_msgs/msg/accel.hpp>
@@ -74,12 +75,14 @@ class ItsConverter : public rclcpp::Node
     std::map<std::string, Subscriber<cm::CarlaEgoVehicleStatus>> sub_vehicle_status_map_;
     std::map<std::string, Subscriber<cm::CarlaEgoVehicleInfo>> sub_vehicle_info_map_;
     std::map<std::string, Subscriber<dom::ObjectArray>> sub_ideal_objects_map_;
+    std::vector<Subscriber<dom::ObjectArray>> sub_custom_objects_vector_;
 
     Publisher<pi::ObjectList> pub_objects_carla_map_;
     std::map<std::string, Publisher<pi::ObjectList>> pub_objects_map_;
     std::map<std::string, Publisher<pi::EgoData>> pub_ego_data_map_;
     std::map<std::string, Publisher<etsi_cam::CAM>> pub_etsi_cam_map_;
     std::map<std::string, Publisher<pi::ObjectList>> pub_ideal_objects_map_;
+    std::vector<Publisher<pi::ObjectList>> pub_custom_objects_vector_;
     std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
 
     pi::EgoData msg_ego_data_;

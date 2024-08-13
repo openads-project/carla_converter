@@ -94,22 +94,55 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
     pub_objects_map_.insert({actor_name, pub_objects});
     pub_ideal_objects_map_.insert({actor_name, pub_ideal_objects});
   }
+  
+  // setup subscriber and publisher depending on custom topics
+  // get topic names and types
+  sleep(1);
+  std::map<std::string, std::vector<std::string> > topics;
+  std::vector<std::string> ObjectArray_topics;
+  topics = this->get_topic_names_and_types();
+
+  // filter topics by datatype
+  for (const auto& topic : topics){
+    std::string topic_type;
+    for (const auto& tt : topic.second){
+      topic_type += tt;
+    }
+    if (topic_type == "derived_object_msgs/msg/ObjectArray"){
+      ObjectArray_topics.push_back(topic.first);
+    }
+  }
+  
+  // filter local object topics
+  std::regex pattern_objects("/carla/.*\\/objects");
+  std::regex pattern_ideal_objects("/carla/.\\/ideal_objects");
+
+  for (const std::string& topic : ObjectArray_topics){
+    if (topic == "/carla/objects" || std::regex_match(topic, pattern_objects) || std::regex_match(topic, pattern_ideal_objects)){
+      continue;
+    }
+
+    // remove "/carla/" from topic name
+    const std::string prefix = "/carla/";
+    std::size_t pos = topic.find(prefix);
+    if (pos == std::string::npos){
+      continue;
+    }
+    std::string sensor_name = topic.substr(pos + prefix.length());
+    
+    // setup subscriber depending on topic name and save subscriber in vector
+    Subscriber<dom::ObjectArray> sub_custom_objects = this->create_subscription<dom::ObjectArray>(prefix + sensor_name, 1, idealObjectsArgCallback("carla_map"));
+    sub_custom_objects_vector_.push_back(sub_custom_objects);
+
+    // setup publisher depending on topic name and save publisher in vector 
+    Publisher<pi::ObjectList> pub_custom_objects = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + sensor_name, 1);
+    pub_custom_objects_map_.push_back(pub_custom_objects);
+  }
 
   ROS_LOG_STREAM(INFO, "carla_its_converter running...");  
 }
 
 bool ItsConverter::loadParameters() {
-
-  sleep(1);
-  std::map<std::string, std::vector<std::string> > topics;
-  topics = this->get_topic_names_and_types();
-  
-  auto it = topics.begin();
-
-  while (it != topics.end()) {
-    std::cout << it->first << std::endl;
-    ++it;
-  }
 
   std::string ego_data_actors_string;
   std::string object_data_actors_string;
@@ -456,7 +489,9 @@ void ItsConverter::idealObjectsCallback(const dom::ObjectArray::ConstPtr msg, st
 
   // transform the object_list from carla_map to actor_name frame
   pi::ObjectList msg_object_list_transformed;
-  if (ItsConverter::transformFrame(msg_object_list_, msg_object_list_transformed, actor_name)) {  
+  if (actor_name == "carla_map"){
+    pub_custom_objects_vector_->publish(msg_object_list_);
+  } else if (ItsConverter::transformFrame(msg_object_list_, msg_object_list_transformed, actor_name)) {  
     // publish ideal object list in actor_name frame
     pub_ideal_objects_map_[actor_name]->publish(msg_object_list_transformed);
   };
