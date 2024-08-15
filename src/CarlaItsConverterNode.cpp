@@ -93,7 +93,7 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
   
   // setup subscriber and publisher depending on custom topics
   // get topic names and types
-  sleep(1);
+  sleep(2);
   std::map<std::string, std::vector<std::string> > topics;
   std::vector<std::string> ObjectArray_topics;
   topics = this->get_topic_names_and_types();
@@ -124,7 +124,6 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
       continue;
     }
     std::string topic_name = topic.substr(pos + prefix.length());
-    std::cout << topic_name << std::endl;
     
     // setup subscriber depending on topic name and save subscriber in vector
     Subscriber<dom::ObjectArray> sub_custom_objects = this->create_subscription<dom::ObjectArray>(prefix + topic_name, 1, customObjectsArgCallback(topic_name));
@@ -432,22 +431,26 @@ bool ItsConverter::transformFrame(const pi::ObjectList& msg_object_list, pi::Obj
 
     gm::TransformStamped carla_map_to_role_name_tf;
     try {
-      // get transformation from carla_map to topic_name
-      if (tf2_buffer_->_frameExists(topic_name)){
-        carla_map_to_role_name_tf = tf2_buffer_->lookupTransform(topic_name, "carla_map", msg_object_list.header.stamp, timeout);
-      } else {
-        ROS_LOG_STREAM(WARN, "Frame '"<< topic_name << "' does not exist");
-        return false; 
+      while (true){
+        // get transformation from carla_map to topic_name
+        if (tf2_buffer_->_frameExists(topic_name)){
+          carla_map_to_role_name_tf = tf2_buffer_->lookupTransform(topic_name, "carla_map", msg_object_list.header.stamp, timeout);
+          tf2::doTransform(msg_object_list, msg_object_list_transformed, carla_map_to_role_name_tf);
+          return true;
+        }
+        size_t pos = topic_name.rfind("/");
+        if (pos == std::string::npos){
+          ROS_LOG_STREAM(WARN, "Frame '" << topic_name << "' does not exist");
+          return false;
+        } else {
+          topic_name = topic_name.substr(0, pos);
+        }
       }
-
-      tf2::doTransform(msg_object_list, msg_object_list_transformed, carla_map_to_role_name_tf);
-      
     } catch (tf2::TransformException& e) {
-      ROS_LOG_STREAM(WARN, "Transformation from 'carla_map' to '" << topic_name << "' is not available");
+      ROS_LOG_STREAM(WARN, "Transformation from 'carla_map' to '" << topic_name << "' or its subframes is not available");
       ROS_LOG_STREAM(WARN, e.what());
       return false;
     }
-  return true;
 }
 
 void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
@@ -482,15 +485,16 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
 
 void ItsConverter::customObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string topic_name) {
   pi::ObjectList msg_object_list_ = ItsConverter::convertObjectArray(msg);
-
-  // transform the object_list from carla_map to actor_name frame if possible
   pi::ObjectList msg_object_list_transformed;
-  if (true){
-    pub_custom_objects_map_[topic_name]->publish(msg_object_list_);
-  } else if (ItsConverter::transformFrame(msg_object_list_, msg_object_list_transformed, topic_name)) {  
+
+  // pub_custom_objects_map_[topic_name]->publish(msg_object_list_);
+  // transform the object_list from carla_map to actor_name frame if possible
+  if (ItsConverter::transformFrame(msg_object_list_, msg_object_list_transformed, topic_name)) {
     // publish ideal object list in actor_name frame
     pub_custom_objects_map_[topic_name]->publish(msg_object_list_transformed);
-  };
+  } else {
+    pub_custom_objects_map_[topic_name]->publish(msg_object_list_);
+  }
 }
 
 }  // end of namespace
