@@ -32,9 +32,9 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
     };
   };
 
-  auto idealObjectsArgCallback = [this](const std::string & actor_name) {
-    return [this, actor_name](const dom::ObjectArray::ConstPtr msg) -> void {
-      ItsConverter::idealObjectsCallback(msg, actor_name);
+  auto customObjectsArgCallback = [this](const std::string & topic_name) {
+    return [this, topic_name](const dom::ObjectArray::ConstPtr msg) -> void {
+      ItsConverter::customObjectsCallback(msg, topic_name);
     };
   };
 
@@ -80,19 +80,15 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
     
     // setup subscriber depending on actor_name    
     Subscriber<cm::CarlaEgoVehicleInfo> sub_vehicle_info = this->create_subscription<cm::CarlaEgoVehicleInfo>("/carla/" + actor_name +"/vehicle_info", qosLatching, vehicleInfoArgCallback(actor_name));
-    Subscriber<dom::ObjectArray> sub_ideal_objects = this->create_subscription<dom::ObjectArray>("/carla/" + actor_name +"/ideal_objects", 1, idealObjectsArgCallback(actor_name));
 
     // save subscriber in map with actor_name as key
     sub_vehicle_info_map_.insert({actor_name, sub_vehicle_info});
-    sub_ideal_objects_map_.insert({actor_name, sub_ideal_objects});
 
     // setup publisher depending on actor_name
     Publisher<pi::ObjectList> pub_objects = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + actor_name + "/objects", 1);
-    Publisher<pi::ObjectList> pub_ideal_objects = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + actor_name + "/ideal_objects", 1);
 
     // save publisher in map with actor_name as key
     pub_objects_map_.insert({actor_name, pub_objects});
-    pub_ideal_objects_map_.insert({actor_name, pub_ideal_objects});
   }
   
   // setup subscriber and publisher depending on custom topics
@@ -115,10 +111,9 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
   
   // filter local object topics
   std::regex pattern_objects("/carla/.*\\/objects");
-  std::regex pattern_ideal_objects("/carla/.\\/ideal_objects");
 
   for (const std::string& topic : ObjectArray_topics){
-    if (topic == "/carla/objects" || std::regex_match(topic, pattern_objects) || std::regex_match(topic, pattern_ideal_objects)){
+    if (topic == "/carla/objects" || std::regex_match(topic, pattern_objects)){
       continue;
     }
 
@@ -128,15 +123,16 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
     if (pos == std::string::npos){
       continue;
     }
-    std::string sensor_name = topic.substr(pos + prefix.length());
+    std::string topic_name = topic.substr(pos + prefix.length());
+    std::cout << topic_name << std::endl;
     
     // setup subscriber depending on topic name and save subscriber in vector
-    Subscriber<dom::ObjectArray> sub_custom_objects = this->create_subscription<dom::ObjectArray>(prefix + sensor_name, 1, idealObjectsArgCallback("carla_map"));
-    sub_custom_objects_vector_.push_back(sub_custom_objects);
+    Subscriber<dom::ObjectArray> sub_custom_objects = this->create_subscription<dom::ObjectArray>(prefix + topic_name, 1, customObjectsArgCallback(topic_name));
+    sub_custom_objects_map_.insert({topic_name, sub_custom_objects});
 
     // setup publisher depending on topic name and save publisher in vector 
-    Publisher<pi::ObjectList> pub_custom_objects = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + sensor_name, 1);
-    pub_custom_objects_map_.push_back(pub_custom_objects);
+    Publisher<pi::ObjectList> pub_custom_objects = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + topic_name, 1);
+    pub_custom_objects_map_.insert({topic_name, pub_custom_objects});
   }
 
   ROS_LOG_STREAM(INFO, "carla_its_converter running...");  
@@ -431,23 +427,23 @@ pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr
   return msg_object_list_;
 }
 
-bool ItsConverter::transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed, std::string actor_name) {
+bool ItsConverter::transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed, std::string topic_name) {
     auto timeout = rclcpp::Duration::from_seconds(1.0);
 
     gm::TransformStamped carla_map_to_role_name_tf;
     try {
-      // get transformation from carla_map to actor_name
-      if (tf2_buffer_->_frameExists(actor_name)){
-        carla_map_to_role_name_tf = tf2_buffer_->lookupTransform(actor_name, "carla_map", msg_object_list.header.stamp, timeout);
+      // get transformation from carla_map to topic_name
+      if (tf2_buffer_->_frameExists(topic_name)){
+        carla_map_to_role_name_tf = tf2_buffer_->lookupTransform(topic_name, "carla_map", msg_object_list.header.stamp, timeout);
       } else {
-        ROS_LOG_STREAM(WARN, "Frame '"<< actor_name << "' does not exist");
+        ROS_LOG_STREAM(WARN, "Frame '"<< topic_name << "' does not exist");
         return false; 
       }
 
       tf2::doTransform(msg_object_list, msg_object_list_transformed, carla_map_to_role_name_tf);
       
     } catch (tf2::TransformException& e) {
-      ROS_LOG_STREAM(WARN, "Transformation from 'carla_map' to '" << actor_name << "' is not available");
+      ROS_LOG_STREAM(WARN, "Transformation from 'carla_map' to '" << topic_name << "' is not available");
       ROS_LOG_STREAM(WARN, e.what());
       return false;
     }
@@ -484,16 +480,16 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
   }
 }
 
-void ItsConverter::idealObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string actor_name) {
+void ItsConverter::customObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string topic_name) {
   pi::ObjectList msg_object_list_ = ItsConverter::convertObjectArray(msg);
 
-  // transform the object_list from carla_map to actor_name frame
+  // transform the object_list from carla_map to actor_name frame if possible
   pi::ObjectList msg_object_list_transformed;
-  if (actor_name == "carla_map"){
-    pub_custom_objects_vector_->publish(msg_object_list_);
-  } else if (ItsConverter::transformFrame(msg_object_list_, msg_object_list_transformed, actor_name)) {  
+  if (true){
+    pub_custom_objects_map_[topic_name]->publish(msg_object_list_);
+  } else if (ItsConverter::transformFrame(msg_object_list_, msg_object_list_transformed, topic_name)) {  
     // publish ideal object list in actor_name frame
-    pub_ideal_objects_map_[actor_name]->publish(msg_object_list_transformed);
+    pub_custom_objects_map_[topic_name]->publish(msg_object_list_transformed);
   };
 }
 
