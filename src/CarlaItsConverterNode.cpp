@@ -95,7 +95,7 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
   // get topic names and types
   sleep(2);
   std::map<std::string, std::vector<std::string> > topics;
-  std::vector<std::string> ObjectArray_topics;
+  std::vector<std::string> topics_selected;
   topics = this->get_topic_names_and_types();
 
   // filter topics by datatype
@@ -105,14 +105,14 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
       topic_type += tt;
     }
     if (topic_type == "derived_object_msgs/msg/ObjectArray"){
-      ObjectArray_topics.push_back(topic.first);
+      topics_selected.push_back(topic.first);
     }
   }
   
   // filter local object topics
   std::regex pattern_objects("/carla/.*\\/objects");
 
-  for (const std::string& topic : ObjectArray_topics){
+  for (const std::string& topic : topics_selected){
     if (topic == "/carla/objects" || std::regex_match(topic, pattern_objects)){
       continue;
     }
