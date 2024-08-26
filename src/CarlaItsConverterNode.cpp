@@ -456,7 +456,7 @@ bool ItsConverter::transformFrame(const pi::ObjectList& msg_object_list, pi::Obj
       if (pos != std::string::npos){
         topic_name = topic_name.substr(0, pos);
       } else {
-        throw null;
+        throw std::runtime_error("Break because topic_name string is empty");
       }
     }
   } catch (tf2::TransformException& e) {
