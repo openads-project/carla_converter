@@ -165,10 +165,10 @@ bool ItsConverter::loadParameters() {
   vel_variances_ = this->get_parameter("vel_variances").as_double();
   this->declare_parameter("acc_variances", oa::CONTINUOUS_STATE_COVARIANCE_INVALID);
   acc_variances_ = this->get_parameter("acc_variances").as_double();
-  this->declare_parameter("yaw_variances", oa::CONTINUOUS_STATE_COVARIANCE_INVALID);
-  yaw_variances_ = this->get_parameter("yaw_variances").as_double();
-  this->declare_parameter("yaw_rate_variances", oa::CONTINUOUS_STATE_COVARIANCE_INVALID);
-  yaw_rate_variances_ = this->get_parameter("yaw_rate_variances").as_double();
+  this->declare_parameter("angle_variances", oa::CONTINUOUS_STATE_COVARIANCE_INVALID);
+  angle_variances_ = this->get_parameter("angle_variances").as_double();
+  this->declare_parameter("angle_rate_variances", oa::CONTINUOUS_STATE_COVARIANCE_INVALID);
+  angle_rate_variances_ = this->get_parameter("angle_rate_variances").as_double();
 
   std::string actor_name;
   std::stringstream ego_data_actors_string_stream(ego_data_actors_string);
@@ -340,11 +340,13 @@ pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr
     matrix.getRPY(roll, pitch, yaw);
 
     // fill state
-    oa::initializeState(objectTemp, pi::ISCACTR::MODEL_ID);
+    oa::initializeState(objectTemp, pi::HEXAMOTION::MODEL_ID);
     objectTemp.state.header = msg->objects[i].header;
     oa::setPose(objectTemp.state, msg->objects[i].pose);
     oa::setVelocityXYZYaw(objectTemp.state, msg->objects[i].twist.linear, yaw);
     oa::setAccelerationXYZYaw(objectTemp.state, msg->objects[i].accel.linear, yaw);
+    oa::setRollRate(objectTemp.state, msg->objects[i].twist.angular.x);
+    oa::setPitchRate(objectTemp.state, msg->objects[i].twist.angular.y);
     oa::setYawRate(objectTemp.state, msg->objects[i].twist.angular.z);
     oa::setLength(objectTemp, msg->objects[i].shape.dimensions[0]);
     oa::setWidth(objectTemp, msg->objects[i].shape.dimensions[1]);
@@ -352,34 +354,40 @@ pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr
 
     // Fill variances
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::X, pi::ISCACTR::X, pos_variances_);
+      objectTemp, pi::HEXAMOTION::X, pi::HEXAMOTION::X, pos_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::Y, pi::ISCACTR::Y, pos_variances_);
+      objectTemp, pi::HEXAMOTION::Y, pi::HEXAMOTION::Y, pos_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::Z, pi::ISCACTR::Z, pos_variances_);
+      objectTemp, pi::HEXAMOTION::Z, pi::HEXAMOTION::Z, pos_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::VEL_LON, pi::ISCACTR::VEL_LON,
+      objectTemp, pi::HEXAMOTION::VEL_LON, pi::HEXAMOTION::VEL_LON,
       vel_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::VEL_LAT, pi::ISCACTR::VEL_LAT,
+      objectTemp, pi::HEXAMOTION::VEL_LAT, pi::HEXAMOTION::VEL_LAT,
       vel_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::ACC_LON, pi::ISCACTR::ACC_LON,
+      objectTemp, pi::HEXAMOTION::ACC_LON, pi::HEXAMOTION::ACC_LON,
       acc_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::ACC_LAT, pi::ISCACTR::ACC_LAT,
+      objectTemp, pi::HEXAMOTION::ACC_LAT, pi::HEXAMOTION::ACC_LAT,
       acc_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::YAW, pi::ISCACTR::YAW, yaw_variances_);
+      objectTemp, pi::HEXAMOTION::ROLL, pi::HEXAMOTION::ROLL, angle_variances_);
+      objectTemp, pi::HEXAMOTION::PITCH, pi::HEXAMOTION::PITCH, angle_variances_);
+      objectTemp, pi::HEXAMOTION::YAW, pi::HEXAMOTION::YAW, angle_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::YAW_RATE, pi::ISCACTR::YAW_RATE,
-      yaw_rate_variances_);
+      objectTemp, pi::HEXAMOTION::ROLL_RATE, pi::HEXAMOTION::ROLL_RATE,
+      angle_rate_variances_);
+      objectTemp, pi::HEXAMOTION::PITCH_RATE, pi::HEXAMOTION::PITCH_RATE,
+      angle_rate_variances_);
+      objectTemp, pi::HEXAMOTION::YAW_RATE, pi::HEXAMOTION::YAW_RATE,
+      angle_rate_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::LENGTH, pi::ISCACTR::LENGTH, pos_variances_);
+      objectTemp, pi::HEXAMOTION::LENGTH, pi::HEXAMOTION::LENGTH, pos_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::WIDTH, pi::ISCACTR::WIDTH, pos_variances_);
+      objectTemp, pi::HEXAMOTION::WIDTH, pi::HEXAMOTION::WIDTH, pos_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::HEIGHT, pi::ISCACTR::HEIGHT, pos_variances_);
+      objectTemp, pi::HEXAMOTION::HEIGHT, pi::HEXAMOTION::HEIGHT, pos_variances_);
 
     // Global object list: Sensor ID 0
     objectTemp.state.sensor_id.push_back(0);

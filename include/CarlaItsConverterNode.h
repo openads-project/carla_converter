@@ -91,8 +91,8 @@ class ItsConverter : public rclcpp::Node
     double pos_variances_;
     double vel_variances_;
     double acc_variances_;
-    double yaw_variances_;
-    double yaw_rate_variances_;
+    double angle_variances_;
+    double angle_rate_variances_;
 
     // ego information
     std::map<std::string, int> ego_id_map_;
