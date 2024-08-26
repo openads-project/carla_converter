@@ -427,30 +427,30 @@ pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr
 }
 
 bool ItsConverter::transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed, std::string topic_name) {
-    auto timeout = rclcpp::Duration::from_seconds(1.0);
 
-    gm::TransformStamped carla_map_to_role_name_tf;
-    try {
-      while (true){
-        // get transformation from carla_map to topic_name
-        if (tf2_buffer_->_frameExists(topic_name)){
-          carla_map_to_role_name_tf = tf2_buffer_->lookupTransform(topic_name, "carla_map", msg_object_list.header.stamp, timeout);
-          tf2::doTransform(msg_object_list, msg_object_list_transformed, carla_map_to_role_name_tf);
-          return true;
-        }
-        size_t pos = topic_name.rfind("/");
-        if (pos == std::string::npos){
-          ROS_LOG_STREAM(WARN, "Frame '" << topic_name << "' does not exist");
-          return false;
-        } else {
-          topic_name = topic_name.substr(0, pos);
-        }
+  if (msg_object_list.objects.size() == 0) return false;
+
+  try {
+    while (true){
+      // try to transform to topic_name frame
+      if (tf2_buffer_->_frameExists(topic_name)){
+        msg_object_list_transformed = tf2_buffer_->transform(msg_object_list, topic_name);
+        return true;
       }
-    } catch (tf2::TransformException& e) {
-      ROS_LOG_STREAM(WARN, "Transformation from 'carla_map' to '" << topic_name << "' or its subframes is not available");
-      ROS_LOG_STREAM(WARN, e.what());
-      return false;
+
+      // if topic_name frame does not exist, try to transform to subframes of topic_name
+      size_t pos = topic_name.rfind("/");
+      if (pos != std::string::npos){
+        topic_name = topic_name.substr(0, pos);
+      } else {
+        throw null;
+      }
     }
+  } catch (tf2::TransformException& e) {
+    ROS_LOG_STREAM(WARN, "Transformation from '" << topic_name << "' or its subframes is not available");
+    ROS_LOG_STREAM(WARN, e.what());
+    return false;
+  }
 }
 
 void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
@@ -487,10 +487,9 @@ void ItsConverter::customObjectsCallback(const dom::ObjectArray::ConstPtr msg, s
   pi::ObjectList msg_object_list_ = ItsConverter::convertObjectArray(msg);
   pi::ObjectList msg_object_list_transformed;
 
-  // pub_custom_objects_map_[topic_name]->publish(msg_object_list_);
-  // transform the object_list from carla_map to actor_name frame if possible
+  // transform the object_list from carla_map to topic frame if possible
   if (ItsConverter::transformFrame(msg_object_list_, msg_object_list_transformed, topic_name)) {
-    // publish ideal object list in actor_name frame
+    // publish ideal object list in topic frame
     pub_custom_objects_map_[topic_name]->publish(msg_object_list_transformed);
   } else {
     pub_custom_objects_map_[topic_name]->publish(msg_object_list_);
