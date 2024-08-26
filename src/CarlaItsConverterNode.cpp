@@ -91,9 +91,10 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
     pub_objects_map_.insert({actor_name, pub_objects});
   }
   
-  // setup subscriber and publisher depending on custom topics
+  // setup custom subscriber and publisher depending on topic type
+  
   // get topic names and types
-  sleep(2);
+  sleep(2); // wait for topics to be available (TODO: improve this)
   std::map<std::string, std::vector<std::string> > topics;
   std::vector<std::string> topics_selected;
   topics = this->get_topic_names_and_types();
@@ -485,7 +486,6 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
     // transform the object_list from carla_map to actor_name frame
     pi::ObjectList msg_object_list_transformed;
     if (ItsConverter::transformFrame(msg_object_list_copy, msg_object_list_transformed, actor_name)) {  
-      // publish ideal object list in actor_name frame
       pub_objects_map_[actor_name]->publish(msg_object_list_transformed);
     };
   }
@@ -497,7 +497,6 @@ void ItsConverter::customObjectsCallback(const dom::ObjectArray::ConstPtr msg, s
 
   // transform the object_list from carla_map to topic frame if possible
   if (ItsConverter::transformFrame(msg_object_list_, msg_object_list_transformed, topic_name)) {
-    // publish ideal object list in topic frame
     pub_custom_objects_map_[topic_name]->publish(msg_object_list_transformed);
   } else {
     pub_custom_objects_map_[topic_name]->publish(msg_object_list_);
