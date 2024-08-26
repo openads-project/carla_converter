@@ -92,7 +92,7 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
   }
   
   // setup custom subscriber and publisher depending on topic type
-  
+
   // get topic names and types
   sleep(2); // wait for topics to be available (TODO: improve this)
   std::map<std::string, std::vector<std::string> > topics;
@@ -374,13 +374,17 @@ pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr
       acc_variances_);
     oa::setContinuousStateCovarianceAt(
       objectTemp, pi::HEXAMOTION::ROLL, pi::HEXAMOTION::ROLL, angle_variances_);
+    oa::setContinuousStateCovarianceAt(
       objectTemp, pi::HEXAMOTION::PITCH, pi::HEXAMOTION::PITCH, angle_variances_);
+    oa::setContinuousStateCovarianceAt(
       objectTemp, pi::HEXAMOTION::YAW, pi::HEXAMOTION::YAW, angle_variances_);
     oa::setContinuousStateCovarianceAt(
       objectTemp, pi::HEXAMOTION::ROLL_RATE, pi::HEXAMOTION::ROLL_RATE,
       angle_rate_variances_);
+    oa::setContinuousStateCovarianceAt(
       objectTemp, pi::HEXAMOTION::PITCH_RATE, pi::HEXAMOTION::PITCH_RATE,
       angle_rate_variances_);
+    oa::setContinuousStateCovarianceAt(
       objectTemp, pi::HEXAMOTION::YAW_RATE, pi::HEXAMOTION::YAW_RATE,
       angle_rate_variances_);
     oa::setContinuousStateCovarianceAt(
