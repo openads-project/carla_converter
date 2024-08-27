@@ -11,7 +11,3 @@ repositories:
     type: git
     url: https://github.com/carla-simulator/ros-carla-msgs.git
     version: master
-  etsi_its_messages:
-    type: git
-    url: https://gitlab.ika.rwth-aachen.de/fb-fi/definitions/etsi_its_messages.git
-    version: main
