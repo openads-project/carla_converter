@@ -286,7 +286,7 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::strin
     // convert and publish cam
     etsi_cam::CAM msg_cam;
     try {
-      ad2etsi::egodata2cam(msg_ego_data_, msg_cam, *tf_buffer_.get(), 32, true);
+      ad2etsi::egodata2cam(msg_ego_data_, msg_cam, *tf2_buffer_.get(), 32, true);
       pub_etsi_cam_map_[actor_name]->publish(msg_cam);
     } 
     catch (const std::exception& e) {
