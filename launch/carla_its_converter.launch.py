@@ -34,11 +34,11 @@ def generate_launch_description():
         default_value='-1.0'
     )
     yaw_variances_launch_arg = DeclareLaunchArgument(
-        name='yaw_variances',
+        name='angle_variances',
         default_value='0.1'
     )
     yaw_rate_variances_launch_arg = DeclareLaunchArgument(
-        name='yaw_rate_variances',
+        name='angle_rate_variances',
         default_value='-1.0'
     )
 
@@ -56,8 +56,8 @@ def generate_launch_description():
                 "pos_variances": LaunchConfiguration('pos_variances'),
                 "vel_variances": LaunchConfiguration('vel_variances'),
                 "acc_variances": LaunchConfiguration('acc_variances'),
-                "yaw_variances": LaunchConfiguration('yaw_variances'),
-                "yaw_rate_variances": LaunchConfiguration('yaw_rate_variances'),
+                "angle_variances": LaunchConfiguration('angle_variances'),
+                "angle_rate_variances": LaunchConfiguration('angle_rate_variances'),
                 "use_sim_time": LaunchConfiguration('use_sim_time')
             },
         ],

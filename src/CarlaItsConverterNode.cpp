@@ -32,12 +32,6 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
     };
   };
 
-  auto idealObjectsArgCallback = [this](const std::string & actor_name) {
-    return [this, actor_name](const dom::ObjectArray::ConstPtr msg) -> void {
-      ItsConverter::idealObjectsCallback(msg, actor_name);
-    };
-  };
-
   // setup buffer
   tf2_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
   tf2_buffer_->setUsingDedicatedThread(true);
@@ -50,6 +44,7 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
   // setup subscriber and publisher
   sub_objects_ = this->create_subscription<dom::ObjectArray>("/carla/objects", 1, std::bind(&ItsConverter::objectsCallback, this, std::placeholders::_1));
   pub_objects_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/objects", 1);
+  ROS_LOG_STREAM(INFO, "Subscribed to /carla/objects and publishing to /carla_its_converter/objects");
   
   // setup subscriber and publisher depending on actor_name
   for(std::string& actor_name : ego_data_actors_) { 
@@ -73,32 +68,89 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
     // save publisher in map with actor_name as key
     pub_ego_data_map_.insert({actor_name, pub_ego_data});
     pub_etsi_cam_map_.insert({actor_name, pub_etsi_cam});
+
+    ROS_LOG_STREAM(INFO, "Subscribed /carla state topics for actor " << actor_name << " and publishing /carla_its_converter/" << actor_name << "/ego_data");
   }
 
-  // setup subscriber and publisher depending on actor_name
+  // setup object subscriber and publisher for object_data_actors_
   for(std::string& actor_name : object_data_actors_) { 
     
     // setup subscriber depending on actor_name    
     Subscriber<cm::CarlaEgoVehicleInfo> sub_vehicle_info = this->create_subscription<cm::CarlaEgoVehicleInfo>("/carla/" + actor_name +"/vehicle_info", qosLatching, vehicleInfoArgCallback(actor_name));
-    Subscriber<dom::ObjectArray> sub_ideal_objects = this->create_subscription<dom::ObjectArray>("/carla/" + actor_name +"/ideal_objects", 1, idealObjectsArgCallback(actor_name));
 
     // save subscriber in map with actor_name as key
     sub_vehicle_info_map_.insert({actor_name, sub_vehicle_info});
-    sub_ideal_objects_map_.insert({actor_name, sub_ideal_objects});
 
     // setup publisher depending on actor_name
     Publisher<pi::ObjectList> pub_objects = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + actor_name + "/objects", 1);
-    Publisher<pi::ObjectList> pub_ideal_objects = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + actor_name + "/ideal_objects", 1);
 
     // save publisher in map with actor_name as key
     pub_objects_map_.insert({actor_name, pub_objects});
-    pub_ideal_objects_map_.insert({actor_name, pub_ideal_objects});
+
+    ROS_LOG_STREAM(INFO, "Subscribed /carla object topics for actor " << actor_name << " and publishing /carla_its_converter/" << actor_name << "/objects");
   }
 
+  // create timer to subscribe to new topics
+  timer_ = this->create_wall_timer(
+            std::chrono::seconds(1),
+            std::bind(&ItsConverter::subscribeNewTopics, this)); 
+
   ROS_LOG_STREAM(INFO, "carla_its_converter running...");  
+  ROS_LOG_STREAM(INFO, "scanning custom object topics...");  
+}
+
+void ItsConverter::subscribeNewTopics() {
+  
+  auto customObjectsArgCallback = [this](const std::string & topic_name) {
+    return [this, topic_name](const dom::ObjectArray::ConstPtr msg) -> void {
+      ItsConverter::customObjectsCallback(msg, topic_name);
+    };
+  };
+
+  // get topic names and types
+  std::map<std::string, std::vector<std::string> > topics = this->get_topic_names_and_types();
+
+  // filter topics by datatype
+  for (const auto& topic : topics){
+
+    std::string topic_name = topic.first;
+    std::string topic_type = topic.second[0];
+
+    // search "/carla/" pattern
+    const std::string pattern_carla = "/carla/";
+    std::size_t pos = topic_name.find(pattern_carla);
+
+    // skip if topic does not match /carla pattern
+    if (pos == std::string::npos) continue;
+
+    // remove "/carla/" from topic
+    topic_name = topic_name.substr(pos + pattern_carla.length());
+
+    // skip if topic does not match type
+    if (topic_type != "derived_object_msgs/msg/ObjectArray") continue;
+
+    // skip if topic matches standard object topic pattern
+    std::regex pattern_objects("/carla/.*\\/objects");
+    if (topic_name == "/carla/objects" || std::regex_match(topic_name, pattern_objects)) continue;
+
+    // skip if topic is already subscribed
+    if (sub_custom_objects_map_.find(topic_name) != sub_custom_objects_map_.end()) continue;
+
+    // setup subscriber depending on topic name and save subscriber in vector
+    Subscriber<dom::ObjectArray> sub_custom_objects = this->create_subscription<dom::ObjectArray>(pattern_carla + topic_name, 1, customObjectsArgCallback(topic_name));
+    sub_custom_objects_map_.insert({topic_name, sub_custom_objects});
+
+    // setup publisher depending on topic name and save publisher in vector 
+    Publisher<pi::ObjectList> pub_custom_objects = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + topic_name, 1);
+    pub_custom_objects_map_.insert({topic_name, pub_custom_objects});
+
+    ROS_LOG_STREAM(INFO, "Subscribed custom topic /carla/" << topic_name << " and publishing /carla_its_converter/" << topic_name);
+  }
+
 }
 
 bool ItsConverter::loadParameters() {
+
   std::string ego_data_actors_string;
   std::string object_data_actors_string;
 
@@ -125,10 +177,10 @@ bool ItsConverter::loadParameters() {
   vel_variances_ = this->get_parameter("vel_variances").as_double();
   this->declare_parameter("acc_variances", oa::CONTINUOUS_STATE_COVARIANCE_INVALID);
   acc_variances_ = this->get_parameter("acc_variances").as_double();
-  this->declare_parameter("yaw_variances", oa::CONTINUOUS_STATE_COVARIANCE_INVALID);
-  yaw_variances_ = this->get_parameter("yaw_variances").as_double();
-  this->declare_parameter("yaw_rate_variances", oa::CONTINUOUS_STATE_COVARIANCE_INVALID);
-  yaw_rate_variances_ = this->get_parameter("yaw_rate_variances").as_double();
+  this->declare_parameter("angle_variances", oa::CONTINUOUS_STATE_COVARIANCE_INVALID);
+  angle_variances_ = this->get_parameter("angle_variances").as_double();
+  this->declare_parameter("angle_rate_variances", oa::CONTINUOUS_STATE_COVARIANCE_INVALID);
+  angle_rate_variances_ = this->get_parameter("angle_rate_variances").as_double();
 
   std::string actor_name;
   std::stringstream ego_data_actors_string_stream(ego_data_actors_string);
@@ -300,11 +352,13 @@ pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr
     matrix.getRPY(roll, pitch, yaw);
 
     // fill state
-    oa::initializeState(objectTemp, pi::ISCACTR::MODEL_ID);
+    oa::initializeState(objectTemp, pi::HEXAMOTION::MODEL_ID);
     objectTemp.state.header = msg->objects[i].header;
     oa::setPose(objectTemp.state, msg->objects[i].pose);
     oa::setVelocityXYZYaw(objectTemp.state, msg->objects[i].twist.linear, yaw);
     oa::setAccelerationXYZYaw(objectTemp.state, msg->objects[i].accel.linear, yaw);
+    oa::setRollRate(objectTemp.state, msg->objects[i].twist.angular.x);
+    oa::setPitchRate(objectTemp.state, msg->objects[i].twist.angular.y);
     oa::setYawRate(objectTemp.state, msg->objects[i].twist.angular.z);
     oa::setLength(objectTemp, msg->objects[i].shape.dimensions[0]);
     oa::setWidth(objectTemp, msg->objects[i].shape.dimensions[1]);
@@ -312,34 +366,44 @@ pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr
 
     // Fill variances
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::X, pi::ISCACTR::X, pos_variances_);
+      objectTemp, pi::HEXAMOTION::X, pi::HEXAMOTION::X, pos_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::Y, pi::ISCACTR::Y, pos_variances_);
+      objectTemp, pi::HEXAMOTION::Y, pi::HEXAMOTION::Y, pos_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::Z, pi::ISCACTR::Z, pos_variances_);
+      objectTemp, pi::HEXAMOTION::Z, pi::HEXAMOTION::Z, pos_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::VEL_LON, pi::ISCACTR::VEL_LON,
+      objectTemp, pi::HEXAMOTION::VEL_LON, pi::HEXAMOTION::VEL_LON,
       vel_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::VEL_LAT, pi::ISCACTR::VEL_LAT,
+      objectTemp, pi::HEXAMOTION::VEL_LAT, pi::HEXAMOTION::VEL_LAT,
       vel_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::ACC_LON, pi::ISCACTR::ACC_LON,
+      objectTemp, pi::HEXAMOTION::ACC_LON, pi::HEXAMOTION::ACC_LON,
       acc_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::ACC_LAT, pi::ISCACTR::ACC_LAT,
+      objectTemp, pi::HEXAMOTION::ACC_LAT, pi::HEXAMOTION::ACC_LAT,
       acc_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::YAW, pi::ISCACTR::YAW, yaw_variances_);
+      objectTemp, pi::HEXAMOTION::ROLL, pi::HEXAMOTION::ROLL, angle_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::YAW_RATE, pi::ISCACTR::YAW_RATE,
-      yaw_rate_variances_);
+      objectTemp, pi::HEXAMOTION::PITCH, pi::HEXAMOTION::PITCH, angle_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::LENGTH, pi::ISCACTR::LENGTH, pos_variances_);
+      objectTemp, pi::HEXAMOTION::YAW, pi::HEXAMOTION::YAW, angle_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::WIDTH, pi::ISCACTR::WIDTH, pos_variances_);
+      objectTemp, pi::HEXAMOTION::ROLL_RATE, pi::HEXAMOTION::ROLL_RATE,
+      angle_rate_variances_);
     oa::setContinuousStateCovarianceAt(
-      objectTemp, pi::ISCACTR::HEIGHT, pi::ISCACTR::HEIGHT, pos_variances_);
+      objectTemp, pi::HEXAMOTION::PITCH_RATE, pi::HEXAMOTION::PITCH_RATE,
+      angle_rate_variances_);
+    oa::setContinuousStateCovarianceAt(
+      objectTemp, pi::HEXAMOTION::YAW_RATE, pi::HEXAMOTION::YAW_RATE,
+      angle_rate_variances_);
+    oa::setContinuousStateCovarianceAt(
+      objectTemp, pi::HEXAMOTION::LENGTH, pi::HEXAMOTION::LENGTH, pos_variances_);
+    oa::setContinuousStateCovarianceAt(
+      objectTemp, pi::HEXAMOTION::WIDTH, pi::HEXAMOTION::WIDTH, pos_variances_);
+    oa::setContinuousStateCovarianceAt(
+      objectTemp, pi::HEXAMOTION::HEIGHT, pi::HEXAMOTION::HEIGHT, pos_variances_);
 
     // Global object list: Sensor ID 0
     objectTemp.state.sensor_id.push_back(0);
@@ -386,27 +450,31 @@ pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr
   return msg_object_list_;
 }
 
-bool ItsConverter::transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed, std::string actor_name) {
-    auto timeout = rclcpp::Duration::from_seconds(1.0);
+bool ItsConverter::transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed, std::string target_frame) {
 
-    gm::TransformStamped carla_map_to_role_name_tf;
-    try {
-      // get transformation from carla_map to actor_name
-      if (tf2_buffer_->_frameExists(actor_name)){
-        carla_map_to_role_name_tf = tf2_buffer_->lookupTransform(actor_name, "carla_map", msg_object_list.header.stamp, timeout);
-      } else {
-        ROS_LOG_STREAM(WARN, "Frame '"<< actor_name << "' does not exist");
-        return false; 
+  if (msg_object_list.objects.size() == 0) return false;
+
+  try {
+    while (true){
+      // try to transform to target_frame
+      if (tf2_buffer_->_frameExists(target_frame)){
+        msg_object_list_transformed = tf2_buffer_->transform(msg_object_list, target_frame, tf2::durationFromSec(0.1));
+        return true;
       }
 
-      tf2::doTransform(msg_object_list, msg_object_list_transformed, carla_map_to_role_name_tf);
-      
-    } catch (tf2::TransformException& e) {
-      ROS_LOG_STREAM(WARN, "Transformation from 'carla_map' to '" << actor_name << "' is not available");
-      ROS_LOG_STREAM(WARN, e.what());
-      return false;
+      // if target_frame frame does not exist, try to transform to sub_frame
+      size_t pos = target_frame.rfind("/");
+      if (pos != std::string::npos){
+        target_frame = target_frame.substr(0, pos);
+      } else {
+        return false;
+      }
     }
-  return true;
+  } catch (tf2::TransformException& e) {
+    ROS_LOG_STREAM(WARN, "Transformation from '" << target_frame << "' or its subframes is not available");
+    ROS_LOG_STREAM(WARN, e.what());
+    return false;
+  }
 }
 
 void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
@@ -433,21 +501,21 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
     // transform the object_list from carla_map to actor_name frame
     pi::ObjectList msg_object_list_transformed;
     if (ItsConverter::transformFrame(msg_object_list_copy, msg_object_list_transformed, actor_name)) {  
-      // publish ideal object list in actor_name frame
       pub_objects_map_[actor_name]->publish(msg_object_list_transformed);
     };
   }
 }
 
-void ItsConverter::idealObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string actor_name) {
+void ItsConverter::customObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string topic_name) {
   pi::ObjectList msg_object_list_ = ItsConverter::convertObjectArray(msg);
-
-  // transform the object_list from carla_map to actor_name frame
   pi::ObjectList msg_object_list_transformed;
-  if (ItsConverter::transformFrame(msg_object_list_, msg_object_list_transformed, actor_name)) {  
-    // publish ideal object list in actor_name frame
-    pub_ideal_objects_map_[actor_name]->publish(msg_object_list_transformed);
-  };
+
+  // transform the object_list from carla_map to topic frame if possible
+  if (ItsConverter::transformFrame(msg_object_list_, msg_object_list_transformed, topic_name)) {
+    pub_custom_objects_map_[topic_name]->publish(msg_object_list_transformed);
+  } else {
+    pub_custom_objects_map_[topic_name]->publish(msg_object_list_);
+  }
 }
 
 }  // end of namespace

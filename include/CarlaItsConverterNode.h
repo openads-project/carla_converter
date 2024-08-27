@@ -9,6 +9,7 @@
 #include <tf2_ros/transform_listener.h>
 
 #include <rclcpp/rclcpp.hpp>
+#include <regex>
 
 #include <derived_object_msgs/msg/object_array.hpp>
 #include <geometry_msgs/msg/accel.hpp>
@@ -51,9 +52,10 @@ class ItsConverter : public rclcpp::Node
     ItsConverter();
 
   private:
+    void subscribeNewTopics();
     void gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string actor_name);
     void objectsCallback(const dom::ObjectArray::ConstPtr msg);
-    void idealObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string actor_name);
+    void customObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string topic_name);
     void odometryCallback(const nm::Odometry::ConstPtr msg, std::string actor_name);
     void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg, std::string actor_name);
     void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string actor_name);
@@ -61,8 +63,9 @@ class ItsConverter : public rclcpp::Node
 
     etsi_cam::CAM convertToEtsiCam(const pi::EgoData& ego_data, ssm::NavSatFix gnss);
     pi::ObjectList convertObjectArray(const dom::ObjectArray::ConstPtr msg);
-    bool transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed, std::string actor_name);
+    bool transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed, std::string target_frame);
 
+    rclcpp::TimerBase::SharedPtr timer_;
     std::unique_ptr<tf2_ros::Buffer> tf2_buffer_;
 
     Subscriber<dom::ObjectArray> sub_objects_;
@@ -71,13 +74,13 @@ class ItsConverter : public rclcpp::Node
     std::map<std::string, Subscriber<nm::Odometry>> sub_odometry_map_;
     std::map<std::string, Subscriber<cm::CarlaEgoVehicleStatus>> sub_vehicle_status_map_;
     std::map<std::string, Subscriber<cm::CarlaEgoVehicleInfo>> sub_vehicle_info_map_;
-    std::map<std::string, Subscriber<dom::ObjectArray>> sub_ideal_objects_map_;
+    std::map<std::string, Subscriber<dom::ObjectArray>> sub_custom_objects_map_;
 
     Publisher<pi::ObjectList> pub_objects_carla_map_;
     std::map<std::string, Publisher<pi::ObjectList>> pub_objects_map_;
     std::map<std::string, Publisher<pi::EgoData>> pub_ego_data_map_;
     std::map<std::string, Publisher<etsi_cam::CAM>> pub_etsi_cam_map_;
-    std::map<std::string, Publisher<pi::ObjectList>> pub_ideal_objects_map_;
+    std::map<std::string, Publisher<pi::ObjectList>> pub_custom_objects_map_;
     std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
 
     pi::EgoData msg_ego_data_;
@@ -88,8 +91,8 @@ class ItsConverter : public rclcpp::Node
     double pos_variances_;
     double vel_variances_;
     double acc_variances_;
-    double yaw_variances_;
-    double yaw_rate_variances_;
+    double angle_variances_;
+    double angle_rate_variances_;
 
     // ego information
     std::map<std::string, int> ego_id_map_;
