@@ -448,28 +448,28 @@ pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr
   return msg_object_list_;
 }
 
-bool ItsConverter::transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed, std::string topic_name) {
+bool ItsConverter::transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed, std::string target_frame) {
 
   if (msg_object_list.objects.size() == 0) return false;
 
   try {
     while (true){
-      // try to transform to topic_name frame
-      if (tf2_buffer_->_frameExists(topic_name)){
-        msg_object_list_transformed = tf2_buffer_->transform(msg_object_list, topic_name);
+      // try to transform to target_frame
+      if (tf2_buffer_->_frameExists(target_frame)){
+        msg_object_list_transformed = tf2_buffer_->transform(msg_object_list, target_frame);
         return true;
       }
 
-      // if topic_name frame does not exist, try to transform to subframes of topic_name
-      size_t pos = topic_name.rfind("/");
+      // if target_frame frame does not exist, try to transform to sub_frame
+      size_t pos = target_frame.rfind("/");
       if (pos != std::string::npos){
-        topic_name = topic_name.substr(0, pos);
+        target_frame = target_frame.substr(0, pos);
       } else {
-        throw std::runtime_error("Break because topic_name string is empty");
+        throw std::runtime_error("Break 'transformFrame' because target_frame is empty");
       }
     }
   } catch (tf2::TransformException& e) {
-    ROS_LOG_STREAM(WARN, "Transformation from '" << topic_name << "' or its subframes is not available");
+    ROS_LOG_STREAM(WARN, "Transformation from '" << target_frame << "' or its subframes is not available");
     ROS_LOG_STREAM(WARN, e.what());
     return false;
   }

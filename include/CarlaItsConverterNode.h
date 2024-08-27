@@ -23,8 +23,6 @@
 #include <etsi_its_msgs_utils/cam_access.hpp>
 #include <perception_msgs_utils/object_access.hpp>
 
-#include <stdlib.h>
-
 #define ROS_LOG_STREAM(level, ...) RCLCPP_##level##_STREAM(this->get_logger(), __VA_ARGS__)
 
 namespace dom = derived_object_msgs::msg;
@@ -64,7 +62,7 @@ class ItsConverter : public rclcpp::Node
 
     etsi_cam::CAM convertToEtsiCam(const pi::EgoData& ego_data, ssm::NavSatFix gnss);
     pi::ObjectList convertObjectArray(const dom::ObjectArray::ConstPtr msg);
-    bool transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed, std::string topic_name);
+    bool transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed, std::string target_frame);
 
     std::unique_ptr<tf2_ros::Buffer> tf2_buffer_;
 

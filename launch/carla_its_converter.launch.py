@@ -15,11 +15,11 @@ def generate_launch_description():
     )
     ego_data_actors_launch_arg = DeclareLaunchArgument(
         name='ego_data_actors',
-        default_value=''
+        default_value='ego_vehicle'
     )
     object_data_actors_launch_arg = DeclareLaunchArgument(
         name='object_data_actors',
-        default_value=''
+        default_value='ego_vehicle'
     )
     pos_variances_launch_arg = DeclareLaunchArgument(
         name='pos_variances',
