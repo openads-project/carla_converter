@@ -458,7 +458,7 @@ bool ItsConverter::transformFrame(const pi::ObjectList& msg_object_list, pi::Obj
     while (true){
       // try to transform to target_frame
       if (tf2_buffer_->_frameExists(target_frame)){
-        msg_object_list_transformed = tf2_buffer_->transform(msg_object_list, target_frame);
+        msg_object_list_transformed = tf2_buffer_->transform(msg_object_list, target_frame, tf2::durationFromSec(0.1));
         return true;
       }
 
