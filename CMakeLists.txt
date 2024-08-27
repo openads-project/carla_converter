@@ -43,10 +43,9 @@ endif()
   find_package(tf2_ros REQUIRED)
 
   find_package(carla_msgs REQUIRED)
-  find_package(etsi_its_msgs REQUIRED)
-  find_package(etsi_its_msgs_utils REQUIRED)
   find_package(perception_msgs REQUIRED)
   find_package(perception_msgs_utils REQUIRED)
+  find_package(ad2etsi_converters REQUIRED)
 
   add_executable(${PROJECT_NAME}_node src/CarlaItsConverterNode.cpp)
 
@@ -66,12 +65,10 @@ endif()
     tf2_geometry_msgs
     tf2_perception_msgs
     tf2_ros
-
     carla_msgs
-    etsi_its_msgs
-    etsi_its_msgs_utils
     perception_msgs
     perception_msgs_utils
+    ad2etsi_converters
   )
   ament_export_dependencies(
     derived_object_msgs
@@ -84,12 +81,10 @@ endif()
     tf2_geometry_msgs
     tf2_perception_msgs
     tf2_ros
-
     carla_msgs
-    etsi_its_msgs
-    etsi_its_msgs_utils
     perception_msgs
     perception_msgs_utils
+    ad2etsi_converters
   )
 
   install(TARGETS

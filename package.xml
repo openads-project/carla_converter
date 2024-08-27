@@ -24,8 +24,7 @@
   <depend>tf2</depend>
   <depend>shape_msgs</depend>
   <depend>carla_msgs</depend>
-  <depend>etsi_its_msgs</depend>
-  <depend>etsi_its_msgs_utils</depend>
+  <depend>ad2etsi_converters</depend>
 
   <!-- ROS2 -->
   <buildtool_depend>ament_cmake</buildtool_depend>

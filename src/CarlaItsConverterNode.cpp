@@ -63,7 +63,7 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
 
     // setup publisher depending on actor_name
     Publisher<pi::EgoData> pub_ego_data = this->create_publisher<pi::EgoData>("/carla_its_converter/" + actor_name + "/ego_data", 1);
-    Publisher<etsi_cam::CAM> pub_etsi_cam = this->create_publisher<etsi_cam::CAM>("/carla_its_converter/" + actor_name + "/etsi_its/cam", 1);
+    Publisher<etsi_cam::CAM> pub_etsi_cam = this->create_publisher<etsi_cam::CAM>("/carla_its_converter/" + actor_name + "/etsi_cam", 1);
 
     // save publisher in map with actor_name as key
     pub_ego_data_map_.insert({actor_name, pub_ego_data});
@@ -283,41 +283,16 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::strin
     // publish ego_data in carla_map frame
     pub_ego_data_map_[actor_name]->publish(msg_ego_data_);
 
-    // additionally publish etsi_cam
-    if (ego_gnss_set_map_[actor_name]) {
-      etsi_cam::CAM msg_cam = convertToEtsiCam(msg_ego_data_, ego_gnss_map_[actor_name]);
-
+    // convert and publish cam
+    etsi_cam::CAM msg_cam;
+    try {
+      ad2etsi::egodata2cam(msg_ego_data_, msg_cam, *tf_buffer_.get(), 32, true);
       pub_etsi_cam_map_[actor_name]->publish(msg_cam);
+    } 
+    catch (const std::exception& e) {
+      RCLCPP_ERROR(this->get_logger(), "Error converting EgoData to CAM: %s", e.what());
     }
-
   } 
-}
-
-etsi_cam::CAM ItsConverter::convertToEtsiCam(const pi::EgoData &ego_data, ssm::NavSatFix gnss) {
-  
-  etsi_cam::CAM cam;
-  
-  ca::setItsPduHeader(cam, ego_data.vehicle_id);
-  
-  uint64_t nns = ego_data.header.stamp.sec * 1e9 + ego_data.header.stamp.nanosec;
-    
-  ca::setGenerationDeltaTime(cam, nns, etsi_its_msgs::getLeapSecondInsertionsSince2004((uint64_t)ego_data.header.stamp.sec));
-  
-  ca::setReferencePosition(cam, gnss.latitude, gnss.longitude, gnss.altitude + ego_data.height/2);
-  
-  // convert and crop heading to etsi range [0,360]
-  double heading = 90 - oa::getYawInDeg(ego_data);
-  if (heading > 360) heading -= 360;
-  if (heading < 0) heading += 360;
-  ca::setHeading(cam, heading);
-
-  ca::setVehicleDimensions(cam, ego_data.length, ego_data.width);
-  
-  ca::setSpeed(cam, oa::getVelocityMagnitude(ego_data));
-  ca::setLongitudinalAcceleration(cam, oa::getAccLon(ego_data));
-  ca::setLateralAcceleration(cam, oa::getAccLat(ego_data));
-
-  return cam;
 }
 
 pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr msg) {

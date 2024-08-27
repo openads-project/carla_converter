@@ -20,8 +20,8 @@
 
 #include <carla_msgs/msg/carla_ego_vehicle_status.hpp>
 #include <carla_msgs/msg/carla_ego_vehicle_info.hpp>
-#include <etsi_its_msgs_utils/cam_access.hpp>
 #include <perception_msgs_utils/object_access.hpp>
+#include <ad2etsi_converters/Converters.hpp>
 
 #define ROS_LOG_STREAM(level, ...) RCLCPP_##level##_STREAM(this->get_logger(), __VA_ARGS__)
 
@@ -33,17 +33,13 @@ namespace sm = shape_msgs::msg;
 namespace ssm = sensor_msgs::msg;
 
 namespace cm = carla_msgs::msg;
+namespace oa = perception_msgs::object_access;
 namespace etsi_cam = etsi_its_cam_msgs::msg;
-namespace ca = etsi_its_cam_msgs::access;
 
 template<typename T>
 using Subscriber = typename rclcpp::Subscription<T>::SharedPtr;
 template<typename T>
 using Publisher = typename rclcpp::Publisher<T>::SharedPtr;
-
-namespace oa = perception_msgs::object_access;
-namespace ca = etsi_its_cam_msgs::access;
-
 namespace carla {
 
 class ItsConverter : public rclcpp::Node
@@ -61,7 +57,6 @@ class ItsConverter : public rclcpp::Node
     void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string actor_name);
     bool loadParameters();
 
-    etsi_cam::CAM convertToEtsiCam(const pi::EgoData& ego_data, ssm::NavSatFix gnss);
     pi::ObjectList convertObjectArray(const dom::ObjectArray::ConstPtr msg);
     bool transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed, std::string target_frame);
 
