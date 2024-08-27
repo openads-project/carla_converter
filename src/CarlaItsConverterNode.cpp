@@ -295,7 +295,7 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::strin
   }
 }
 
-etsi_cam::CAM ItsConverter::convertEgoData(const pi::EgoData msg) {
+etsi_cam::CAM ItsConverter::convertEgoDataCam(const pi::EgoData msg) {
 
   etsi_cam::CAM msg_cam;
 
