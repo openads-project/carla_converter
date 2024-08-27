@@ -32,12 +32,6 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
     };
   };
 
-  auto customObjectsArgCallback = [this](const std::string & topic_name) {
-    return [this, topic_name](const dom::ObjectArray::ConstPtr msg) -> void {
-      ItsConverter::customObjectsCallback(msg, topic_name);
-    };
-  };
-
   // setup buffer
   tf2_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
   tf2_buffer_->setUsingDedicatedThread(true);
@@ -95,56 +89,64 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
 
     ROS_LOG_STREAM(INFO, "Subscribed /carla object topics for actor " << actor_name << " and publishing /carla_its_converter/" << actor_name << "/objects");
   }
-  
+
+  // create timer to subscribe to new topics
+  timer_ = this->create_wall_timer(
+            std::chrono::seconds(1),
+            std::bind(&ItsConverter::subscribeNewTopics, this)); 
+
   ROS_LOG_STREAM(INFO, "carla_its_converter running...");  
   ROS_LOG_STREAM(INFO, "scanning custom object topics...");  
+}
 
-  // setup custom subscriber and publisher depending on topic type
-  while (rclcpp::ok())
-  {
-    // wait for topics to be available
-    sleep(1);
+void ItsConverter::subscribeNewTopics() {
   
-    // get topic names and types
-    std::map<std::string, std::vector<std::string> > topics = this->get_topic_names_and_types();
+  auto customObjectsArgCallback = [this](const std::string & topic_name) {
+    return [this, topic_name](const dom::ObjectArray::ConstPtr msg) -> void {
+      ItsConverter::customObjectsCallback(msg, topic_name);
+    };
+  };
 
-    // filter topics by datatype
-    for (const auto& topic : topics){
+  // get topic names and types
+  std::map<std::string, std::vector<std::string> > topics = this->get_topic_names_and_types();
 
-      std::string topic_name = topic.first;
-      std::string topic_type = topic.second[0];
+  // filter topics by datatype
+  for (const auto& topic : topics){
 
-      // search "/carla/" pattern
-      const std::string pattern_carla = "/carla/";
-      std::size_t pos = topic_name.find(pattern_carla);
+    std::string topic_name = topic.first;
+    std::string topic_type = topic.second[0];
 
-      // skip if topic does not match /carla pattern
-      if (pos == std::string::npos) continue;
+    // search "/carla/" pattern
+    const std::string pattern_carla = "/carla/";
+    std::size_t pos = topic_name.find(pattern_carla);
 
-      // remove "/carla/" from topic
-      topic_name = topic_name.substr(pos + pattern_carla.length());
+    // skip if topic does not match /carla pattern
+    if (pos == std::string::npos) continue;
 
-      // skip if topic does not match type
-      if (topic_type != "derived_object_msgs/msg/ObjectArray") continue;
+    // remove "/carla/" from topic
+    topic_name = topic_name.substr(pos + pattern_carla.length());
 
-      // skip if topic matches standard object topic pattern
-      std::regex pattern_objects("/carla/.*\\/objects");
-      if (topic_name == "/carla/objects" || std::regex_match(topic_name, pattern_objects)) continue;
+    // skip if topic does not match type
+    if (topic_type != "derived_object_msgs/msg/ObjectArray") continue;
 
-      // skip if topic is already subscribed
-      if (sub_custom_objects_map_.find(topic_name) != sub_custom_objects_map_.end()) continue;
+    // skip if topic matches standard object topic pattern
+    std::regex pattern_objects("/carla/.*\\/objects");
+    if (topic_name == "/carla/objects" || std::regex_match(topic_name, pattern_objects)) continue;
 
-      // setup subscriber depending on topic name and save subscriber in vector
-      Subscriber<dom::ObjectArray> sub_custom_objects = this->create_subscription<dom::ObjectArray>(pattern_carla + topic_name, 1, customObjectsArgCallback(topic_name));
-      sub_custom_objects_map_.insert({topic_name, sub_custom_objects});
+    // skip if topic is already subscribed
+    if (sub_custom_objects_map_.find(topic_name) != sub_custom_objects_map_.end()) continue;
 
-      // setup publisher depending on topic name and save publisher in vector 
-      Publisher<pi::ObjectList> pub_custom_objects = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + topic_name, 1);
-      pub_custom_objects_map_.insert({topic_name, pub_custom_objects});
+    // setup subscriber depending on topic name and save subscriber in vector
+    Subscriber<dom::ObjectArray> sub_custom_objects = this->create_subscription<dom::ObjectArray>(pattern_carla + topic_name, 1, customObjectsArgCallback(topic_name));
+    sub_custom_objects_map_.insert({topic_name, sub_custom_objects});
 
-      ROS_LOG_STREAM(INFO, "Subscribed custom topic /carla/" << topic_name << " and publishing /carla_its_converter/" << topic_name);
-    }
+    // setup publisher depending on topic name and save publisher in vector 
+    Publisher<pi::ObjectList> pub_custom_objects = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + topic_name, 1);
+    pub_custom_objects_map_.insert({topic_name, pub_custom_objects});
+
+    ROS_LOG_STREAM(INFO, "Subscribed custom topic /carla/" << topic_name << " and publishing /carla_its_converter/" << topic_name);
   }
+
 }
 
 bool ItsConverter::loadParameters() {
@@ -465,7 +467,7 @@ bool ItsConverter::transformFrame(const pi::ObjectList& msg_object_list, pi::Obj
       if (pos != std::string::npos){
         target_frame = target_frame.substr(0, pos);
       } else {
-        throw std::runtime_error("Break 'transformFrame' because target_frame is empty");
+        return false;
       }
     }
   } catch (tf2::TransformException& e) {

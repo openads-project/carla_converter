@@ -52,6 +52,7 @@ class ItsConverter : public rclcpp::Node
     ItsConverter();
 
   private:
+    void subscribeNewTopics();
     void gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string actor_name);
     void objectsCallback(const dom::ObjectArray::ConstPtr msg);
     void customObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string topic_name);
@@ -64,6 +65,7 @@ class ItsConverter : public rclcpp::Node
     pi::ObjectList convertObjectArray(const dom::ObjectArray::ConstPtr msg);
     bool transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed, std::string target_frame);
 
+    rclcpp::TimerBase::SharedPtr timer_;
     std::unique_ptr<tf2_ros::Buffer> tf2_buffer_;
 
     Subscriber<dom::ObjectArray> sub_objects_;
