@@ -6,7 +6,7 @@ repositories:
   ad2etsi:
     type: git
     url: https://gitlab.ika.rwth-aachen.de/fb-fi/definitions/ad2etsi.git
-    version: main
+    version: fix/etsi_its_messages
   ros-carla-msgs:
     type: git
     url: https://github.com/carla-simulator/ros-carla-msgs.git
