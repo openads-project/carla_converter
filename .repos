@@ -2,7 +2,7 @@ repositories:
   perception_interfaces:
     type: git
     url: https://gitlab.ika.rwth-aachen.de/fb-fi/definitions/perception_interfaces.git
-    version: feature/add_6_dof_state_model
+    version: main
   ad2etsi:
     type: git
     url: https://gitlab.ika.rwth-aachen.de/fb-fi/definitions/ad2etsi.git
