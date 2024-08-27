@@ -55,9 +55,11 @@ class ItsConverter : public rclcpp::Node
     void odometryCallback(const nm::Odometry::ConstPtr msg, std::string actor_name);
     void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg, std::string actor_name);
     void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string actor_name);
+    
     bool loadParameters();
 
     pi::ObjectList convertObjectArray(const dom::ObjectArray::ConstPtr msg);
+    etsi_cam::CAM convertEgoDataCam(const pi::EgoData msg);
     bool transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed, std::string target_frame);
 
     rclcpp::TimerBase::SharedPtr timer_;

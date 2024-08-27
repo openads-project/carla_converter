@@ -283,16 +283,35 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::strin
     // publish ego_data in carla_map frame
     pub_ego_data_map_[actor_name]->publish(msg_ego_data_);
 
-    // convert and publish cam
-    etsi_cam::CAM msg_cam;
+
     try {
-      ad2etsi::egodata2cam(msg_ego_data_, msg_cam, *tf2_buffer_.get(), 32, true);
+      etsi_cam::CAM msg_cam = convertEgoDataCam(msg_ego_data_);
       pub_etsi_cam_map_[actor_name]->publish(msg_cam);
-    } 
+    }
     catch (const std::exception& e) {
       RCLCPP_ERROR(this->get_logger(), "Error converting EgoData to CAM: %s", e.what());
+      RCLCPP_ERROR(this->get_logger(), "Make sure that utm_31N or utm_32N exist and simulation time is current unix time (see carla-ros-bridge)");
     }
-  } 
+  }
+}
+
+etsi_cam::CAM ItsConverter::convertEgoData(const pi::EgoData msg) {
+
+  etsi_cam::CAM msg_cam;
+
+  // TODO: get direct parent frame of carla_map dynamically
+  if (tf2_buffer_->_frameExists("utm_32N") && tf2_buffer_->canTransform("utm_32N", msg.header.frame_id, msg.header.stamp)){
+    ad2etsi::egodata2cam(msg_ego_data_, msg_cam, *tf2_buffer_.get(), 32, true);
+  }
+  else if (tf2_buffer_->_frameExists("utm_31N") && tf2_buffer_->canTransform("utm_31N", msg.header.frame_id, msg.header.stamp)) {
+    ad2etsi::egodata2cam(msg_ego_data_, msg_cam, *tf2_buffer_.get(), 31, true);
+  }
+  else
+  {
+    RCLCPP_ERROR(this->get_logger(), "Tranformation to global utm frame not found.");
+  }
+
+  return msg_cam;
 }
 
 pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr msg) {
