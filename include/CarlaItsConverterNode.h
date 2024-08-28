@@ -20,8 +20,8 @@
 
 #include <carla_msgs/msg/carla_ego_vehicle_status.hpp>
 #include <carla_msgs/msg/carla_ego_vehicle_info.hpp>
-#include <etsi_its_msgs_utils/cam_access.hpp>
 #include <perception_msgs_utils/object_access.hpp>
+#include <ad2etsi_converters/Converters.hpp>
 
 #define ROS_LOG_STREAM(level, ...) RCLCPP_##level##_STREAM(this->get_logger(), __VA_ARGS__)
 
@@ -33,17 +33,13 @@ namespace sm = shape_msgs::msg;
 namespace ssm = sensor_msgs::msg;
 
 namespace cm = carla_msgs::msg;
+namespace oa = perception_msgs::object_access;
 namespace etsi_cam = etsi_its_cam_msgs::msg;
-namespace ca = etsi_its_cam_msgs::access;
 
 template<typename T>
 using Subscriber = typename rclcpp::Subscription<T>::SharedPtr;
 template<typename T>
 using Publisher = typename rclcpp::Publisher<T>::SharedPtr;
-
-namespace oa = perception_msgs::object_access;
-namespace ca = etsi_its_cam_msgs::access;
-
 namespace carla {
 
 class ItsConverter : public rclcpp::Node
@@ -52,22 +48,27 @@ class ItsConverter : public rclcpp::Node
     ItsConverter();
 
   private:
-    void subscribeNewTopics();
+    bool loadParameters();
+    void subscribeCustomTopics();
+
     void gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string actor_name);
-    void objectsCallback(const dom::ObjectArray::ConstPtr msg);
-    void customObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string topic_name);
-    void odometryCallback(const nm::Odometry::ConstPtr msg, std::string actor_name);
     void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg, std::string actor_name);
     void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string actor_name);
-    bool loadParameters();
-
-    etsi_cam::CAM convertToEtsiCam(const pi::EgoData& ego_data, ssm::NavSatFix gnss);
+    void odometryCallback(const nm::Odometry::ConstPtr msg, std::string actor_name);
+    void objectsCallback(const dom::ObjectArray::ConstPtr msg);
+    void customObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string topic_name);
+ 
     pi::ObjectList convertObjectArray(const dom::ObjectArray::ConstPtr msg);
+    etsi_cam::CAM convertEgoDataCam(const pi::EgoData msg);
     bool transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed, std::string target_frame);
 
-    rclcpp::TimerBase::SharedPtr timer_;
+    // tf amd timing variables
     std::unique_ptr<tf2_ros::Buffer> tf2_buffer_;
+    std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
+    rclcpp::TimerBase::SharedPtr timer_;
+    rclcpp::Time last_cam_msg_;
 
+    // subscriber and publisher
     Subscriber<dom::ObjectArray> sub_objects_;
 
     std::map<std::string, Subscriber<ssm::NavSatFix>> sub_gnss_map_;
@@ -81,9 +82,6 @@ class ItsConverter : public rclcpp::Node
     std::map<std::string, Publisher<pi::EgoData>> pub_ego_data_map_;
     std::map<std::string, Publisher<etsi_cam::CAM>> pub_etsi_cam_map_;
     std::map<std::string, Publisher<pi::ObjectList>> pub_custom_objects_map_;
-    std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
-
-    pi::EgoData msg_ego_data_;
 
     // ros parameters
     std::vector<std::string> ego_data_actors_;
@@ -101,6 +99,8 @@ class ItsConverter : public rclcpp::Node
     std::map<std::string, gm::Accel> ego_acceleration_map_;
     std::map<std::string, sm::SolidPrimitive> ego_shape_map_;
     std::map<std::string, ssm::NavSatFix> ego_gnss_map_;
+
+    pi::EgoData msg_ego_data_;
 
     // set flags
     std::map<std::string, bool> ego_shape_set_map_;

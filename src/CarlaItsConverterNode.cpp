@@ -5,9 +5,10 @@ namespace carla {
 
 ItsConverter::ItsConverter() : Node("CarlaItsConverter")
 {
-  // load Parameters and if not successful, return
+  // load Parameters
   if(!loadParameters()) return;
 
+  // setup callback functions
   auto odometryArgCallback = [this](const std::string & actor_name) {
     return [this, actor_name](const nm::Odometry::ConstPtr msg) -> void {
       ItsConverter::odometryCallback(msg, actor_name);
@@ -32,11 +33,12 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
     };
   };
 
-  // setup buffer
+  // setup tf2 buffer
   tf2_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
   tf2_buffer_->setUsingDedicatedThread(true);
   tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
   
+  // setup qos
   rclcpp::QoS qosLatching = rclcpp::QoS(rclcpp::KeepLast(1));
   qosLatching.transient_local();
   qosLatching.reliable();
@@ -63,7 +65,7 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
 
     // setup publisher depending on actor_name
     Publisher<pi::EgoData> pub_ego_data = this->create_publisher<pi::EgoData>("/carla_its_converter/" + actor_name + "/ego_data", 1);
-    Publisher<etsi_cam::CAM> pub_etsi_cam = this->create_publisher<etsi_cam::CAM>("/carla_its_converter/" + actor_name + "/etsi_its/cam", 1);
+    Publisher<etsi_cam::CAM> pub_etsi_cam = this->create_publisher<etsi_cam::CAM>("/carla_its_converter/" + actor_name + "/etsi_cam", 1);
 
     // save publisher in map with actor_name as key
     pub_ego_data_map_.insert({actor_name, pub_ego_data});
@@ -90,63 +92,15 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
     ROS_LOG_STREAM(INFO, "Subscribed /carla object topics for actor " << actor_name << " and publishing /carla_its_converter/" << actor_name << "/objects");
   }
 
-  // create timer to subscribe to new topics
+  // create 1s timer to subscribe to custom topics
   timer_ = this->create_wall_timer(
             std::chrono::seconds(1),
-            std::bind(&ItsConverter::subscribeNewTopics, this)); 
+            std::bind(&ItsConverter::subscribeCustomTopics, this)); 
+
+  // init last_cam_msg_
+  last_cam_msg_ = this->now();
 
   ROS_LOG_STREAM(INFO, "carla_its_converter running...");  
-  ROS_LOG_STREAM(INFO, "scanning custom object topics...");  
-}
-
-void ItsConverter::subscribeNewTopics() {
-  
-  auto customObjectsArgCallback = [this](const std::string & topic_name) {
-    return [this, topic_name](const dom::ObjectArray::ConstPtr msg) -> void {
-      ItsConverter::customObjectsCallback(msg, topic_name);
-    };
-  };
-
-  // get topic names and types
-  std::map<std::string, std::vector<std::string> > topics = this->get_topic_names_and_types();
-
-  // filter topics by datatype
-  for (const auto& topic : topics){
-
-    std::string topic_name = topic.first;
-    std::string topic_type = topic.second[0];
-
-    // search "/carla/" pattern
-    const std::string pattern_carla = "/carla/";
-    std::size_t pos = topic_name.find(pattern_carla);
-
-    // skip if topic does not match /carla pattern
-    if (pos == std::string::npos) continue;
-
-    // remove "/carla/" from topic
-    topic_name = topic_name.substr(pos + pattern_carla.length());
-
-    // skip if topic does not match type
-    if (topic_type != "derived_object_msgs/msg/ObjectArray") continue;
-
-    // skip if topic matches standard object topic pattern
-    std::regex pattern_objects("/carla/.*\\/objects");
-    if (topic_name == "/carla/objects" || std::regex_match(topic_name, pattern_objects)) continue;
-
-    // skip if topic is already subscribed
-    if (sub_custom_objects_map_.find(topic_name) != sub_custom_objects_map_.end()) continue;
-
-    // setup subscriber depending on topic name and save subscriber in vector
-    Subscriber<dom::ObjectArray> sub_custom_objects = this->create_subscription<dom::ObjectArray>(pattern_carla + topic_name, 1, customObjectsArgCallback(topic_name));
-    sub_custom_objects_map_.insert({topic_name, sub_custom_objects});
-
-    // setup publisher depending on topic name and save publisher in vector 
-    Publisher<pi::ObjectList> pub_custom_objects = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + topic_name, 1);
-    pub_custom_objects_map_.insert({topic_name, pub_custom_objects});
-
-    ROS_LOG_STREAM(INFO, "Subscribed custom topic /carla/" << topic_name << " and publishing /carla_its_converter/" << topic_name);
-  }
-
 }
 
 bool ItsConverter::loadParameters() {
@@ -207,6 +161,53 @@ bool ItsConverter::loadParameters() {
   return true;
 }
 
+void ItsConverter::subscribeCustomTopics() {
+  
+  auto customObjectsArgCallback = [this](const std::string & topic_name) {
+    return [this, topic_name](const dom::ObjectArray::ConstPtr msg) -> void {
+      ItsConverter::customObjectsCallback(msg, topic_name);
+    };
+  };
+
+  // iterate over all topic
+  std::map<std::string, std::vector<std::string> > topics = this->get_topic_names_and_types();
+  for (const auto& topic : topics){
+
+    std::string topic_name = topic.first;
+    std::string topic_type = topic.second[0];
+
+    // search "/carla/" pattern
+    const std::string pattern_carla = "/carla/";
+    std::size_t pos = topic_name.find(pattern_carla);
+
+    // skip if topic does not match /carla pattern
+    if (pos == std::string::npos) continue;
+
+    // remove "/carla/" from topic
+    topic_name = topic_name.substr(pos + pattern_carla.length());
+
+    // skip if topic does not match type
+    if (topic_type != "derived_object_msgs/msg/ObjectArray") continue;
+
+    // skip if topic matches standard object topic pattern
+    std::regex pattern_objects("/carla/.*\\/objects");
+    if (topic_name == "/carla/objects" || std::regex_match(topic_name, pattern_objects)) continue;
+
+    // skip if topic is already subscribed
+    if (sub_custom_objects_map_.find(topic_name) != sub_custom_objects_map_.end()) continue;
+
+    // setup subscriber depending on topic name and save subscriber in vector
+    Subscriber<dom::ObjectArray> sub_custom_objects = this->create_subscription<dom::ObjectArray>(pattern_carla + topic_name, 1, customObjectsArgCallback(topic_name));
+    sub_custom_objects_map_.insert({topic_name, sub_custom_objects});
+
+    // setup publisher depending on topic name and save publisher in vector 
+    Publisher<pi::ObjectList> pub_custom_objects = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + topic_name, 1);
+    pub_custom_objects_map_.insert({topic_name, pub_custom_objects});
+
+    ROS_LOG_STREAM(INFO, "Subscribed custom topic /carla/" << topic_name << " and publishing /carla_its_converter/" << topic_name);
+  }
+}
+
 void ItsConverter::gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string actor_name) {
   // get gnss position from actor_name vehicle
   ego_gnss_map_[actor_name] = *msg;
@@ -232,7 +233,7 @@ void ItsConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr m
 }
 
 void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::string actor_name) {
-  // map ego data from CARLA to the perception_msgs format
+  // map ego data from CARLA to the perception_msgs EgoData format
   if(ego_shape_set_map_[actor_name] && ego_status_set_map_[actor_name]){
     msg_ego_data_.header = msg->header;
     
@@ -283,41 +284,59 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::strin
     // publish ego_data in carla_map frame
     pub_ego_data_map_[actor_name]->publish(msg_ego_data_);
 
-    // additionally publish etsi_cam
-    if (ego_gnss_set_map_[actor_name]) {
-      etsi_cam::CAM msg_cam = convertToEtsiCam(msg_ego_data_, ego_gnss_map_[actor_name]);
-
+    // try to convert ego_data to CAM
+    try {
+      etsi_cam::CAM msg_cam = convertEgoDataCam(msg_ego_data_);
       pub_etsi_cam_map_[actor_name]->publish(msg_cam);
     }
-
-  } 
+    catch (const std::exception& e) {
+      if (this->now() - last_cam_msg_ > rclcpp::Duration(1, 0)) {
+        RCLCPP_WARN(this->get_logger(), "Skip EgoData to CAM conversion: %s (Make sure that utm frame exist unix time is used!)", e.what());
+        last_cam_msg_ = this->now();
+      }
+    }
+  }
 }
 
-etsi_cam::CAM ItsConverter::convertToEtsiCam(const pi::EgoData &ego_data, ssm::NavSatFix gnss) {
-  
-  etsi_cam::CAM cam;
-  
-  ca::setItsPduHeader(cam, ego_data.vehicle_id);
-  
-  uint64_t nns = ego_data.header.stamp.sec * 1e9 + ego_data.header.stamp.nanosec;
-    
-  ca::setGenerationDeltaTime(cam, nns, etsi_its_msgs::getLeapSecondInsertionsSince2004((uint64_t)ego_data.header.stamp.sec));
-  
-  ca::setReferencePosition(cam, gnss.latitude, gnss.longitude, gnss.altitude + ego_data.height/2);
-  
-  // convert and crop heading to etsi range [0,360]
-  double heading = 90 - oa::getYawInDeg(ego_data);
-  if (heading > 360) heading -= 360;
-  if (heading < 0) heading += 360;
-  ca::setHeading(cam, heading);
+void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
+  pi::ObjectList msg_object_list_ = ItsConverter::convertObjectArray(msg);
 
-  ca::setVehicleDimensions(cam, ego_data.length, ego_data.width);
-  
-  ca::setSpeed(cam, oa::getVelocityMagnitude(ego_data));
-  ca::setLongitudinalAcceleration(cam, oa::getAccLon(ego_data));
-  ca::setLateralAcceleration(cam, oa::getAccLat(ego_data));
+  // publish object_list in carla_map frame
+  pub_objects_carla_map_->publish(msg_object_list_);
 
-  return cam;
+  // iterate over each actor_name
+  for(std::string & actor_name: object_data_actors_){
+    pi::ObjectList msg_object_list_copy = msg_object_list_;
+
+    // Set increasing sensor ID per role name. As `ego_data_actors_` doesnt change, this assigns a fixed sensor ID to each role.
+    for (auto &object: msg_object_list_copy.objects)
+    {
+      object.state.sensor_id[0] = ego_id_map_[actor_name];
+    }
+
+    // remove element with the actor_name id
+    msg_object_list_copy.objects.erase(std::remove_if(msg_object_list_copy.objects.begin(), msg_object_list_copy.objects.end(), [this, actor_name](const pi::Object& obj) {
+      return obj.id == ego_id_map_[actor_name];
+    }), msg_object_list_copy.objects.end());
+
+    // transform the object_list from carla_map to actor_name frame
+    pi::ObjectList msg_object_list_transformed;
+    if (ItsConverter::transformFrame(msg_object_list_copy, msg_object_list_transformed, actor_name)) {  
+      pub_objects_map_[actor_name]->publish(msg_object_list_transformed);
+    };
+  }
+}
+
+void ItsConverter::customObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string topic_name) {
+  pi::ObjectList msg_object_list_ = ItsConverter::convertObjectArray(msg);
+  pi::ObjectList msg_object_list_transformed;
+
+  // transform the object_list from carla_map to topic frame if possible
+  if (ItsConverter::transformFrame(msg_object_list_, msg_object_list_transformed, topic_name)) {
+    pub_custom_objects_map_[topic_name]->publish(msg_object_list_transformed);
+  } else {
+    pub_custom_objects_map_[topic_name]->publish(msg_object_list_);
+  }
 }
 
 pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr msg) {
@@ -450,6 +469,25 @@ pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr
   return msg_object_list_;
 }
 
+etsi_cam::CAM ItsConverter::convertEgoDataCam(const pi::EgoData msg) {
+
+  etsi_cam::CAM msg_cam;
+
+  // TODO: get direct parent frame of carla_map dynamically
+  if (tf2_buffer_->_frameExists("utm_32N") && tf2_buffer_->canTransform("utm_32N", msg.header.frame_id, msg.header.stamp)){
+    ad2etsi::egodata2cam(msg_ego_data_, msg_cam, *tf2_buffer_.get(), 32, true);
+  }
+  else if (tf2_buffer_->_frameExists("utm_31N") && tf2_buffer_->canTransform("utm_31N", msg.header.frame_id, msg.header.stamp)) {
+    ad2etsi::egodata2cam(msg_ego_data_, msg_cam, *tf2_buffer_.get(), 31, true);
+  }
+  else
+  {
+    RCLCPP_ERROR(this->get_logger(), "Tranformation to global utm frame not found.");
+  }
+
+  return msg_cam;
+}
+
 bool ItsConverter::transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed, std::string target_frame) {
 
   if (msg_object_list.objects.size() == 0) return false;
@@ -474,47 +512,6 @@ bool ItsConverter::transformFrame(const pi::ObjectList& msg_object_list, pi::Obj
     ROS_LOG_STREAM(WARN, "Transformation from '" << target_frame << "' or its subframes is not available");
     ROS_LOG_STREAM(WARN, e.what());
     return false;
-  }
-}
-
-void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
-  pi::ObjectList msg_object_list_ = ItsConverter::convertObjectArray(msg);
-
-  // publish object_list in carla_map frame
-  pub_objects_carla_map_->publish(msg_object_list_);
-
-  // iterate over each actor_name
-  for(std::string & actor_name: object_data_actors_){
-    pi::ObjectList msg_object_list_copy = msg_object_list_;
-
-    // Set increasing sensor ID per role name. As `ego_data_actors_` doesnt change, this assigns a fixed sensor ID to each role.
-    for (auto &object: msg_object_list_copy.objects)
-    {
-      object.state.sensor_id[0] = ego_id_map_[actor_name];
-    }
-
-    // remove element with the actor_name id
-    msg_object_list_copy.objects.erase(std::remove_if(msg_object_list_copy.objects.begin(), msg_object_list_copy.objects.end(), [this, actor_name](const pi::Object& obj) {
-      return obj.id == ego_id_map_[actor_name];
-    }), msg_object_list_copy.objects.end());
-
-    // transform the object_list from carla_map to actor_name frame
-    pi::ObjectList msg_object_list_transformed;
-    if (ItsConverter::transformFrame(msg_object_list_copy, msg_object_list_transformed, actor_name)) {  
-      pub_objects_map_[actor_name]->publish(msg_object_list_transformed);
-    };
-  }
-}
-
-void ItsConverter::customObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string topic_name) {
-  pi::ObjectList msg_object_list_ = ItsConverter::convertObjectArray(msg);
-  pi::ObjectList msg_object_list_transformed;
-
-  // transform the object_list from carla_map to topic frame if possible
-  if (ItsConverter::transformFrame(msg_object_list_, msg_object_list_transformed, topic_name)) {
-    pub_custom_objects_map_[topic_name]->publish(msg_object_list_transformed);
-  } else {
-    pub_custom_objects_map_[topic_name]->publish(msg_object_list_);
   }
 }
 
