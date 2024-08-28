@@ -97,8 +97,8 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
             std::chrono::seconds(1),
             std::bind(&ItsConverter::subscribeCustomTopics, this)); 
 
-  // init last_cam_conversion_
-  last_cam_conversion_ = this->now();
+  // init last_cam_msg_
+  last_cam_msg_ = this->now();
 
   ROS_LOG_STREAM(INFO, "carla_its_converter running...");  
 }
@@ -290,9 +290,9 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::strin
       pub_etsi_cam_map_[actor_name]->publish(msg_cam);
     }
     catch (const std::exception& e) {
-      if (this->now() - last_cam_conversion_ > rclcpp::Duration(1, 0)) {
+      if (this->now() - last_cam_msg_ > rclcpp::Duration(1, 0)) {
         RCLCPP_WARN(this->get_logger(), "Skip EgoData to CAM conversion: %s (Make sure that utm frame exist unix time is used!)", e.what());
-        last_cam_conversion_ = this->now();
+        last_cam_msg_ = this->now();
       }
     }
   }

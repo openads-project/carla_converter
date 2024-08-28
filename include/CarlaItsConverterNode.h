@@ -66,7 +66,7 @@ class ItsConverter : public rclcpp::Node
     std::unique_ptr<tf2_ros::Buffer> tf2_buffer_;
     std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
     rclcpp::TimerBase::SharedPtr timer_;
-    rclcpp::Time last_cam_conversion_;
+    rclcpp::Time last_cam_msg_;
 
     // subscriber and publisher
     Subscriber<dom::ObjectArray> sub_objects_;
