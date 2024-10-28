@@ -7,7 +7,5 @@ variables:
   COMMAND: ros2 launch carla_its_converter carla_its_converter.launch.py
   TARGET: dev, run
   PLATFORM: amd64
-  IMAGE_TAG: ros2
   ENABLE_INDUSTRIAL_CI: 'false'
-  ENABLE_PUSH_AS_LATEST: 'true'
   REMOTE_BUILDKIT: '134.130.20.221:29170'
