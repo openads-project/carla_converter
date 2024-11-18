@@ -45,8 +45,8 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
   
   // setup subscriber and publisher
   sub_objects_ = this->create_subscription<dom::ObjectArray>("/carla/objects", 1, std::bind(&ItsConverter::objectsCallback, this, std::placeholders::_1));
-  pub_objects_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/objects", 1);
-  ROS_LOG_STREAM(INFO, "Subscribed to /carla/objects and publishing to /carla_its_converter/objects");
+  pub_objects_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/object_list", 1);
+  ROS_LOG_STREAM(INFO, "Subscribed to /carla/objects and publishing to /carla_its_converter/object_list");
   
   // setup subscriber and publisher depending on actor_name
   for(std::string& actor_name : ego_data_actors_) { 
@@ -84,12 +84,12 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter")
     sub_vehicle_info_map_.insert({actor_name, sub_vehicle_info});
 
     // setup publisher depending on actor_name
-    Publisher<pi::ObjectList> pub_objects = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + actor_name + "/objects", 1);
+    Publisher<pi::ObjectList> pub_objects = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + actor_name + "/object_list", 1);
 
     // save publisher in map with actor_name as key
     pub_objects_map_.insert({actor_name, pub_objects});
 
-    ROS_LOG_STREAM(INFO, "Subscribed /carla object topics for actor " << actor_name << " and publishing /carla_its_converter/" << actor_name << "/objects");
+    ROS_LOG_STREAM(INFO, "Subscribed /carla object topics for actor " << actor_name << " and publishing /carla_its_converter/" << actor_name << "/object_list");
   }
 
   // create 1s timer to subscribe to custom topics
@@ -176,16 +176,6 @@ void ItsConverter::subscribeCustomTopics() {
     std::string topic_name = topic.first;
     std::string topic_type = topic.second[0];
 
-    // search "/carla/" pattern
-    const std::string pattern_carla = "/carla/";
-    std::size_t pos = topic_name.find(pattern_carla);
-
-    // skip if topic does not match /carla pattern
-    if (pos == std::string::npos) continue;
-
-    // remove "/carla/" from topic
-    topic_name = topic_name.substr(pos + pattern_carla.length());
-
     // skip if topic does not match type
     if (topic_type != "derived_object_msgs/msg/ObjectArray") continue;
 
@@ -193,18 +183,31 @@ void ItsConverter::subscribeCustomTopics() {
     std::regex pattern_objects("/carla/.*\\/objects");
     if (topic_name == "/carla/objects" || std::regex_match(topic_name, pattern_objects)) continue;
 
+    // remove "/carla/"
+    size_t pos = topic_name.find("/carla/");
+    if (pos != std::string::npos) {
+        topic_name.erase(pos, 7); // length of "/carla/" is 7
+    }
+    
+    // remove "/objects"
+    pos = topic_name.find("/objects");
+    if (pos != std::string::npos) {
+        topic_name.erase(pos, 8); // length of "/objects" is 8
+    }
+
     // skip if topic is already subscribed
     if (sub_custom_objects_map_.find(topic_name) != sub_custom_objects_map_.end()) continue;
 
     // setup subscriber depending on topic name and save subscriber in vector
-    Subscriber<dom::ObjectArray> sub_custom_objects = this->create_subscription<dom::ObjectArray>(pattern_carla + topic_name, 1, customObjectsArgCallback(topic_name));
+    Subscriber<dom::ObjectArray> sub_custom_objects = this->create_subscription<dom::ObjectArray>("/carla/" + topic_name + "/objects", 1, customObjectsArgCallback(topic_name));
     sub_custom_objects_map_.insert({topic_name, sub_custom_objects});
 
+
     // setup publisher depending on topic name and save publisher in vector 
-    Publisher<pi::ObjectList> pub_custom_objects = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + topic_name, 1);
+    Publisher<pi::ObjectList> pub_custom_objects = this->create_publisher<pi::ObjectList>("/carla_its_converter/" + topic_name + "/object_list", 1);
     pub_custom_objects_map_.insert({topic_name, pub_custom_objects});
 
-    ROS_LOG_STREAM(INFO, "Subscribed custom topic /carla/" << topic_name << " and publishing /carla_its_converter/" << topic_name);
+    ROS_LOG_STREAM(INFO, "Subscribed custom topic /carla/" << topic_name << "/objects and publishing /carla_its_converter/" << topic_name << "/object_list");
   }
 }
 
