@@ -101,8 +101,10 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
   // create 1s timer to subscribe to custom topics
   timer_ = this->create_wall_timer(std::chrono::seconds(1), std::bind(&ItsConverter::subscribeCustomTopics, this));
 
-  // init last_cam_msg_
+  // init etsi msg timestpamp
   last_cam_msg_ = this->now();
+  last_spatem_msg_ = this->now();
+  last_mapem_msg_ = this->now();
 
   ROS_LOG_STREAM(INFO, "carla_its_converter running...");
 }
@@ -229,6 +231,151 @@ void ItsConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr m
   }
 
   ego_info_set_map_[actor_name] = true;
+}
+
+uint16_t trafficLightIdToIntersectionId(const int id)
+{
+  return id / 100;
+}
+
+uint16_t trafficLightIdToMovementStateId(const int id)
+{
+  return id % 100;
+}
+
+uint16_t trafficLightIdToLaneId(const int id)
+{
+  return id / 100;
+}
+
+etsi_mapem::MAPEM convertCarlaToEtsi(const cm::CarlaTrafficLightInfoList::ConstPtr msg)
+{
+  etsi_mapem::MAPEM mapem;
+
+  mapem.header =
+  mapem.map.msg_issue_revision.value = 0; // todo?
+  
+  for (auto &traffic_light : msg->traffic_lights) {
+
+    // intersection geometry
+    etsi_mapem::IntersectionGeometry intersection_geometry;
+    intersection_geometry.id.id.value = trafficLightIdToIntersectionId(traffic_light.id);
+    intersection_geometry.ref_point.lat.value = 0; // todo
+    intersection_geometry.ref_point.lon.value = 0; // todo
+    intersection_geometry.ref_point.elevation_is_present = true;
+    intersection_geometry.ref_point.elevation.value = 0;
+
+    // generic lane
+    etsi_mapem::GenericLane generic_lane;
+    generic_lane.lane_id.value = trafficLightIdToLaneId(traffic_light.id);
+    // todo: lane_attributes necessary
+    
+    intersection_geometry.lane_set.array.push_back(generic_lane);
+
+    // nodes
+    etsi_mapem::NodeXY node_traffic;
+    
+    generic_lane.node_list.choice = etsi_mapem::NodeListXY::CHOICE_NODES; // node type is arbritrary in our case?
+    
+    // todo: dangerous data type conversion
+    node_traffic.attributes.d_elevation_is_present = true;
+    node_traffic.delta.node_xy1.x.value = traffic_light.transform.position.x;
+    node_traffic.delta.node_xy1.y.value = traffic_light.transform.position.y;
+    node_traffic.attributes.d_elevation.value = traffic_light.transform.position.z;
+    
+    generic_lane.node_list.nodes.array.push_back(node_traffic);
+  }
+
+  return mapem;
+}
+
+etsi_spatem::SPATEM convertCarlaToEtsi(const cm::CarlaTrafficLightStatusList::ConstPtr msg)
+{
+  etsi_spatem::SPATEM spatem;
+  
+  spatem.spat.name_is_present = true;
+  //spatem.spat.name = etsi_spatem::DescriptiveName();
+  spatem.spat.name.value = "Carla traffic light status";
+  etsi_spatem::IntersectionStateList intersection_list;
+
+  for (auto &traffic_light : msg->traffic_lights) {
+    
+    // Intersection State
+    etsi_spatem::IntersectionState intersection_state;
+    intersection_state.id.id.set__value(trafficLightIdToIntersectionId(traffic_light.id)); // todo: get the correct Intersectionid
+    intersection_state.revision.value = 0; // are we interested in getting a revision from the CARLA simulation, e.g. a version number of the scene?
+    //intersection_state.status.value = etsi_spatem::IntersectionStatusObject::BIT_INDEX_MANUAL_CONTROL_IS_ENABLED;
+    
+    intersection_state.name_is_present = true;
+    intersection_state.name.value = "Intersection State name";
+
+    intersection_list.array.push_back(intersection_state);
+
+    // Movement State
+    etsi_spatem::MovementState movement_state;
+    movement_state.signal_group.value = trafficLightIdToMovementStateId(traffic_light.id); // signal group id
+
+    intersection_state.states.array.push_back(movement_state);
+
+    // Movement event
+    etsi_spatem::MovementEvent movement_event;
+
+    // todo: discuss which ETSI values to take since the Carla values are ambiguous 
+    switch (traffic_light.state) {
+      case cm::CarlaTrafficLightStatus::RED:
+        movement_event.event_state.value = etsi_spatem::MovementPhaseState::STOP_THEN_PROCEED;
+        break;
+      case cm::CarlaTrafficLightStatus::YELLOW:
+      movement_event.event_state.value = etsi_spatem::MovementPhaseState::PRE_MOVEMENT;
+        break;
+      case cm::CarlaTrafficLightStatus::GREEN:
+        movement_event.event_state.value = etsi_spatem::MovementPhaseState::PERMISSIVE_MOVEMENT_ALLOWED;
+        break;
+      case cm::CarlaTrafficLightStatus::OFF:
+        movement_event.event_state.value = etsi_spatem::MovementPhaseState::DARK;
+        break;
+      case cm::CarlaTrafficLightStatus::UNKNOWN:
+        movement_event.event_state.value = etsi_spatem::MovementPhaseState::DARK;
+        break;
+    default:
+      movement_event.event_state.value = etsi_spatem::MovementPhaseState::STOP_THEN_PROCEED;
+      break;
+    }
+
+    movement_state.state_time_speed.array.push_back(movement_event);
+  }
+
+  return spatem;
+}
+
+void ItsConverter::trafficInfoCallback(const cm::CarlaTrafficLightInfoList::ConstPtr msg, const std::string actor_name) {
+  // try to convert TrafficListInfoList to MAPEM
+  try {
+    etsi_mapem::MAPEM msg_mapem = convertCarlaToEtsi(msg);
+    
+    pub_etsi_mapem_map_[actor_name]->publish(msg_mapem);
+  } catch (const std::exception& e) {
+    if (this->now() - last_mapem_msg_ > rclcpp::Duration(1, 0)) {
+      RCLCPP_WARN(this->get_logger(),
+                  "Skip EgoData to CAM conversion: %s (Make sure that utm frame exist unix time is used!)", e.what());
+      last_mapem_msg_ = this->now();
+    }
+  }
+}
+
+
+void ItsConverter::trafficStatusCallback(const cm::CarlaTrafficLightStatusList::ConstPtr msg, const std::string actor_name) {
+  // try to convert CarlaTrafficLightStatusList to SPATEM
+  try {
+    etsi_spatem::SPATEM msg_spatem = convertCarlaToEtsi(msg);
+    pub_etsi_spatem_map_[actor_name]->publish(msg_spatem);
+  } catch (const std::exception& e) {
+    if (this->now() - last_spatem_msg_ > rclcpp::Duration(1, 0)) {
+      RCLCPP_WARN(this->get_logger(),
+                  "Skip EgoData to CAM conversion: %s (Make sure that utm frame exist unix time is used!)", e.what());
+      last_spatem_msg_ = this->now();
+    }
+  }
 }
 
 void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::string actor_name) {
@@ -458,7 +605,7 @@ pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr
 
 etsi_cam::CAM ItsConverter::convertEgoDataCam(const pi::EgoData msg) {
   etsi_cam::CAM msg_cam;
-
+  
   // TODO: get direct parent frame of carla_map dynamically
   if (tf2_buffer_->_frameExists("utm_32N") &&
       tf2_buffer_->canTransform("utm_32N", msg.header.frame_id, msg.header.stamp)) {
