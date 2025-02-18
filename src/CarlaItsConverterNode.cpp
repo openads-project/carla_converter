@@ -252,7 +252,6 @@ etsi_mapem::MAPEM convertCarlaToEtsi(const cm::CarlaTrafficLightInfoList::ConstP
 {
   etsi_mapem::MAPEM mapem;
 
-  mapem.header =
   mapem.map.msg_issue_revision.value = 0; // todo?
   
   for (auto &traffic_light : msg->traffic_lights) {
