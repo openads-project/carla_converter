@@ -60,8 +60,8 @@ class ItsConverter : public rclcpp::Node {
   void gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string actor_name);
   void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg, std::string actor_name);
   void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string actor_name);
-  void trafficInfoCallback(const cm::CarlaTrafficLightInfoList::ConstPtr msg, std::string actor_name);
-  void trafficStatusCallback(const cm::CarlaTrafficLightStatusList::ConstPtr msg, std::string actor_name);
+  void trafficInfoCallback(const cm::CarlaTrafficLightInfoList::ConstPtr msg);
+  void trafficStatusCallback(const cm::CarlaTrafficLightStatusList::ConstPtr msg);
   
   void odometryCallback(const nm::Odometry::ConstPtr msg, std::string actor_name);
   void objectsCallback(const dom::ObjectArray::ConstPtr msg);
@@ -82,21 +82,21 @@ class ItsConverter : public rclcpp::Node {
 
   // subscriber and publisher
   Subscriber<dom::ObjectArray> sub_objects_;
+  Subscriber<cm::CarlaTrafficLightInfoList> sub_traffic_light_info_list_;
+  Subscriber<cm::CarlaTrafficLightStatusList> sub_traffic_light_status_list_;
 
   std::map<std::string, Subscriber<ssm::NavSatFix>> sub_gnss_map_;
   std::map<std::string, Subscriber<nm::Odometry>> sub_odometry_map_;
   std::map<std::string, Subscriber<cm::CarlaEgoVehicleStatus>> sub_vehicle_status_map_;
   std::map<std::string, Subscriber<cm::CarlaEgoVehicleInfo>> sub_vehicle_info_map_;
   std::map<std::string, Subscriber<dom::ObjectArray>> sub_custom_objects_map_;
-  std::map<std::string, Subscriber<cm::CarlaTrafficLightInfoList>> sub_traffic_light_info_list_;
-  std::map<std::string, Subscriber<cm::CarlaTrafficLightStatusList>> sub_traffic_light_status_list_;
 
   Publisher<pi::ObjectList> pub_objects_carla_map_;
+  Publisher<etsi_mapem::MAPEM> pub_etsi_mapem_;
+  Publisher<etsi_spatem::SPATEM> pub_etsi_spatem_;
   std::map<std::string, Publisher<pi::ObjectList>> pub_objects_map_;
   std::map<std::string, Publisher<pi::EgoData>> pub_ego_data_map_;
   std::map<std::string, Publisher<etsi_cam::CAM>> pub_etsi_cam_map_;
-  std::map<std::string, Publisher<etsi_mapem::MAPEM>> pub_etsi_mapem_map_;
-  std::map<std::string, Publisher<etsi_spatem::SPATEM>> pub_etsi_spatem_map_;
   std::map<std::string, Publisher<pi::ObjectList>> pub_custom_objects_map_;
   
 

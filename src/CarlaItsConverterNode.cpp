@@ -46,6 +46,17 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
   pub_objects_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/object_list", 1);
   ROS_LOG_STREAM(INFO, "Subscribed to /carla/objects and publishing to /carla_its_converter/object_list");
 
+  // info: mapem
+  sub_traffic_light_info_list_ = this->create_subscription<cm::CarlaTrafficLightInfoList>(
+    "/carla/traffic_lights/info", 1, std::bind(&ItsConverter::trafficInfoCallback, this, std::placeholders::_1));
+  pub_etsi_mapem_ = this->create_publisher<etsi_mapem::MAPEM>("/carla_its_converter/etsi_mapem", 1);
+  ROS_LOG_STREAM(INFO, "Subscribed to /carla/traffic_lights/info and publishing to /carla_its_converter/etsi_mapem");
+
+  sub_traffic_light_status_list_ = this->create_subscription<cm::CarlaTrafficLightStatusList>(
+    "/carla/traffic_lights/status", 1, std::bind(&ItsConverter::trafficStatusCallback, this, std::placeholders::_1));
+  pub_etsi_spatem_ = this->create_publisher<etsi_spatem::SPATEM>("/carla_its_converter/etsi_spatem", 1);
+  ROS_LOG_STREAM(INFO, "Subscribed to /carla/traffic_lights/status and publishing to /carla_its_converter/etsi_spatem");
+
   // setup subscriber and publisher depending on actor_name
   for (std::string& actor_name : ego_data_actors_) {
     // setup subscriber depending on actor_name
@@ -235,16 +246,19 @@ void ItsConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr m
 
 uint16_t trafficLightIdToIntersectionId(const int id)
 {
+  // todo: check how the id is encoded
   return id / 100;
 }
 
 uint16_t trafficLightIdToMovementStateId(const int id)
 {
+  // todo: check how the id is encoded
   return id % 100;
 }
 
 uint16_t trafficLightIdToLaneId(const int id)
 {
+  // todo: check how the id is encoded
   return id / 100;
 }
 
@@ -252,7 +266,7 @@ etsi_mapem::MAPEM convertCarlaToEtsi(const cm::CarlaTrafficLightInfoList::ConstP
 {
   etsi_mapem::MAPEM mapem;
 
-  mapem.map.msg_issue_revision.value = 0; // todo?
+  mapem.map.msg_issue_revision.value = 0; // are we interested in getting a revision from the CARLA simulation, e.g. a version number of the scene?
   
   for (auto &traffic_light : msg->traffic_lights) {
 
@@ -283,6 +297,8 @@ etsi_mapem::MAPEM convertCarlaToEtsi(const cm::CarlaTrafficLightInfoList::ConstP
     node_traffic.attributes.d_elevation.value = traffic_light.transform.position.z;
     
     generic_lane.node_list.nodes.array.push_back(node_traffic);
+
+    mapem.map.intersections.array.push_back(intersection_geometry);
   }
 
   return mapem;
@@ -293,17 +309,16 @@ etsi_spatem::SPATEM convertCarlaToEtsi(const cm::CarlaTrafficLightStatusList::Co
   etsi_spatem::SPATEM spatem;
   
   spatem.spat.name_is_present = true;
-  //spatem.spat.name = etsi_spatem::DescriptiveName();
   spatem.spat.name.value = "Carla traffic light status";
   etsi_spatem::IntersectionStateList intersection_list;
 
+  int i = 0;
+
   for (auto &traffic_light : msg->traffic_lights) {
-    
     // Intersection State
     etsi_spatem::IntersectionState intersection_state;
-    intersection_state.id.id.set__value(trafficLightIdToIntersectionId(traffic_light.id)); // todo: get the correct Intersectionid
+    intersection_state.id.id.value = trafficLightIdToIntersectionId(traffic_light.id);
     intersection_state.revision.value = 0; // are we interested in getting a revision from the CARLA simulation, e.g. a version number of the scene?
-    //intersection_state.status.value = etsi_spatem::IntersectionStatusObject::BIT_INDEX_MANUAL_CONTROL_IS_ENABLED;
     
     intersection_state.name_is_present = true;
     intersection_state.name.value = "Intersection State name";
@@ -342,36 +357,43 @@ etsi_spatem::SPATEM convertCarlaToEtsi(const cm::CarlaTrafficLightStatusList::Co
     }
 
     movement_state.state_time_speed.array.push_back(movement_event);
+
+
+    spatem.spat.intersections.array.push_back(intersection_state);
   }
 
   return spatem;
 }
 
-void ItsConverter::trafficInfoCallback(const cm::CarlaTrafficLightInfoList::ConstPtr msg, const std::string actor_name) {
+void ItsConverter::trafficInfoCallback(const cm::CarlaTrafficLightInfoList::ConstPtr msg) {
   // try to convert TrafficListInfoList to MAPEM
+  RCLCPP_INFO(this->get_logger(), "MAPEM test");
   try {
     etsi_mapem::MAPEM msg_mapem = convertCarlaToEtsi(msg);
     
-    pub_etsi_mapem_map_[actor_name]->publish(msg_mapem);
+    pub_etsi_mapem_->publish(msg_mapem);
+    RCLCPP_INFO(this->get_logger(), "MAPEM published");
   } catch (const std::exception& e) {
     if (this->now() - last_mapem_msg_ > rclcpp::Duration(1, 0)) {
       RCLCPP_WARN(this->get_logger(),
-                  "Skip EgoData to CAM conversion: %s (Make sure that utm frame exist unix time is used!)", e.what());
+                  "Skip TrasfficLightInfoList to MAPEM conversion: %s (Make sure that utm frame exist unix time is used!)", e.what());
       last_mapem_msg_ = this->now();
     }
   }
 }
 
 
-void ItsConverter::trafficStatusCallback(const cm::CarlaTrafficLightStatusList::ConstPtr msg, const std::string actor_name) {
+void ItsConverter::trafficStatusCallback(const cm::CarlaTrafficLightStatusList::ConstPtr msg) {
   // try to convert CarlaTrafficLightStatusList to SPATEM
   try {
     etsi_spatem::SPATEM msg_spatem = convertCarlaToEtsi(msg);
-    pub_etsi_spatem_map_[actor_name]->publish(msg_spatem);
+    pub_etsi_spatem_->publish(msg_spatem);
+    RCLCPP_INFO(this->get_logger(), (std::string("Traffic light count") + std::to_string(msg->traffic_lights.size())).c_str());
+    RCLCPP_INFO(this->get_logger(), "SPATEM published");
   } catch (const std::exception& e) {
     if (this->now() - last_spatem_msg_ > rclcpp::Duration(1, 0)) {
       RCLCPP_WARN(this->get_logger(),
-                  "Skip EgoData to CAM conversion: %s (Make sure that utm frame exist unix time is used!)", e.what());
+                  "Skip TrasfficLightInfoList to SPATEM conversion: %s (Make sure that utm frame exist unix time is used!)", e.what());
       last_spatem_msg_ = this->now();
     }
   }
