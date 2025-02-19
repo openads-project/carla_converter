@@ -367,7 +367,6 @@ etsi_spatem::SPATEM convertCarlaToEtsi(const cm::CarlaTrafficLightStatusList::Co
 
 void ItsConverter::trafficInfoCallback(const cm::CarlaTrafficLightInfoList::ConstPtr msg) {
   // try to convert TrafficListInfoList to MAPEM
-  RCLCPP_INFO(this->get_logger(), "MAPEM test");
   try {
     etsi_mapem::MAPEM msg_mapem = convertCarlaToEtsi(msg);
     
