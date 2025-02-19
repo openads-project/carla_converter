@@ -250,19 +250,19 @@ void ItsConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr m
 uint16_t trafficLightIdToIntersectionId(const int id)
 {
   // todo: check how the id is encoded
-  return id / 100;
+  return id;// / 100;
 }
 
 uint16_t trafficLightIdToMovementStateId(const int id)
 {
   // todo: check how the id is encoded
-  return id % 100;
+  return id;// % 100;
 }
 
 uint16_t trafficLightIdToLaneId(const int id)
 {
   // todo: check how the id is encoded
-  return id / 100;
+  return id;// / 100;
 }
 
 etsi_mapem::MAPEM convertCarlaToEtsi(const cm::CarlaTrafficLightInfoList::ConstPtr msg)
