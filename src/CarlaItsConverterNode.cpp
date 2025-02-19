@@ -50,6 +50,9 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
   sub_traffic_light_info_list_ = this->create_subscription<cm::CarlaTrafficLightInfoList>(
     "/carla/traffic_lights/info", 1, std::bind(&ItsConverter::trafficInfoCallback, this, std::placeholders::_1));
   pub_etsi_mapem_ = this->create_publisher<etsi_mapem::MAPEM>("/carla_its_converter/etsi_mapem", 1);
+  timer_publisher_mapem_ = create_wall_timer(
+    std::chrono::milliseconds((long)(1000 / publisher_mapem_frequency_)),
+    std::bind(&ItsConverter::publishMapemData, this));
   ROS_LOG_STREAM(INFO, "Subscribed to /carla/traffic_lights/info and publishing to /carla_its_converter/etsi_mapem");
 
   sub_traffic_light_status_list_ = this->create_subscription<cm::CarlaTrafficLightStatusList>(
@@ -368,19 +371,15 @@ etsi_spatem::SPATEM convertCarlaToEtsi(const cm::CarlaTrafficLightStatusList::Co
 void ItsConverter::trafficInfoCallback(const cm::CarlaTrafficLightInfoList::ConstPtr msg) {
   // try to convert TrafficListInfoList to MAPEM
   try {
-    etsi_mapem::MAPEM msg_mapem = convertCarlaToEtsi(msg);
-    
-    pub_etsi_mapem_->publish(msg_mapem);
-    RCLCPP_INFO(this->get_logger(), "MAPEM published");
+    mapem_converted_ = std::make_shared<etsi_mapem::MAPEM>(convertCarlaToEtsi(msg));
   } catch (const std::exception& e) {
     if (this->now() - last_mapem_msg_ > rclcpp::Duration(1, 0)) {
       RCLCPP_WARN(this->get_logger(),
-                  "Skip TrasfficLightInfoList to MAPEM conversion: %s (Make sure that utm frame exist unix time is used!)", e.what());
+                  "Skip TrafficLightInfoList to MAPEM conversion: %s (Make sure that utm frame exist unix time is used!)", e.what());
       last_mapem_msg_ = this->now();
     }
   }
 }
-
 
 void ItsConverter::trafficStatusCallback(const cm::CarlaTrafficLightStatusList::ConstPtr msg) {
   // try to convert CarlaTrafficLightStatusList to SPATEM
@@ -392,9 +391,21 @@ void ItsConverter::trafficStatusCallback(const cm::CarlaTrafficLightStatusList::
   } catch (const std::exception& e) {
     if (this->now() - last_spatem_msg_ > rclcpp::Duration(1, 0)) {
       RCLCPP_WARN(this->get_logger(),
-                  "Skip TrasfficLightInfoList to SPATEM conversion: %s (Make sure that utm frame exist unix time is used!)", e.what());
+                  "Skip TrafficLightStatusList to SPATEM conversion: %s (Make sure that utm frame exist unix time is used!)", e.what());
       last_spatem_msg_ = this->now();
     }
+  }
+}
+
+void ItsConverter::publishMapemData() {
+  if (mapem_converted_ == nullptr)
+  {
+    RCLCPP_INFO(this->get_logger(), "No MAPEM data available to publish.");
+  }
+  else
+  {
+    pub_etsi_mapem_->publish(*mapem_converted_);
+    RCLCPP_INFO(this->get_logger(), "MAPEM published");
   }
 }
 

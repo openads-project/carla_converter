@@ -60,12 +60,14 @@ class ItsConverter : public rclcpp::Node {
   void gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string actor_name);
   void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg, std::string actor_name);
   void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string actor_name);
-  void trafficInfoCallback(const cm::CarlaTrafficLightInfoList::ConstPtr msg);
-  void trafficStatusCallback(const cm::CarlaTrafficLightStatusList::ConstPtr msg);
   
   void odometryCallback(const nm::Odometry::ConstPtr msg, std::string actor_name);
   void objectsCallback(const dom::ObjectArray::ConstPtr msg);
   void customObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string topic_name);
+  void trafficInfoCallback(const cm::CarlaTrafficLightInfoList::ConstPtr msg);
+  void trafficStatusCallback(const cm::CarlaTrafficLightStatusList::ConstPtr msg);
+
+  void publishMapemData();
 
   pi::ObjectList convertObjectArray(const dom::ObjectArray::ConstPtr msg);
   etsi_cam::CAM convertEgoDataCam(const pi::EgoData msg);
@@ -118,6 +120,11 @@ class ItsConverter : public rclcpp::Node {
   std::map<std::string, ssm::NavSatFix> ego_gnss_map_;
 
   pi::EgoData msg_ego_data_;
+
+  // MAPEM information
+  etsi_mapem::MAPEM::SharedPtr mapem_converted_ = nullptr;
+  rclcpp::TimerBase::SharedPtr timer_publisher_mapem_;
+  const float publisher_mapem_frequency_ = 1.0f;
 
   // set flags
   std::map<std::string, bool> ego_shape_set_map_;
