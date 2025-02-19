@@ -387,7 +387,7 @@ void ItsConverter::trafficStatusCallback(const cm::CarlaTrafficLightStatusList::
   try {
     etsi_spatem::SPATEM msg_spatem = convertCarlaToEtsi(msg);
     pub_etsi_spatem_->publish(msg_spatem);
-    RCLCPP_INFO(this->get_logger(), (std::string("Traffic light count") + std::to_string(msg->traffic_lights.size())).c_str());
+    
     RCLCPP_INFO(this->get_logger(), "SPATEM published");
   } catch (const std::exception& e) {
     if (this->now() - last_spatem_msg_ > rclcpp::Duration(1, 0)) {
