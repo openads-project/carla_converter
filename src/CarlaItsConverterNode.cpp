@@ -300,7 +300,8 @@ etsi_mapem::MAPEM convertCarlaToEtsi(const cm::CarlaTrafficLightInfoList::ConstP
     node_traffic.attributes.d_elevation.value = traffic_light.transform.position.z;
     
     generic_lane.node_list.nodes.array.push_back(node_traffic);
-
+    
+    mapem.map.intersections_is_present = true;
     mapem.map.intersections.array.push_back(intersection_geometry);
   }
 
