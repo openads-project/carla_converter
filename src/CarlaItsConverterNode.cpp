@@ -253,7 +253,7 @@ uint16_t trafficLightIdToIntersectionId(const int id)
   return id;// / 100;
 }
 
-uint16_t trafficLightIdToMovementStateId(const int id)
+uint16_t trafficLightIdToMSignalGroupId(const int id)
 {
   // todo: check how the id is encoded
   return id;// % 100;
@@ -284,7 +284,18 @@ etsi_mapem::MAPEM convertCarlaToEtsi(const cm::CarlaTrafficLightInfoList::ConstP
     // generic lane
     etsi_mapem::GenericLane generic_lane;
     generic_lane.lane_id.value = trafficLightIdToLaneId(traffic_light.id);
-    // todo: lane_attributes necessary
+    //generic_lane.lane_attributes.directional_use = // todo: lane_attributes necessary
+    // generic_lane.lane_attributes.lane_type = 
+    
+    // needed to finde corresponding SPAT messages
+    generic_lane.connects_to_is_present = true;
+    
+    etsi_mapem::Connection connection;
+    connection.signal_group_is_present = true;
+    connection.signal_group.value = trafficLightIdToMSignalGroupId(traffic_light.id);
+
+    generic_lane.connects_to.array.push_back(connection);
+    
     
     intersection_geometry.lane_set.array.push_back(generic_lane);
 
@@ -292,7 +303,9 @@ etsi_mapem::MAPEM convertCarlaToEtsi(const cm::CarlaTrafficLightInfoList::ConstP
     etsi_mapem::NodeXY node_traffic;
     
     generic_lane.node_list.choice = etsi_mapem::NodeListXY::CHOICE_NODES; // node type is arbritrary in our case?
+    // TODO: generic_lane.lane_attributes = ??  set lane direction
     
+
     // todo: dangerous data type conversion
     node_traffic.attributes.d_elevation_is_present = true;
     node_traffic.delta.node_xy1.x.value = traffic_light.transform.position.x;
@@ -331,7 +344,7 @@ etsi_spatem::SPATEM convertCarlaToEtsi(const cm::CarlaTrafficLightStatusList::Co
 
     // Movement State
     etsi_spatem::MovementState movement_state;
-    movement_state.signal_group.value = trafficLightIdToMovementStateId(traffic_light.id); // signal group id
+    movement_state.signal_group.value = trafficLightIdToMSignalGroupId(traffic_light.id); // signal group id
 
     intersection_state.states.array.push_back(movement_state);
 
