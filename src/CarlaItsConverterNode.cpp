@@ -285,19 +285,11 @@ etsi_mapem::MAPEM convertCarlaToEtsi(const cm::CarlaTrafficLightInfoList::ConstP
     etsi_mapem::GenericLane generic_lane;
     generic_lane.lane_id.value = trafficLightIdToLaneId(traffic_light.id);
     //generic_lane.lane_attributes.directional_use = // todo: lane_attributes necessary
-    // generic_lane.lane_attributes.lane_type = 
     
-    // needed to finde corresponding SPAT messages
-    generic_lane.connects_to_is_present = true;
-    
+    // needed to find the corresponding SPAT messages
     etsi_mapem::Connection connection;
     connection.signal_group_is_present = true;
     connection.signal_group.value = trafficLightIdToMSignalGroupId(traffic_light.id);
-
-    generic_lane.connects_to.array.push_back(connection);
-    
-    
-    intersection_geometry.lane_set.array.push_back(generic_lane);
 
     // nodes
     etsi_mapem::NodeXY node_traffic;
@@ -305,15 +297,19 @@ etsi_mapem::MAPEM convertCarlaToEtsi(const cm::CarlaTrafficLightInfoList::ConstP
     generic_lane.node_list.choice = etsi_mapem::NodeListXY::CHOICE_NODES; // node type is arbritrary in our case?
     // TODO: generic_lane.lane_attributes = ??  set lane direction
     
-
     // todo: dangerous data type conversion
     node_traffic.attributes.d_elevation_is_present = true;
     node_traffic.delta.node_xy1.x.value = traffic_light.transform.position.x;
     node_traffic.delta.node_xy1.y.value = traffic_light.transform.position.y;
     node_traffic.attributes.d_elevation.value = traffic_light.transform.position.z;
-    
+
+    // fill arrays
+    generic_lane.connects_to_is_present = true;
+    generic_lane.connects_to.array.push_back(connection);
     generic_lane.node_list.nodes.array.push_back(node_traffic);
-    
+
+    intersection_geometry.lane_set.array.push_back(generic_lane);
+
     mapem.map.intersections_is_present = true;
     mapem.map.intersections.array.push_back(intersection_geometry);
   }
@@ -327,7 +323,6 @@ etsi_spatem::SPATEM convertCarlaToEtsi(const cm::CarlaTrafficLightStatusList::Co
   
   spatem.spat.name_is_present = true;
   spatem.spat.name.value = "Carla traffic light status";
-  etsi_spatem::IntersectionStateList intersection_list;
 
   int i = 0;
 
@@ -340,13 +335,9 @@ etsi_spatem::SPATEM convertCarlaToEtsi(const cm::CarlaTrafficLightStatusList::Co
     intersection_state.name_is_present = true;
     intersection_state.name.value = "Intersection State name";
 
-    intersection_list.array.push_back(intersection_state);
-
     // Movement State
     etsi_spatem::MovementState movement_state;
     movement_state.signal_group.value = trafficLightIdToMSignalGroupId(traffic_light.id); // signal group id
-
-    intersection_state.states.array.push_back(movement_state);
 
     // Movement event
     etsi_spatem::MovementEvent movement_event;
@@ -375,6 +366,7 @@ etsi_spatem::SPATEM convertCarlaToEtsi(const cm::CarlaTrafficLightStatusList::Co
 
     movement_state.state_time_speed.array.push_back(movement_event);
 
+    intersection_state.states.array.push_back(movement_state);
 
     spatem.spat.intersections.array.push_back(intersection_state);
   }
