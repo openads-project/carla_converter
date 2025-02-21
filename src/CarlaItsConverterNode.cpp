@@ -297,11 +297,10 @@ etsi_mapem::MAPEM convertCarlaToEtsi(const cm::CarlaTrafficLightInfoList::ConstP
     generic_lane.node_list.choice = etsi_mapem::NodeListXY::CHOICE_NODES; // node type is arbritrary in our case?
     // TODO: generic_lane.lane_attributes = ??  set lane direction
     
-    // todo: dangerous data type conversion
     node_traffic.attributes.d_elevation_is_present = true;
-    node_traffic.delta.node_xy1.x.value = traffic_light.transform.position.x;
-    node_traffic.delta.node_xy1.y.value = traffic_light.transform.position.y;
-    node_traffic.attributes.d_elevation.value = traffic_light.transform.position.z;
+    node_traffic.delta.node_xy1.x.value = traffic_light.transform.position.x * 1e2;
+    node_traffic.delta.node_xy1.y.value = traffic_light.transform.position.y * 1e2;
+    node_traffic.attributes.d_elevation.value = traffic_light.transform.position.z * 1e2;
 
     // fill arrays
     generic_lane.connects_to_is_present = true;
