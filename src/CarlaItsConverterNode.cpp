@@ -284,8 +284,11 @@ etsi_mapem::MAPEM convertCarlaToEtsi(const cm::CarlaTrafficLightInfoList::ConstP
     // generic lane
     etsi_mapem::GenericLane generic_lane;
     generic_lane.lane_id.value = trafficLightIdToLaneId(traffic_light.id);
-    //generic_lane.lane_attributes.directional_use = // todo: lane_attributes necessary
+    // set bidirectional lane as default
+    generic_lane.lane_attributes.directional_use.value.push_back(true);
+    generic_lane.lane_attributes.directional_use.value.push_back(true);
     
+
     // needed to find the corresponding SPAT messages
     etsi_mapem::Connection connection;
     connection.signal_group_is_present = true;
