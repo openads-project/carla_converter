@@ -269,6 +269,27 @@ uint16_t trafficLightIdToLaneId(const int id)
   return id;// / 100;
 }
 
+
+geometry_msgs::msg::Vector3 transform_vector_by_quaternion(
+  const geometry_msgs::msg::Vector3 &vector,
+  const geometry_msgs::msg::Quaternion &quaternion)
+{
+  // Convert the Vector3 and Quaternion into tf2 types
+  tf2::Vector3 tf_vector(vector.x, vector.y, vector.z);
+  tf2::Quaternion tf_quaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
+
+  // Rotate the vector by the quaternion
+  tf_vector = tf2::quatRotate(tf_quaternion, tf_vector);
+
+  // Convert the tf2::Vector3 back into a geometry_msgs::msg::Vector3
+  geometry_msgs::msg::Vector3 result;
+  result.x = tf_vector.x();
+  result.y = tf_vector.y();
+  result.z = tf_vector.z();
+
+  return result;
+}
+
 etsi_mapem::MAPEM convertCarlaToEtsi(const cm::CarlaTrafficLightInfoList::ConstPtr msg)
 {
   etsi_mapem::MAPEM mapem;
@@ -312,9 +333,10 @@ etsi_mapem::MAPEM convertCarlaToEtsi(const cm::CarlaTrafficLightInfoList::ConstP
 
     etsi_mapem::NodeXY node_bb;
     node_bb.attributes.d_elevation_is_present = true;
-    node_bb.delta.node_xy1.x.value = traffic_light.trigger_volume.center.x * 1e2;
-    node_bb.delta.node_xy1.y.value = traffic_light.trigger_volume.center.y * 1e2;
-    node_bb.attributes.d_elevation.value = traffic_light.trigger_volume.center.z * 1e2;
+    geometry_msgs::msg::Vector3 bb_position_transformed =  transform_vector_by_quaternion(traffic_light.trigger_volume.center, traffic_light.transform.orientation);
+    node_bb.delta.node_xy1.x.value = bb_position_transformed.x * 1e2;
+    node_bb.delta.node_xy1.y.value = bb_position_transformed.y * 1e2;
+    node_bb.attributes.d_elevation.value = bb_position_transformed.z * 1e2;
 
     // fill arrays
     generic_lane.connects_to_is_present = true;
