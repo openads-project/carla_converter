@@ -302,9 +302,16 @@ etsi_mapem::MAPEM convertCarlaToEtsi(const cm::CarlaTrafficLightInfoList::ConstP
     ETSI_ITS_MSGS_UTILS_IMPL_ASN1_PRIMITIVES_ASN1_PRIMITIVES_SETTERS_H::setBitString(generic_lane.lane_attributes.directional_use, direction_bits);
     
     // nodes
-    etsi_mapem::NodeXY node_traffic;
-    
     generic_lane.node_list.choice = etsi_mapem::NodeListXY::CHOICE_NODES; // node type is arbritrary in our case?
+
+    etsi_mapem::NodeXY node_bb;
+    
+    node_bb.attributes.d_elevation_is_present = true;
+    node_bb.delta.node_xy1.x.value = traffic_light.trigger_volume.center.x * 1e2;
+    node_bb.delta.node_xy1.y.value = traffic_light.trigger_volume.center.y * 1e2;
+    node_bb.attributes.d_elevation.value = traffic_light.trigger_volume.center.z * 1e2;
+
+    etsi_mapem::NodeXY node_traffic;
     
     node_traffic.attributes.d_elevation_is_present = true;
     node_traffic.delta.node_xy1.x.value = traffic_light.transform.position.x * 1e2;
@@ -314,6 +321,7 @@ etsi_mapem::MAPEM convertCarlaToEtsi(const cm::CarlaTrafficLightInfoList::ConstP
     // fill arrays
     generic_lane.connects_to_is_present = true;
     generic_lane.connects_to.array.push_back(connection);
+    generic_lane.node_list.nodes.array.push_back(node_bb);
     generic_lane.node_list.nodes.array.push_back(node_traffic);
 
     intersection_geometry.lane_set.array.push_back(generic_lane);
