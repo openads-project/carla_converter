@@ -13,6 +13,8 @@
 
 #include <etsi_its_spatem_ts_msgs/msg/spatem.hpp>
 #include <etsi_its_mapem_ts_msgs/msg/mapem.hpp>
+#include <etsi_its_msgs_utils/mapem_ts_access.hpp>
+#include <etsi_its_msgs_utils/impl/asn1_primitives/asn1_primitives_setters.h>
 
 #include <derived_object_msgs/msg/object_array.hpp>
 #include <geometry_msgs/msg/accel.hpp>

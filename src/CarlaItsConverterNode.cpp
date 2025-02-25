@@ -285,23 +285,22 @@ etsi_mapem::MAPEM convertCarlaToEtsi(const cm::CarlaTrafficLightInfoList::ConstP
     etsi_mapem::GenericLane generic_lane;
     generic_lane.lane_id.value = trafficLightIdToLaneId(traffic_light.id);
     
+    // needed to find the corresponding SPAT messages
+    etsi_mapem::Connection connection;
+    connection.signal_group_is_present = true;
+    connection.signal_group.value = trafficLightIdToMSignalGroupId(traffic_light.id);
+
     // set bidirectional lane as default
     std::vector<bool> direction_bits;
     direction_bits.push_back(true);
     direction_bits.push_back(true);
     
     ETSI_ITS_MSGS_UTILS_IMPL_ASN1_PRIMITIVES_ASN1_PRIMITIVES_SETTERS_H::setBitString(generic_lane.lane_attributes.directional_use, direction_bits);
-
-    // needed to find the corresponding SPAT messages
-    etsi_mapem::Connection connection;
-    connection.signal_group_is_present = true;
-    connection.signal_group.value = trafficLightIdToMSignalGroupId(traffic_light.id);
-
+    
     // nodes
     etsi_mapem::NodeXY node_traffic;
     
     generic_lane.node_list.choice = etsi_mapem::NodeListXY::CHOICE_NODES; // node type is arbritrary in our case?
-    // TODO: generic_lane.lane_attributes = ??  set lane direction
     
     node_traffic.attributes.d_elevation_is_present = true;
     node_traffic.delta.node_xy1.x.value = traffic_light.transform.position.x * 1e2;
