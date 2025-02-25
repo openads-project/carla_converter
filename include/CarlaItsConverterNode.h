@@ -70,6 +70,7 @@ class ItsConverter : public rclcpp::Node {
   void trafficStatusCallback(const cm::CarlaTrafficLightStatusList::ConstPtr msg);
 
   void publishMapemData();
+  void publishSpatemData();
 
   pi::ObjectList convertObjectArray(const dom::ObjectArray::ConstPtr msg);
   etsi_cam::CAM convertEgoDataCam(const pi::EgoData msg);
@@ -127,6 +128,11 @@ class ItsConverter : public rclcpp::Node {
   etsi_mapem::MAPEM::SharedPtr mapem_converted_ = nullptr;
   rclcpp::TimerBase::SharedPtr timer_publisher_mapem_;
   const float publisher_mapem_frequency_ = 1.0f;
+
+  // SPATEM information
+  etsi_spatem::SPATEM::SharedPtr spatem_converted_ = nullptr;
+  rclcpp::TimerBase::SharedPtr timer_publisher_spatem_;
+  const float publisher_spatem_frequency_ = 20.0f;
 
   // set flags
   std::map<std::string, bool> ego_shape_set_map_;

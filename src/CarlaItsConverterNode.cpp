@@ -46,7 +46,7 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
   pub_objects_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/object_list", 1);
   ROS_LOG_STREAM(INFO, "Subscribed to /carla/objects and publishing to /carla_its_converter/object_list");
 
-  // info: mapem
+  // mapem
   sub_traffic_light_info_list_ = this->create_subscription<cm::CarlaTrafficLightInfoList>(
     "/carla/traffic_lights/info", 1, std::bind(&ItsConverter::trafficInfoCallback, this, std::placeholders::_1));
   pub_etsi_mapem_ = this->create_publisher<etsi_mapem::MAPEM>("/carla_its_converter/etsi_mapem", 1);
@@ -55,9 +55,13 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
     std::bind(&ItsConverter::publishMapemData, this));
   ROS_LOG_STREAM(INFO, "Subscribed to /carla/traffic_lights/info and publishing to /carla_its_converter/etsi_mapem");
 
+    /// spatem
   sub_traffic_light_status_list_ = this->create_subscription<cm::CarlaTrafficLightStatusList>(
     "/carla/traffic_lights/status", 1, std::bind(&ItsConverter::trafficStatusCallback, this, std::placeholders::_1));
   pub_etsi_spatem_ = this->create_publisher<etsi_spatem::SPATEM>("/carla_its_converter/etsi_spatem", 1);
+  timer_publisher_spatem_ = create_wall_timer(
+    std::chrono::milliseconds((long)(1000 / publisher_spatem_frequency_)),
+    std::bind(&ItsConverter::publishSpatemData, this));
   ROS_LOG_STREAM(INFO, "Subscribed to /carla/traffic_lights/status and publishing to /carla_its_converter/etsi_spatem");
 
   // setup subscriber and publisher depending on actor_name
@@ -394,8 +398,7 @@ void ItsConverter::trafficInfoCallback(const cm::CarlaTrafficLightInfoList::Cons
 void ItsConverter::trafficStatusCallback(const cm::CarlaTrafficLightStatusList::ConstPtr msg) {
   // try to convert CarlaTrafficLightStatusList to SPATEM
   try {
-    etsi_spatem::SPATEM msg_spatem = convertCarlaToEtsi(msg);
-    pub_etsi_spatem_->publish(msg_spatem);
+    spatem_converted_ = std::make_shared<etsi_spatem::SPATEM>(convertCarlaToEtsi(msg));
     
     RCLCPP_INFO(this->get_logger(), "SPATEM published");
   } catch (const std::exception& e) {
@@ -416,6 +419,18 @@ void ItsConverter::publishMapemData() {
   {
     pub_etsi_mapem_->publish(*mapem_converted_);
     RCLCPP_INFO(this->get_logger(), "MAPEM published");
+  }
+}
+
+void ItsConverter::publishSpatemData() {
+  if (mapem_converted_ == nullptr)
+  {
+    RCLCPP_INFO(this->get_logger(), "No SPATEM data available to publish.");
+  }
+  else
+  {
+    pub_etsi_spatem_->publish(*spatem_converted_);
+    RCLCPP_INFO(this->get_logger(), "SPATEM published");
   }
 }
 
