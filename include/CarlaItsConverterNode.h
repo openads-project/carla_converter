@@ -11,11 +11,6 @@
 #include <rclcpp/rclcpp.hpp>
 #include <regex>
 
-#include <etsi_its_spatem_ts_msgs/msg/spatem.hpp>
-#include <etsi_its_mapem_ts_msgs/msg/mapem.hpp>
-#include <etsi_its_msgs_utils/mapem_ts_access.hpp>
-#include <etsi_its_msgs_utils/impl/asn1_primitives/asn1_primitives_setters.h>
-
 #include <derived_object_msgs/msg/object_array.hpp>
 #include <geometry_msgs/msg/accel.hpp>
 #include <nav_msgs/msg/odometry.hpp>
@@ -42,8 +37,6 @@ namespace ssm = sensor_msgs::msg;
 namespace cm = carla_msgs::msg;
 namespace oa = perception_msgs::object_access;
 namespace etsi_cam = etsi_its_cam_msgs::msg;
-namespace etsi_mapem = etsi_its_mapem_ts_msgs::msg;
-namespace etsi_spatem = etsi_its_spatem_ts_msgs::msg;
 
 template <typename T>
 using Subscriber = typename rclcpp::Subscription<T>::SharedPtr;
@@ -69,21 +62,21 @@ class ItsConverter : public rclcpp::Node {
   void trafficInfoCallback(const cm::CarlaTrafficLightInfoList::ConstPtr msg);
   void trafficStatusCallback(const cm::CarlaTrafficLightStatusList::ConstPtr msg);
 
-  void publishMapemData();
-  void publishSpatemData();
-
+  void publishTrafficLightData();
+  
   pi::ObjectList convertObjectArray(const dom::ObjectArray::ConstPtr msg);
   etsi_cam::CAM convertEgoDataCam(const pi::EgoData msg);
   bool transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed,
                       std::string target_frame);
+
+  void convertTrafficLightInfo(const cm::CarlaTrafficLightInfoList::ConstPtr msg);
+  void convertTrafficLightStatus(const cm::CarlaTrafficLightStatusList::ConstPtr msg);
 
   // tf amd timing variables
   std::unique_ptr<tf2_ros::Buffer> tf2_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::Time last_cam_msg_;
-  rclcpp::Time last_mapem_msg_;
-  rclcpp::Time last_spatem_msg_;
 
   // subscriber and publisher
   Subscriber<dom::ObjectArray> sub_objects_;
@@ -97,13 +90,12 @@ class ItsConverter : public rclcpp::Node {
   std::map<std::string, Subscriber<dom::ObjectArray>> sub_custom_objects_map_;
 
   Publisher<pi::ObjectList> pub_objects_carla_map_;
-  Publisher<etsi_mapem::MAPEM> pub_etsi_mapem_;
-  Publisher<etsi_spatem::SPATEM> pub_etsi_spatem_;
+  Publisher<pi::ObjectList> pub_trafficlights_carla_map_;
+  
   std::map<std::string, Publisher<pi::ObjectList>> pub_objects_map_;
   std::map<std::string, Publisher<pi::EgoData>> pub_ego_data_map_;
   std::map<std::string, Publisher<etsi_cam::CAM>> pub_etsi_cam_map_;
   std::map<std::string, Publisher<pi::ObjectList>> pub_custom_objects_map_;
-  
 
   // ros parameters
   std::vector<std::string> ego_data_actors_;
@@ -124,15 +116,12 @@ class ItsConverter : public rclcpp::Node {
 
   pi::EgoData msg_ego_data_;
 
-  // MAPEM information
-  etsi_mapem::MAPEM::SharedPtr mapem_converted_ = nullptr;
-  rclcpp::TimerBase::SharedPtr timer_publisher_mapem_;
-  const float publisher_mapem_frequency_ = 1.0f;
+  // trafficlight information (position and signal state)
+  pi::ObjectList::SharedPtr trafficlight_data_;
 
-  // SPATEM information
-  etsi_spatem::SPATEM::SharedPtr spatem_converted_ = nullptr;
-  rclcpp::TimerBase::SharedPtr timer_publisher_spatem_;
-  const float publisher_spatem_frequency_ = 20.0f;
+  pi::ObjectList tafficlights_carla_map_;
+  rclcpp::TimerBase::SharedPtr timer_publisher_trafficlights_;
+  const float publisher_trafficlights_frequency_ = 0.1f;
 
   // set flags
   std::map<std::string, bool> ego_shape_set_map_;
