@@ -30,8 +30,8 @@ This package contains the CarlaItsConverterNode - a simple ROS Node that convert
 | `/carla/$(actor_name)/vehicle_status` | `cm::CarlaEgoVehicleStatus` | Steering angle and acceleration of the `actor_name` from list `ego_data_actors` (default: `ego_vehicle`) |
 | `/carla/$(actor_name)/odometry` | `nm::Odometry` | Odometry of the `actor_name` from list `ego_data_actors` (default: `ego_vehicle`) |
 | `/carla/.*` | `dom::ObjectArray` | All custom topics of type `dom::ObjectArray` are subscribed and converted automatically |
-| `/carla/traffic_lights/info` | `cm::CarlaTrafficLightInfoList` | Global traffic light info including traffic light poses and trigger volumes |
-| `/carla/traffic_lights/status` | `cm::CarlaTrafficLightStatusList` | Global traffic light status (currenttly active light color) |
+| `/carla/traffic_lights/info` | `cm::CarlaTrafficLightInfoList` | Global geometric traffic light information |
+| `/carla/traffic_lights/status` | `cm::CarlaTrafficLightStatusList` | Global traffic light signal status |
 
 #### Published Topics
 
@@ -42,8 +42,7 @@ This package contains the CarlaItsConverterNode - a simple ROS Node that convert
 | `/carla_its_converter/.*` | `perception_msgs::msg::ObjectList` | All custom topics of type `dom::ObjectArray` are subscribed and converted automatically |
 | `/carla_its_converter/$(actor_name)/ego_data` | `perception_msgs::msg::EgoState` | Ego State of `actor_name` from list `ego_data_actors` (default: `ego_vehicle`)  |
 | `/carla_its_converter/$(actor_name)/etsi_cam` | `etsi_its_cam_msgs::msg::CAM` | Ego State of `actor_name` is converted to CAM if simulation time is current unix time. |
-| `/carla_its_converter/etsi_mapem` | `etsi_its_mapem_msgs::msg::MAPEM` | Geometric static scene information in carla map frame |
-| `/carla_its_converter/etsi_spatem` | `etsi_its_mapem_msgs::msg::SPATEM` | Current dynamic scene status |
+| `/carla_its_converter/traffic_lights` | `perception_msgs::msg::ObjectList` | Gloal traffic light information of it's pose and current signal status |
 
 #### Parameters
 
