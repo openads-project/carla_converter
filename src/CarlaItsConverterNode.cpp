@@ -54,7 +54,7 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
     
   pub_trafficlights_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/traffic_lights", 1);
   timer_publisher_trafficlights_ = create_wall_timer(
-    std::chrono::milliseconds((long)(1000 / publisher_trafficlights_frequency_)),
+    std::chrono::milliseconds((long)(100 / publisher_trafficlights_frequency_)),
     std::bind(&ItsConverter::publishTrafficLightData, this));
   ROS_LOG_STREAM(INFO, "Subscribed to /carla/traffic_lights/info and /carla/traffic_lights/status and publishing to /carla_its_converter/trafficlights");
 
@@ -312,7 +312,7 @@ void ItsConverter::convertAndStoreTrafficLightStatus(const cm::CarlaTrafficLight
 
 void ItsConverter::trafficInfoCallback(const cm::CarlaTrafficLightInfoList::ConstPtr msg) {
   try {
-    convertTrafficLightInfo(msg);
+    convertAndStoreTrafficLightInfo(msg);
   } catch (const std::exception& e) {
     RCLCPP_WARN(this->get_logger(), "Skip TrafficLightInfoList conversion: %s", e.what());
   }
@@ -320,7 +320,7 @@ void ItsConverter::trafficInfoCallback(const cm::CarlaTrafficLightInfoList::Cons
 
 void ItsConverter::trafficStatusCallback(const cm::CarlaTrafficLightStatusList::ConstPtr msg) {
   try {
-    convertTrafficLightStatus(msg);
+    convertAndStoreTrafficLightStatus(msg);
   } catch (const std::exception& e) {
     RCLCPP_WARN(this->get_logger(), "Skip TrafficLightStatusList conversion: %s", e.what());
   }
@@ -334,7 +334,6 @@ void ItsConverter::publishTrafficLightData() {
   else
   {
     pub_trafficlights_carla_map_->publish(*trafficlight_data_);
-    RCLCPP_INFO(this->get_logger(), "Carla traffic data published");
   }
 }
 
