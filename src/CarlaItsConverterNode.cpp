@@ -264,7 +264,7 @@ geometry_msgs::msg::Vector3 transform_vector_by_quaternion(
   return result;
 }
 
-void ItsConverter::convertTrafficLightInfo(const cm::CarlaTrafficLightInfoList::ConstPtr msg)
+void ItsConverter::convertAndStoreTrafficLightInfo(const cm::CarlaTrafficLightInfoList::ConstPtr msg)
 {
   trafficlight_data_ = std::make_shared<pi::ObjectList>();
   trafficlight_data_->header.frame_id = "map";
@@ -281,7 +281,7 @@ void ItsConverter::convertTrafficLightInfo(const cm::CarlaTrafficLightInfoList::
   }
 }
 
-void ItsConverter::convertTrafficLightStatus(const cm::CarlaTrafficLightStatusList::ConstPtr msg)
+void ItsConverter::convertAndStoreTrafficLightStatus(const cm::CarlaTrafficLightStatusList::ConstPtr msg)
 {
   int i = 0;
 

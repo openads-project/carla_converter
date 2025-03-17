@@ -69,8 +69,8 @@ class ItsConverter : public rclcpp::Node {
   bool transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed,
                       std::string target_frame);
 
-  void convertTrafficLightInfo(const cm::CarlaTrafficLightInfoList::ConstPtr msg);
-  void convertTrafficLightStatus(const cm::CarlaTrafficLightStatusList::ConstPtr msg);
+  void convertAndStoreTrafficLightInfo(const cm::CarlaTrafficLightInfoList::ConstPtr msg);
+  void convertAndStoreTrafficLightStatus(const cm::CarlaTrafficLightStatusList::ConstPtr msg);
 
   // tf amd timing variables
   std::unique_ptr<tf2_ros::Buffer> tf2_buffer_;
