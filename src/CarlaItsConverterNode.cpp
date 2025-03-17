@@ -52,7 +52,7 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
   sub_traffic_light_status_list_ = this->create_subscription<cm::CarlaTrafficLightStatusList>(
     "/carla/traffic_lights/status", 1, std::bind(&ItsConverter::trafficStatusCallback, this, std::placeholders::_1));
     
-  pub_trafficlights_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/trafficlights", 1);
+  pub_trafficlights_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/traffic_lights", 1);
   timer_publisher_trafficlights_ = create_wall_timer(
     std::chrono::milliseconds((long)(1000 / publisher_trafficlights_frequency_)),
     std::bind(&ItsConverter::publishTrafficLightData, this));
