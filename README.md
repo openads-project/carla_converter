@@ -40,9 +40,9 @@ This package contains the CarlaItsConverterNode - a simple ROS Node that convert
 | `/carla_its_converter/object_list` | `perception_msgs::msg::ObjectList` | Object list in carla map frame |
 | `/carla_its_converter/$(actor_name)/object_list` | `perception_msgs::msg::ObjectList` | Object list in `actor_name` frame from list `ego_data_actors` (default: `ego_vehicle`) |
 | `/carla_its_converter/.*` | `perception_msgs::msg::ObjectList` | All custom topics of type `dom::ObjectArray` are subscribed and converted automatically |
+| `/carla_its_converter/traffic_lights` | `perception_msgs::msg::ObjectList` | Gloal traffic light information of it's pose and current signal status |
 | `/carla_its_converter/$(actor_name)/ego_data` | `perception_msgs::msg::EgoState` | Ego State of `actor_name` from list `ego_data_actors` (default: `ego_vehicle`)  |
 | `/carla_its_converter/$(actor_name)/etsi_cam` | `etsi_its_cam_msgs::msg::CAM` | Ego State of `actor_name` is converted to CAM if simulation time is current unix time. |
-| `/carla_its_converter/traffic_lights` | `perception_msgs::msg::ObjectList` | Gloal traffic light information of it's pose and current signal status |
 
 #### Parameters
 
