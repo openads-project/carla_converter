@@ -272,6 +272,7 @@ void ItsConverter::convertAndStoreTrafficLightInfo(const cm::CarlaTrafficLightIn
 
   for (auto &traffic_light : msg->traffic_lights) {
     pi::Object pi_light;
+    pi_light.id = traffic_light.id;
     oa::initializeState(pi_light, pi::TRAFFICLIGHT::MODEL_ID);
     oa::setPose(pi_light.state, traffic_light.transform);
     oa::setTrafficLightType(pi_light.state, pi::TRAFFICLIGHT::TYPE_UNKNOWN);
