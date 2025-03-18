@@ -54,7 +54,7 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
     
   pub_trafficlights_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/traffic_lights", 1);
   timer_publisher_trafficlights_ = create_wall_timer(
-    std::chrono::milliseconds((long)(100 / publisher_trafficlights_frequency_)),
+    std::chrono::milliseconds((long)(1000 / publisher_trafficlights_frequency_)),
     std::bind(&ItsConverter::publishTrafficLightData, this));
   ROS_LOG_STREAM(INFO, "Subscribed to /carla/traffic_lights/info and /carla/traffic_lights/status and publishing to /carla_its_converter/trafficlights");
 
@@ -294,18 +294,6 @@ void ItsConverter::convertAndStoreTrafficLightStatus(const cm::CarlaTrafficLight
 
       oa::setTrafficLightState(trafficlight_data_->objects.at(i).state, traffic_light.state);
       i++;
-    }
-
-    for (int i = 0; i < msg->traffic_lights.size(); i++)
-    {
-      auto& traffic_light = msg->traffic_lights.at(i);
-
-      if (trafficlight_data_->objects.at(i).id != msg->traffic_lights.at(i).id) {
-        RCLCPP_WARN(this->get_logger(), "Traffic status and info ids do not match.");
-        continue;
-      }
-
-      oa::setTrafficLightState(trafficlight_data_->objects.at(i).state, traffic_light.state);
     }
   }
 }
