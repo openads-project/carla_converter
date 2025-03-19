@@ -267,7 +267,7 @@ geometry_msgs::msg::Vector3 transform_vector_by_quaternion(
 void ItsConverter::convertAndStoreTrafficLightInfo(const cm::CarlaTrafficLightInfoList::ConstPtr msg)
 {
   trafficlight_data_ = std::make_shared<pi::ObjectList>();
-  trafficlight_data_->header.frame_id = "map";
+  trafficlight_data_->header.frame_id = "carla_map";
   trafficlight_data_->header.stamp = get_clock()->now();
 
   for (auto &traffic_light : msg->traffic_lights) {
