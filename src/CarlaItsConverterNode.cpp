@@ -282,6 +282,21 @@ void ItsConverter::convertAndStoreTrafficLightInfo(const cm::CarlaTrafficLightIn
   }
 }
 
+int convert_traffic_staus_from_carla_to_pi(const int status_carla) {
+  switch (status_carla) {
+  case carla_msgs::msg::CarlaTrafficLightStatus::RED:
+    return pi::TRAFFICLIGHT::STATE_RED;
+  case carla_msgs::msg::CarlaTrafficLightStatus::YELLOW:
+    return pi::TRAFFICLIGHT::STATE_YELLOW;    
+  case carla_msgs::msg::CarlaTrafficLightStatus::GREEN:
+    return pi::TRAFFICLIGHT::STATE_GREEN;
+  case carla_msgs::msg::CarlaTrafficLightStatus::UNKNOWN:
+  return pi::TRAFFICLIGHT::STATE_UNKNOWN;
+  default:
+    return pi::TRAFFICLIGHT::STATE_UNKNOWN;
+  }
+}
+
 void ItsConverter::convertAndStoreTrafficLightStatus(const cm::CarlaTrafficLightStatusList::ConstPtr msg)
 {
   int i = 0;
@@ -293,7 +308,8 @@ void ItsConverter::convertAndStoreTrafficLightStatus(const cm::CarlaTrafficLight
         continue;
       }
 
-      oa::setTrafficLightState(trafficlight_data_->objects.at(i).state, traffic_light.state);
+      oa::setTrafficLightState(trafficlight_data_->objects.at(i).state, 
+        convert_traffic_staus_from_carla_to_pi(traffic_light.state));
       i++;
     }
   }
