@@ -243,27 +243,6 @@ void ItsConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr m
   ego_info_set_map_[actor_name] = true;
 }
 
-
-geometry_msgs::msg::Vector3 transform_vector_by_quaternion(
-  const geometry_msgs::msg::Vector3 &vector,
-  const geometry_msgs::msg::Quaternion &quaternion)
-{
-  // Convert the Vector3 and Quaternion into tf2 types
-  tf2::Vector3 tf_vector(vector.x, vector.y, vector.z);
-  tf2::Quaternion tf_quaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
-
-  // Rotate the vector by the quaternion
-  tf_vector = tf2::quatRotate(tf_quaternion, tf_vector);
-
-  // Convert the tf2::Vector3 back into a geometry_msgs::msg::Vector3
-  geometry_msgs::msg::Vector3 result;
-  result.x = tf_vector.x();
-  result.y = tf_vector.y();
-  result.z = tf_vector.z();
-
-  return result;
-}
-
 void ItsConverter::convertAndStoreTrafficLightInfo(const cm::CarlaTrafficLightInfoList::ConstPtr msg)
 {
   trafficlight_data_ = std::make_shared<pi::ObjectList>();
