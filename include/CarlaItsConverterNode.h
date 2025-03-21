@@ -121,7 +121,7 @@ class ItsConverter : public rclcpp::Node {
 
   pi::ObjectList tafficlights_carla_map_;
   rclcpp::TimerBase::SharedPtr timer_publisher_trafficlights_;
-  const float publisher_trafficlights_frequency_ = 10.0f;
+  static constexpr float publisher_trafficlights_frequency_ = 10.0f;
 
   // set flags
   std::map<std::string, bool> ego_shape_set_map_;
