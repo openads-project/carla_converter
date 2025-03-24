@@ -8,22 +8,26 @@ def generate_launch_description():
     transform_utm_31N = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
-        arguments = ['-166021.443', '0', '0', '0', '0', '0', 'world_origin', 'utm_31N']
+        arguments = ['-166021.443', '0', '0', '0', '0', '0', 'world_origin', 'utm_31N'],
+        parameters=[{'use_sim_time': 'true'}]
     )
     transform_utm_31S = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
-        arguments = ['-166021.443', '-10000000.000', '0', '0', '0', '0', 'world_origin', 'utm_31S']
+        arguments = ['-166021.443', '-10000000.000', '0', '0', '0', '0', 'world_origin', 'utm_31S'],
+        parameters=[{'use_sim_time': 'true'}]
     )
     transform_utm_30N = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
-        arguments = ['-833978.557', '0', '0', '0', '0', '0', 'world_origin', 'utm_30N']
+        arguments = ['-833978.557', '0', '0', '0', '0', '0', 'world_origin', 'utm_30N'],
+        parameters=[{'use_sim_time': 'true'}]
     )
     transform_utm_30S = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
-        arguments = ['-833978.557', '-10000000.000', '0', '0', '0', '0',  'world_origin', 'utm_30S']
+        arguments = ['-833978.557', '-10000000.000', '0', '0', '0', '0',  'world_origin', 'utm_30S'],
+        parameters=[{'use_sim_time': 'true'}]
     )
 
     return launch.LaunchDescription([
