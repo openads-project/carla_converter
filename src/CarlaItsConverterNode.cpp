@@ -282,14 +282,20 @@ int convert_traffic_status(const int status_carla) {
 
 void ItsConverter::trafficLightStatusCallback(const cm::CarlaTrafficLightStatusList::ConstPtr msg) {
   try {
-    for (const auto &carla_traffic_light : msg->traffic_lights) {
-        
+
+    if (!msg_traffic_lights_ || msg_traffic_lights_->objects.empty()) {
+      RCLCPP_WARN(this->get_logger(), "No traffic lights available to process status.");
+      return;
+    }
+
+    for (const auto carla_traffic_light : msg->traffic_lights) {
       // loop over msg_traffic_lights_ vector
       for (auto pi_traffic_light : msg_traffic_lights_->objects) {
 
         if (pi_traffic_light.id == carla_traffic_light.id) {
           oa::setTrafficLightState(pi_traffic_light, 
             convert_traffic_status(carla_traffic_light.state));
+          break;
         }
       }
     }
