@@ -55,33 +55,30 @@ class ItsConverter : public rclcpp::Node {
   void gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string actor_name);
   void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg, std::string actor_name);
   void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string actor_name);
-  
   void odometryCallback(const nm::Odometry::ConstPtr msg, std::string actor_name);
   void objectsCallback(const dom::ObjectArray::ConstPtr msg);
   void customObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string topic_name);
-  void trafficInfoCallback(const cm::CarlaTrafficLightInfoList::ConstPtr msg);
-  void trafficStatusCallback(const cm::CarlaTrafficLightStatusList::ConstPtr msg);
+  void trafficLightInfoCallback(const cm::CarlaTrafficLightInfoList::ConstPtr msg);
+  void trafficLightStatusCallback(const cm::CarlaTrafficLightStatusList::ConstPtr msg);
 
-  void publishTrafficLightData();
+  void publishTrafficLights();
   
   pi::ObjectList convertObjectArray(const dom::ObjectArray::ConstPtr msg);
   etsi_cam::CAM convertEgoDataCam(const pi::EgoData msg);
   bool transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed,
                       std::string target_frame);
 
-  void convertAndStoreTrafficLightInfo(const cm::CarlaTrafficLightInfoList::ConstPtr msg);
-  void convertAndStoreTrafficLightStatus(const cm::CarlaTrafficLightStatusList::ConstPtr msg);
-
-  // tf amd timing variables
+  // tf and timing variables
   std::unique_ptr<tf2_ros::Buffer> tf2_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
   rclcpp::TimerBase::SharedPtr timer_;
+  rclcpp::TimerBase::SharedPtr timer_traffic_lights_;
   rclcpp::Time last_cam_msg_;
 
   // subscriber and publisher
   Subscriber<dom::ObjectArray> sub_objects_;
-  Subscriber<cm::CarlaTrafficLightInfoList> sub_traffic_light_info_list_;
-  Subscriber<cm::CarlaTrafficLightStatusList> sub_traffic_light_status_list_;
+  Subscriber<cm::CarlaTrafficLightInfoList> sub_traffic_light_info_;
+  Subscriber<cm::CarlaTrafficLightStatusList> sub_traffic_light_status_;
 
   std::map<std::string, Subscriber<ssm::NavSatFix>> sub_gnss_map_;
   std::map<std::string, Subscriber<nm::Odometry>> sub_odometry_map_;
@@ -90,7 +87,7 @@ class ItsConverter : public rclcpp::Node {
   std::map<std::string, Subscriber<dom::ObjectArray>> sub_custom_objects_map_;
 
   Publisher<pi::ObjectList> pub_objects_carla_map_;
-  Publisher<pi::ObjectList> pub_trafficlights_carla_map_;
+  Publisher<pi::ObjectList> pub_traffic_lights_carla_map_;
   
   std::map<std::string, Publisher<pi::ObjectList>> pub_objects_map_;
   std::map<std::string, Publisher<pi::EgoData>> pub_ego_data_map_;
@@ -105,6 +102,7 @@ class ItsConverter : public rclcpp::Node {
   double acc_variances_;
   double angle_variances_;
   double angle_rate_variances_;
+  double traffic_light_frequency_;
 
   // ego information
   std::map<std::string, int> ego_id_map_;
@@ -115,13 +113,7 @@ class ItsConverter : public rclcpp::Node {
   std::map<std::string, ssm::NavSatFix> ego_gnss_map_;
 
   pi::EgoData msg_ego_data_;
-
-  // trafficlight information (position and signal state)
-  pi::ObjectList::SharedPtr trafficlight_data_;
-
-  pi::ObjectList tafficlights_carla_map_;
-  rclcpp::TimerBase::SharedPtr timer_publisher_trafficlights_;
-  static constexpr float publisher_trafficlights_frequency_ = 10.0f;
+  pi::ObjectList::SharedPtr msg_traffic_lights_;
 
   // set flags
   std::map<std::string, bool> ego_shape_set_map_;

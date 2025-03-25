@@ -33,13 +33,17 @@ def generate_launch_description():
         name='acc_variances',
         default_value='-1.0'
     )
-    yaw_variances_launch_arg = DeclareLaunchArgument(
+    angle_variances_launch_arg = DeclareLaunchArgument(
         name='angle_variances',
         default_value='0.1'
     )
-    yaw_rate_variances_launch_arg = DeclareLaunchArgument(
+    angle_rate_variances_launch_arg = DeclareLaunchArgument(
         name='angle_rate_variances',
         default_value='-1.0'
+    )
+    traffic_light_frequency_launch_arg = DeclareLaunchArgument(
+        name='traffic_light_frequency',
+        default_value='10.0'
     )
 
     carla_its_converter_node = LifecycleNode(
@@ -58,6 +62,7 @@ def generate_launch_description():
                 "acc_variances": LaunchConfiguration('acc_variances'),
                 "angle_variances": LaunchConfiguration('angle_variances'),
                 "angle_rate_variances": LaunchConfiguration('angle_rate_variances'),
+                "traffic_light_frequency": LaunchConfiguration('traffic_light_frequency'),
                 "use_sim_time": LaunchConfiguration('use_sim_time')
             },
         ],
@@ -77,8 +82,9 @@ def generate_launch_description():
         pos_variances_launch_arg,
         vel_variances_launch_arg,
         acc_variances_launch_arg,
-        yaw_variances_launch_arg,
-        yaw_rate_variances_launch_arg,
+        angle_variances_launch_arg,
+        angle_rate_variances_launch_arg,
+        traffic_light_frequency_launch_arg,
         transforms,
         carla_its_converter_node
     ])
