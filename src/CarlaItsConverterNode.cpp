@@ -292,7 +292,7 @@ void ItsConverter::trafficLightStatusCallback(const cm::CarlaTrafficLightStatusL
       for (auto pi_traffic_light : msg_traffic_lights_->objects) {
 
         if (pi_traffic_light.id == carla_traffic_light.id) {
-          oa::setTrafficLightState(pi_traffic_light, 
+          oa::setTrafficLightState(pi_traffic_light.state, 
             convert_traffic_status(carla_traffic_light.state));
           break;
         }
