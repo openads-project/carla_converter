@@ -248,7 +248,7 @@ void ItsConverter::trafficLightInfoCallback(const cm::CarlaTrafficLightInfoList:
   try {
     msg_traffic_lights_ = std::make_shared<pi::ObjectList>();
 
-    for (auto &traffic_light : msg->traffic_lights) {
+    for (auto& traffic_light : msg->traffic_lights) {
       pi::Object pi_light;
       pi_light.id = traffic_light.id;
       pi_light.existence_probability = 1.0;
@@ -289,7 +289,7 @@ void ItsConverter::trafficLightStatusCallback(const cm::CarlaTrafficLightStatusL
 
     for (const auto carla_traffic_light : msg->traffic_lights) {
       // loop over msg_traffic_lights_ vector
-      for (auto pi_traffic_light : msg_traffic_lights_->objects) {
+      for (auto &pi_traffic_light : msg_traffic_lights_->objects) {
 
         if (pi_traffic_light.id == carla_traffic_light.id) {
           oa::setTrafficLightState(pi_traffic_light.state, 
