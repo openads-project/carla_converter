@@ -247,12 +247,11 @@ void ItsConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr m
 void ItsConverter::trafficLightInfoCallback(const cm::CarlaTrafficLightInfoList::ConstPtr msg) {
   try {
     msg_traffic_lights_ = std::make_shared<pi::ObjectList>();
-    msg_traffic_lights_->header.frame_id = "carla_map";
-    msg_traffic_lights_->header.stamp = this->now();
 
     for (auto &traffic_light : msg->traffic_lights) {
       pi::Object pi_light;
       pi_light.id = traffic_light.id;
+      pi_light.existence_probability = 1.0;
       oa::initializeState(pi_light, pi::TRAFFICLIGHT::MODEL_ID);
       oa::setPose(pi_light.state, traffic_light.transform);
       oa::setTrafficLightType(pi_light.state, pi::TRAFFICLIGHT::TYPE_UNKNOWN);
@@ -311,6 +310,8 @@ void ItsConverter::publishTrafficLights() {
   }
   else
   {
+    msg_traffic_lights_->header.frame_id = "carla_map";
+    msg_traffic_lights_->header.stamp = this->now();
     pub_traffic_lights_carla_map_->publish(*msg_traffic_lights_);
   }
 }
