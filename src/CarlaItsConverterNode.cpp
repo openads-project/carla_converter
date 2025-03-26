@@ -150,6 +150,8 @@ bool ItsConverter::loadParameters() {
   angle_rate_variances_ = this->get_parameter("angle_rate_variances").as_double();
   this->declare_parameter("traffic_light_frequency", 10.0);
   traffic_light_frequency_ = this->get_parameter("traffic_light_frequency").as_double();
+  this->declare_parameter("carla_fixed_frame_id", "carla_map");
+  carla_fixed_frame_id_ = this->get_parameter("carla_fixed_frame_id").as_string();
 
   std::string actor_name;
   std::stringstream ego_data_actors_string_stream(ego_data_actors_string);
@@ -247,7 +249,6 @@ void ItsConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr m
 void ItsConverter::trafficLightInfoCallback(const cm::CarlaTrafficLightInfoList::ConstPtr msg) {
   try {
     msg_traffic_lights_ = std::make_shared<pi::ObjectList>();
-    msg_traffic_lights_->header.frame_id = msg->header.frame_id;
 
     for (auto& traffic_light : msg->traffic_lights) {
       pi::Object pi_light;
@@ -311,6 +312,7 @@ void ItsConverter::publishTrafficLights() {
   }
   else
   {
+    msg_traffic_lights_->header.frame_id = carla_fixed_frame_id_;
     msg_traffic_lights_->header.stamp = this->now();
     pub_traffic_lights_carla_map_->publish(*msg_traffic_lights_);
   }
