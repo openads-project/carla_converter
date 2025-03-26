@@ -45,6 +45,10 @@ def generate_launch_description():
         name='traffic_light_frequency',
         default_value='10.0'
     )
+    carla_fixed_frame_id_launch_arg = DeclareLaunchArgument(
+        name='carla_fixed_frame_id',
+        default_value='carla_map'
+    )
 
     carla_its_converter_node = LifecycleNode(
         package="carla_its_converter",
@@ -63,6 +67,7 @@ def generate_launch_description():
                 "angle_variances": LaunchConfiguration('angle_variances'),
                 "angle_rate_variances": LaunchConfiguration('angle_rate_variances'),
                 "traffic_light_frequency": LaunchConfiguration('traffic_light_frequency'),
+                "carla_fixed_frame_id": LaunchConfiguration('carla_fixed_frame_id'),
                 "use_sim_time": LaunchConfiguration('use_sim_time')
             },
         ],
@@ -76,7 +81,6 @@ def generate_launch_description():
         )
 
     return launch.LaunchDescription([
-        use_sim_time_lauch_arg,
         ego_data_actors_launch_arg,
         object_data_actors_launch_arg,
         pos_variances_launch_arg,
@@ -85,6 +89,8 @@ def generate_launch_description():
         angle_variances_launch_arg,
         angle_rate_variances_launch_arg,
         traffic_light_frequency_launch_arg,
+        carla_fixed_frame_id_launch_arg,
+        use_sim_time_lauch_arg,
         transforms,
         carla_its_converter_node
     ])

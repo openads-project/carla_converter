@@ -103,6 +103,7 @@ class ItsConverter : public rclcpp::Node {
   double angle_variances_;
   double angle_rate_variances_;
   double traffic_light_frequency_;
+  std::string carla_fixed_frame_id_;
 
   // ego information
   std::map<std::string, int> ego_id_map_;
