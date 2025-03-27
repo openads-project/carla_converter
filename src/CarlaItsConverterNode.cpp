@@ -46,6 +46,16 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
   pub_objects_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/object_list", 1);
   ROS_LOG_STREAM(INFO, "Subscribed to /carla/objects and publishing to /carla_its_converter/object_list");
 
+  sub_traffic_light_info_ = this->create_subscription<cm::CarlaTrafficLightInfoList>(
+    "/carla/traffic_lights/info", 1, std::bind(&ItsConverter::trafficLightInfoCallback, this, std::placeholders::_1));
+  sub_traffic_light_status_ = this->create_subscription<cm::CarlaTrafficLightStatusList>(
+    "/carla/traffic_lights/status", 1, std::bind(&ItsConverter::trafficLightStatusCallback, this, std::placeholders::_1));
+  pub_traffic_lights_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/traffic_lights", 1);
+  timer_traffic_lights_ = create_wall_timer(
+    std::chrono::milliseconds(int(1000 / traffic_light_frequency_)),
+    std::bind(&ItsConverter::publishTrafficLights, this));
+  ROS_LOG_STREAM(INFO, "Subscribed to /carla/traffic_lights/info and /carla/traffic_lights/status and publishing to /carla_its_converter/traffic_lights");
+
   // setup subscriber and publisher depending on actor_name
   for (std::string& actor_name : ego_data_actors_) {
     // setup subscriber depending on actor_name
@@ -101,7 +111,7 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
   // create 1s timer to subscribe to custom topics
   timer_ = this->create_wall_timer(std::chrono::seconds(1), std::bind(&ItsConverter::subscribeCustomTopics, this));
 
-  // init last_cam_msg_
+  // init etsi msg timestamp
   last_cam_msg_ = this->now();
 
   ROS_LOG_STREAM(INFO, "carla_its_converter running...");
@@ -138,6 +148,10 @@ bool ItsConverter::loadParameters() {
   angle_variances_ = this->get_parameter("angle_variances").as_double();
   this->declare_parameter("angle_rate_variances", oa::CONTINUOUS_STATE_COVARIANCE_INVALID);
   angle_rate_variances_ = this->get_parameter("angle_rate_variances").as_double();
+  this->declare_parameter("traffic_light_frequency", 10.0);
+  traffic_light_frequency_ = this->get_parameter("traffic_light_frequency").as_double();
+  this->declare_parameter("carla_fixed_frame_id", "carla_map");
+  carla_fixed_frame_id_ = this->get_parameter("carla_fixed_frame_id").as_string();
 
   std::string actor_name;
   std::stringstream ego_data_actors_string_stream(ego_data_actors_string);
@@ -229,6 +243,79 @@ void ItsConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr m
   }
 
   ego_info_set_map_[actor_name] = true;
+}
+
+
+void ItsConverter::trafficLightInfoCallback(const cm::CarlaTrafficLightInfoList::ConstPtr msg) {
+  try {
+    msg_traffic_lights_ = std::make_shared<pi::ObjectList>();
+
+    for (auto& traffic_light : msg->traffic_lights) {
+      pi::Object pi_light;
+      pi_light.id = traffic_light.id;
+      pi_light.existence_probability = 1.0;
+      oa::initializeState(pi_light, pi::TRAFFICLIGHT::MODEL_ID);
+      oa::setPose(pi_light.state, traffic_light.transform);
+      oa::setTrafficLightType(pi_light.state, pi::TRAFFICLIGHT::TYPE_UNKNOWN);
+      oa::setTrafficLightState(pi_light.state, pi::TRAFFICLIGHT::STATE_UNKNOWN);
+
+      msg_traffic_lights_->objects.push_back(pi_light);
+    }
+  } catch (const std::exception& e) {
+    RCLCPP_WARN(this->get_logger(), "Skip TrafficLightInfo processing: %s", e.what());
+  }
+}
+
+int convert_traffic_status(const int status_carla) {
+  switch (status_carla) {
+  case carla_msgs::msg::CarlaTrafficLightStatus::RED:
+    return pi::TRAFFICLIGHT::STATE_RED;
+  case carla_msgs::msg::CarlaTrafficLightStatus::YELLOW:
+    return pi::TRAFFICLIGHT::STATE_YELLOW;    
+  case carla_msgs::msg::CarlaTrafficLightStatus::GREEN:
+    return pi::TRAFFICLIGHT::STATE_GREEN;
+  case carla_msgs::msg::CarlaTrafficLightStatus::UNKNOWN:
+  return pi::TRAFFICLIGHT::STATE_UNKNOWN;
+  default:
+    return pi::TRAFFICLIGHT::STATE_UNKNOWN;
+  }
+}
+
+void ItsConverter::trafficLightStatusCallback(const cm::CarlaTrafficLightStatusList::ConstPtr msg) {
+  try {
+
+    if (!msg_traffic_lights_ || msg_traffic_lights_->objects.empty()) {
+      RCLCPP_WARN(this->get_logger(), "No traffic lights available to process status.");
+      return;
+    }
+
+    for (const auto carla_traffic_light : msg->traffic_lights) {
+      // loop over msg_traffic_lights_ vector
+      for (auto &pi_traffic_light : msg_traffic_lights_->objects) {
+
+        if (pi_traffic_light.id == carla_traffic_light.id) {
+          oa::setTrafficLightState(pi_traffic_light.state, 
+            convert_traffic_status(carla_traffic_light.state));
+          break;
+        }
+      }
+    }
+  } catch (const std::exception& e) {
+    RCLCPP_WARN(this->get_logger(), "Skip TrafficLightStatus processing: %s", e.what());
+  }
+}
+
+void ItsConverter::publishTrafficLights() {
+  if (msg_traffic_lights_ == nullptr)
+  {
+    RCLCPP_INFO(this->get_logger(), "No traffic lights available to publish.");
+  }
+  else
+  {
+    msg_traffic_lights_->header.frame_id = carla_fixed_frame_id_;
+    msg_traffic_lights_->header.stamp = this->now();
+    pub_traffic_lights_carla_map_->publish(*msg_traffic_lights_);
+  }
 }
 
 void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::string actor_name) {
@@ -458,7 +545,7 @@ pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr
 
 etsi_cam::CAM ItsConverter::convertEgoDataCam(const pi::EgoData msg) {
   etsi_cam::CAM msg_cam;
-
+  
   // TODO: get direct parent frame of carla_map dynamically
   if (tf2_buffer_->_frameExists("utm_32N") &&
       tf2_buffer_->canTransform("utm_32N", msg.header.frame_id, msg.header.stamp)) {
