@@ -356,8 +356,18 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::strin
     // reference point for object position
     msg_ego_data_.state.reference_point.value = pi::ObjectReferencePoint::GEOMETRIC_CENTER;
 
-    // # continuous state covariance matrix (N*N flattened)
-    // float64[] continuous_state_covariance
+    // fill variances
+    oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::X, pi::EGO::X, pos_variances_);
+    oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::Y, pi::EGO::Y, pos_variances_);
+    oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::Z, pi::EGO::Z, pos_variances_);
+    oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::VEL_LON, pi::EGO::VEL_LON, vel_variances_);
+    oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::VEL_LAT, pi::EGO::VEL_LAT, vel_variances_);
+    oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::ACC_LON, pi::EGO::ACC_LON, acc_variances_);
+    oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::ACC_LAT, pi::EGO::ACC_LAT, acc_variances_);
+    oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::ROLL, pi::EGO::ROLL, angle_variances_);
+    oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::PITCH, pi::EGO::PITCH, angle_variances_);
+    oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::YAW, pi::EGO::YAW, angle_variances_);
+    oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::YAW_RATE, pi::EGO::YAW_RATE, angle_rate_variances_);
 
     // # Planned trajectory of the ego_vehicle
     // ObjectState[] trajectory_planned
@@ -384,7 +394,7 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::strin
     } catch (const std::exception& e) {
       if (this->now() - last_cam_msg_ > rclcpp::Duration(1, 0)) {
         RCLCPP_WARN(this->get_logger(),
-                    "Skip EgoData to CAM conversion: %s (Make sure that utm frame exist unix time is used!)", e.what());
+                    "Skip EgoData to CAM conversion: %s (Make sure that utm frame exist and unix time is used!)", e.what());
         last_cam_msg_ = this->now();
       }
     }
