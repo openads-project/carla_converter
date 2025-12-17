@@ -50,8 +50,8 @@ This package contains the CarlaItsConverterNode - a simple ROS Node that convert
 | Parameter | Type | Description |
 | --- | --- | --- |
 | ego_data_actors | string | List of actors which should be used to generate ego information. `EgoData` is published for every actor. Additionaly, `CAM` messages are published if simulation time is current unix time. (default: `ego_vehicle`) (example: `ego_data_actors:="hero, hero1"`). |
-| object_data_actors | string | List of actors which should be used to generate object information.
-The global `ObjectList` is converted and published within the actors frame. Same applies to potential ideal `ObjectList`. (default: `ego_vehicle`) (example: `object_data_actors:="hero, hero1"`). |
+| object_data_actors | string | List of actors which should be used to generate object information. The global `ObjectList` is converted and published within the actors frame. Same applies to potential ideal `ObjectList`. (default: `ego_vehicle`) (example: `object_data_actors:="hero, hero1"`). |
+| acceleration_filter_alpha | float | Low-pass filter acceleration values with `filtered = alpha * new + (1 - alpha) * previous` (example: `acceleration_filter_alpha:=0.5`). |
 
 ## Usage of docker-ros Images
 

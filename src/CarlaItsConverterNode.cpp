@@ -160,6 +160,8 @@ bool ItsConverter::loadParameters() {
   traffic_light_frequency_ = this->get_parameter("traffic_light_frequency").as_double();
   this->declare_parameter("carla_fixed_frame_id", "carla_map");
   carla_fixed_frame_id_ = this->get_parameter("carla_fixed_frame_id").as_string();
+  this->declare_parameter("acceleration_filter_alpha", 1.0);
+  acceleration_filter_alpha_ = this->get_parameter("acceleration_filter_alpha").as_double();
 
   std::string actor_name;
   std::stringstream ego_data_actors_string_stream(ego_data_actors_string);
@@ -235,8 +237,24 @@ void ItsConverter::gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string 
 }
 
 void ItsConverter::imuCallback(const ssm::Imu::ConstPtr msg, std::string actor_name) {
-  // get imu acceleration from actor_name vehicle
-  ego_acceleration_map_[actor_name].linear = msg->linear_acceleration;
+  // get imu acceleration from actor_name vehicle and apply low-pass filter
+  if (!ego_acceleration_initialized_map_[actor_name]) {
+    // Initialize filter with first measurement
+    ego_acceleration_filtered_map_[actor_name] = msg->linear_acceleration;
+    ego_acceleration_initialized_map_[actor_name] = true;
+  } else {
+    // Apply low-pass filter: filtered = alpha * new + (1 - alpha) * previous
+    ego_acceleration_filtered_map_[actor_name].x = 
+        acceleration_filter_alpha_ * msg->linear_acceleration.x + 
+        (1.0 - acceleration_filter_alpha_) * ego_acceleration_filtered_map_[actor_name].x;
+    ego_acceleration_filtered_map_[actor_name].y = 
+        acceleration_filter_alpha_ * msg->linear_acceleration.y + 
+        (1.0 - acceleration_filter_alpha_) * ego_acceleration_filtered_map_[actor_name].y;
+    ego_acceleration_filtered_map_[actor_name].z = 
+        acceleration_filter_alpha_ * msg->linear_acceleration.z + 
+        (1.0 - acceleration_filter_alpha_) * ego_acceleration_filtered_map_[actor_name].z;
+  }
+  ego_acceleration_map_[actor_name].linear = ego_acceleration_filtered_map_[actor_name];
 }
 
 void ItsConverter::vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg, std::string actor_name) {

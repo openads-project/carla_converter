@@ -107,12 +107,15 @@ class ItsConverter : public rclcpp::Node {
   double angle_rate_variances_;
   double traffic_light_frequency_;
   std::string carla_fixed_frame_id_;
+  double acceleration_filter_alpha_;
 
   // ego information
   std::map<std::string, int> ego_id_map_;
   std::map<std::string, float> ego_steering_angle_map_;
   std::map<std::string, double> ego_steering_angle_max_map_;
   std::map<std::string, gm::Accel> ego_acceleration_map_;
+  std::map<std::string, gm::Vector3> ego_acceleration_filtered_map_;
+  std::map<std::string, bool> ego_acceleration_initialized_map_;
   std::map<std::string, sm::SolidPrimitive> ego_shape_map_;
   std::map<std::string, ssm::NavSatFix> ego_gnss_map_;
 
