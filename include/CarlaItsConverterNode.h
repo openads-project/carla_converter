@@ -14,6 +14,7 @@
 #include <derived_object_msgs/msg/object_array.hpp>
 #include <geometry_msgs/msg/accel.hpp>
 #include <nav_msgs/msg/odometry.hpp>
+#include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include <shape_msgs/msg/solid_primitive.hpp>
 #include <tf2_perception_msgs/tf2_perception_msgs.hpp>
@@ -53,6 +54,7 @@ class ItsConverter : public rclcpp::Node {
   void subscribeCustomTopics();
 
   void gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string actor_name);
+  void imuCallback(const ssm::Imu::ConstPtr msg, std::string actor_name);
   void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg, std::string actor_name);
   void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string actor_name);
   void odometryCallback(const nm::Odometry::ConstPtr msg, std::string actor_name);
@@ -81,6 +83,7 @@ class ItsConverter : public rclcpp::Node {
   Subscriber<cm::CarlaTrafficLightStatusList> sub_traffic_light_status_;
 
   std::map<std::string, Subscriber<ssm::NavSatFix>> sub_gnss_map_;
+  std::map<std::string, Subscriber<ssm::Imu>> sub_imu_map_;
   std::map<std::string, Subscriber<nm::Odometry>> sub_odometry_map_;
   std::map<std::string, Subscriber<cm::CarlaEgoVehicleStatus>> sub_vehicle_status_map_;
   std::map<std::string, Subscriber<cm::CarlaEgoVehicleInfo>> sub_vehicle_info_map_;

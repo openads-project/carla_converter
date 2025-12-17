@@ -27,8 +27,9 @@ This package contains the CarlaItsConverterNode - a simple ROS Node that convert
 | --- | --- | --- |
 | `/carla/objects` | `dom::ObjectArray` | Objects in the carla environment |
 | `/carla/$(actor_name)/vehicle_info` | `cm::CarlaEgoVehicleInfo` | Object id of the `actor_name` from list `ego_data_actors` (default: `ego_vehicle`) |
-| `/carla/$(actor_name)/vehicle_status` | `cm::CarlaEgoVehicleStatus` | Steering angle and acceleration of the `actor_name` from list `ego_data_actors` (default: `ego_vehicle`) |
+| `/carla/$(actor_name)/vehicle_status` | `cm::CarlaEgoVehicleStatus` | Steering angle of the `actor_name` from list `ego_data_actors` (default: `ego_vehicle`) |
 | `/carla/$(actor_name)/odometry` | `nm::Odometry` | Odometry of the `actor_name` from list `ego_data_actors` (default: `ego_vehicle`) |
+| `/carla/$(actor_name)/imu` | `ssm::Imu` | Imu of the `actor_name` from list `ego_data_actors` (default: `ego_vehicle`) |
 | `/carla/.*` | `dom::ObjectArray` | All custom topics of type `dom::ObjectArray` are subscribed and converted automatically |
 | `/carla/traffic_lights/info` | `cm::CarlaTrafficLightInfoList` | Global traffic light information |
 | `/carla/traffic_lights/status` | `cm::CarlaTrafficLightStatusList` | Global traffic light status |
