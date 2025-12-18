@@ -27,8 +27,9 @@ This package contains the CarlaItsConverterNode - a simple ROS Node that convert
 | --- | --- | --- |
 | `/carla/objects` | `dom::ObjectArray` | Objects in the carla environment |
 | `/carla/$(actor_name)/vehicle_info` | `cm::CarlaEgoVehicleInfo` | Object id of the `actor_name` from list `ego_data_actors` (default: `ego_vehicle`) |
-| `/carla/$(actor_name)/vehicle_status` | `cm::CarlaEgoVehicleStatus` | Steering angle and acceleration of the `actor_name` from list `ego_data_actors` (default: `ego_vehicle`) |
+| `/carla/$(actor_name)/vehicle_status` | `cm::CarlaEgoVehicleStatus` | Steering angle of the `actor_name` from list `ego_data_actors` (default: `ego_vehicle`) |
 | `/carla/$(actor_name)/odometry` | `nm::Odometry` | Odometry of the `actor_name` from list `ego_data_actors` (default: `ego_vehicle`) |
+| `/carla/$(actor_name)/imu` | `ssm::Imu` | Imu of the `actor_name` from list `ego_data_actors` (default: `ego_vehicle`) |
 | `/carla/.*` | `dom::ObjectArray` | All custom topics of type `dom::ObjectArray` are subscribed and converted automatically |
 | `/carla/traffic_lights/info` | `cm::CarlaTrafficLightInfoList` | Global traffic light information |
 | `/carla/traffic_lights/status` | `cm::CarlaTrafficLightStatusList` | Global traffic light status |
@@ -49,8 +50,8 @@ This package contains the CarlaItsConverterNode - a simple ROS Node that convert
 | Parameter | Type | Description |
 | --- | --- | --- |
 | ego_data_actors | string | List of actors which should be used to generate ego information. `EgoData` is published for every actor. Additionaly, `CAM` messages are published if simulation time is current unix time. (default: `ego_vehicle`) (example: `ego_data_actors:="hero, hero1"`). |
-| object_data_actors | string | List of actors which should be used to generate object information.
-The global `ObjectList` is converted and published within the actors frame. Same applies to potential ideal `ObjectList`. (default: `ego_vehicle`) (example: `object_data_actors:="hero, hero1"`). |
+| object_data_actors | string | List of actors which should be used to generate object information. The global `ObjectList` is converted and published within the actors frame. Same applies to potential ideal `ObjectList`. (default: `ego_vehicle`) (example: `object_data_actors:="hero, hero1"`). |
+| acceleration_filter_alpha | float | Low-pass filter acceleration values with `filtered = alpha * new + (1 - alpha) * previous` (default: `acceleration_filter_alpha:=1.0` disables filtering). |
 
 ## Usage of docker-ros Images
 

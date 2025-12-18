@@ -14,6 +14,7 @@
 #include <derived_object_msgs/msg/object_array.hpp>
 #include <geometry_msgs/msg/accel.hpp>
 #include <nav_msgs/msg/odometry.hpp>
+#include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include <shape_msgs/msg/solid_primitive.hpp>
 #include <tf2_perception_msgs/tf2_perception_msgs.hpp>
@@ -53,6 +54,7 @@ class ItsConverter : public rclcpp::Node {
   void subscribeCustomTopics();
 
   void gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string actor_name);
+  void imuCallback(const ssm::Imu::ConstPtr msg, std::string actor_name);
   void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg, std::string actor_name);
   void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string actor_name);
   void odometryCallback(const nm::Odometry::ConstPtr msg, std::string actor_name);
@@ -81,6 +83,7 @@ class ItsConverter : public rclcpp::Node {
   Subscriber<cm::CarlaTrafficLightStatusList> sub_traffic_light_status_;
 
   std::map<std::string, Subscriber<ssm::NavSatFix>> sub_gnss_map_;
+  std::map<std::string, Subscriber<ssm::Imu>> sub_imu_map_;
   std::map<std::string, Subscriber<nm::Odometry>> sub_odometry_map_;
   std::map<std::string, Subscriber<cm::CarlaEgoVehicleStatus>> sub_vehicle_status_map_;
   std::map<std::string, Subscriber<cm::CarlaEgoVehicleInfo>> sub_vehicle_info_map_;
@@ -104,12 +107,15 @@ class ItsConverter : public rclcpp::Node {
   double angle_rate_variances_;
   double traffic_light_frequency_;
   std::string carla_fixed_frame_id_;
+  double acceleration_filter_alpha_;
 
   // ego information
   std::map<std::string, int> ego_id_map_;
   std::map<std::string, float> ego_steering_angle_map_;
   std::map<std::string, double> ego_steering_angle_max_map_;
   std::map<std::string, gm::Accel> ego_acceleration_map_;
+  std::map<std::string, gm::Vector3> ego_acceleration_filtered_map_;
+  std::map<std::string, bool> ego_acceleration_initialized_map_;
   std::map<std::string, sm::SolidPrimitive> ego_shape_map_;
   std::map<std::string, ssm::NavSatFix> ego_gnss_map_;
 

@@ -30,6 +30,11 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
         [this, actor_name](const ssm::NavSatFix::ConstPtr msg) -> void { ItsConverter::gnssCallback(msg, actor_name); };
   };
 
+  auto imuArgCallback = [this](const std::string& actor_name) {
+    return
+        [this, actor_name](const ssm::Imu::ConstPtr msg) -> void { ItsConverter::imuCallback(msg, actor_name); };
+  };
+
   // setup tf2 buffer
   tf2_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
   tf2_buffer_->setUsingDedicatedThread(true);
@@ -67,12 +72,15 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
         "/carla/" + actor_name + "/vehicle_info", qosLatching, vehicleInfoArgCallback(actor_name));
     Subscriber<ssm::NavSatFix> sub_gnss =
         this->create_subscription<ssm::NavSatFix>("/carla/" + actor_name + "/gnss", 1, gnssArgCallback(actor_name));
+    Subscriber<ssm::Imu> sub_imu =
+        this->create_subscription<ssm::Imu>("/carla/" + actor_name + "/imu", 1, imuArgCallback(actor_name));
 
     // save subscriber in map with actor_name as key
     sub_odometry_map_.insert({actor_name, sub_odometry});
     sub_vehicle_status_map_.insert({actor_name, sub_vehicle_status});
     sub_vehicle_info_map_.insert({actor_name, sub_vehicle_info});
     sub_gnss_map_.insert({actor_name, sub_gnss});
+    sub_imu_map_.insert({actor_name, sub_imu});
 
     // setup publisher depending on actor_name
     Publisher<pi::EgoData> pub_ego_data =
@@ -152,6 +160,8 @@ bool ItsConverter::loadParameters() {
   traffic_light_frequency_ = this->get_parameter("traffic_light_frequency").as_double();
   this->declare_parameter("carla_fixed_frame_id", "carla_map");
   carla_fixed_frame_id_ = this->get_parameter("carla_fixed_frame_id").as_string();
+  this->declare_parameter("acceleration_filter_alpha", 1.0);
+  acceleration_filter_alpha_ = this->get_parameter("acceleration_filter_alpha").as_double();
 
   std::string actor_name;
   std::stringstream ego_data_actors_string_stream(ego_data_actors_string);
@@ -226,10 +236,30 @@ void ItsConverter::gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string 
   ego_gnss_set_map_[actor_name] = true;
 }
 
+void ItsConverter::imuCallback(const ssm::Imu::ConstPtr msg, std::string actor_name) {
+  // get imu acceleration from actor_name vehicle and apply low-pass filter
+  if (!ego_acceleration_initialized_map_[actor_name]) {
+    // Initialize filter with first measurement
+    ego_acceleration_filtered_map_[actor_name] = msg->linear_acceleration;
+    ego_acceleration_initialized_map_[actor_name] = true;
+  } else {
+    // Apply low-pass filter: filtered = alpha * new + (1 - alpha) * previous
+    ego_acceleration_filtered_map_[actor_name].x = 
+        acceleration_filter_alpha_ * msg->linear_acceleration.x + 
+        (1.0 - acceleration_filter_alpha_) * ego_acceleration_filtered_map_[actor_name].x;
+    ego_acceleration_filtered_map_[actor_name].y = 
+        acceleration_filter_alpha_ * msg->linear_acceleration.y + 
+        (1.0 - acceleration_filter_alpha_) * ego_acceleration_filtered_map_[actor_name].y;
+    ego_acceleration_filtered_map_[actor_name].z = 
+        acceleration_filter_alpha_ * msg->linear_acceleration.z + 
+        (1.0 - acceleration_filter_alpha_) * ego_acceleration_filtered_map_[actor_name].z;
+  }
+  ego_acceleration_map_[actor_name].linear = ego_acceleration_filtered_map_[actor_name];
+}
+
 void ItsConverter::vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg, std::string actor_name) {
   // get steering_angle and acceleration from actor_name vehicle
   ego_steering_angle_map_[actor_name] = msg->control.steer;
-  ego_acceleration_map_[actor_name] = msg->acceleration;
   ego_status_set_map_[actor_name] = true;
 }
 
@@ -342,8 +372,7 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::strin
                    msg->twist.twist.angular.z);  // twist is defined in child frame (no transformation needed)
     oa::setVelocity(msg_ego_data_.state,
                     msg->twist.twist.linear);  // twist is defined in child frame (no transformation needed)
-    oa::setAccelerationXYZYaw(msg_ego_data_.state, ego_acceleration_map_[actor_name].linear,
-                              yaw);  // accleration defined in carla_map frame (transformation needed)
+    oa::setAcceleration(msg_ego_data_.state, ego_acceleration_map_[actor_name].linear); // imu accleration defined in vehicle frame (no transformation needed)
 
     // SteeringAngleMax is given in rad (contrary to the description in the documentation)
     // https://github.com/carla-simulator/ros-bridge/blob/e9063d97ff5a724f76adbb1b852dc71da1dcfeec/carla_ros_bridge/src/carla_ros_bridge/ego_vehicle.py#L145C46-L145C81
