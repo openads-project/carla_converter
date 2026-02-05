@@ -49,6 +49,10 @@ def generate_launch_description():
         name='carla_fixed_frame_id',
         default_value='carla_map'
     )
+    acceleration_filter_alpha_launch_arg = DeclareLaunchArgument(
+        name='acceleration_filter_alpha',
+        default_value='1.0'
+    )
 
     carla_its_converter_node = LifecycleNode(
         package="carla_its_converter",
@@ -68,6 +72,7 @@ def generate_launch_description():
                 "angle_rate_variances": LaunchConfiguration('angle_rate_variances'),
                 "traffic_light_frequency": LaunchConfiguration('traffic_light_frequency'),
                 "carla_fixed_frame_id": LaunchConfiguration('carla_fixed_frame_id'),
+                "acceleration_filter_alpha": LaunchConfiguration('acceleration_filter_alpha'),
                 "use_sim_time": LaunchConfiguration('use_sim_time')
             },
         ],
@@ -90,6 +95,7 @@ def generate_launch_description():
         angle_rate_variances_launch_arg,
         traffic_light_frequency_launch_arg,
         carla_fixed_frame_id_launch_arg,
+        acceleration_filter_alpha_launch_arg,
         use_sim_time_lauch_arg,
         transforms,
         carla_its_converter_node
