@@ -551,16 +551,13 @@ pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr
         objectTemp.state.classifications[0].type = pi::ObjectClassification::BICYCLE;
         break;
       case dom::Object::CLASSIFICATION_MOTORCYCLE:
-        objectTemp.state.classifications[0].type = pi::ObjectClassification::MOTORBIKE;
+        objectTemp.state.classifications[0].type = pi::ObjectClassification::MOTORCYCLE;
         break;
       case dom::Object::CLASSIFICATION_CAR:
         objectTemp.state.classifications[0].type = pi::ObjectClassification::CAR;
         break;
       case dom::Object::CLASSIFICATION_TRUCK:
-        objectTemp.state.classifications[0].type = pi::ObjectClassification::TRUCK;
-        break;
-      case dom::Object::CLASSIFICATION_BARRIER:
-        objectTemp.state.classifications[0].type = pi::ObjectClassification::ROAD_OBSTACLE;
+        objectTemp.state.classifications[0].type = pi::ObjectClassification::UTILITY;
         break;
       default:
         objectTemp.state.classifications[0].type = pi::ObjectClassification::UNCLASSIFIED;
