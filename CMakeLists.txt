@@ -37,6 +37,7 @@ endif()
   find_package(rclcpp REQUIRED)
   find_package(sensor_msgs REQUIRED)
   find_package(shape_msgs REQUIRED)
+  find_package(std_msgs REQUIRED)
   find_package(tf2 REQUIRED)
   find_package(tf2_geometry_msgs REQUIRED)
   find_package(tf2_perception_msgs REQUIRED)
@@ -61,6 +62,7 @@ endif()
     rclcpp
     sensor_msgs
     shape_msgs
+    std_msgs
     tf2
     tf2_geometry_msgs
     tf2_perception_msgs
@@ -77,6 +79,7 @@ endif()
     rclcpp
     sensor_msgs
     shape_msgs
+    std_msgs
     tf2
     tf2_geometry_msgs
     tf2_perception_msgs

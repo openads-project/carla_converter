@@ -24,7 +24,9 @@
 #include <carla_msgs/msg/carla_ego_vehicle_status.hpp>
 #include <carla_msgs/msg/carla_traffic_light_info_list.hpp>
 #include <carla_msgs/msg/carla_traffic_light_status_list.hpp>
+#include <carla_msgs/msg/carla_world_info.hpp>
 #include <perception_msgs_utils/object_access.hpp>
+#include <std_msgs/msg/string.hpp>
 
 #define ROS_LOG_STREAM(level, ...) RCLCPP_##level##_STREAM(this->get_logger(), __VA_ARGS__)
 
@@ -38,6 +40,7 @@ namespace ssm = sensor_msgs::msg;
 namespace cm = carla_msgs::msg;
 namespace oa = perception_msgs::object_access;
 namespace etsi_cam = etsi_its_cam_msgs::msg;
+namespace stm = std_msgs::msg;
 
 template <typename T>
 using Subscriber = typename rclcpp::Subscription<T>::SharedPtr;
@@ -62,6 +65,7 @@ class ItsConverter : public rclcpp::Node {
   void customObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string topic_name);
   void trafficLightInfoCallback(const cm::CarlaTrafficLightInfoList::ConstPtr msg);
   void trafficLightStatusCallback(const cm::CarlaTrafficLightStatusList::ConstPtr msg);
+  void worldInfoCallback(const cm::CarlaWorldInfo::ConstPtr msg);
 
   void publishTrafficLights();
   
@@ -81,6 +85,7 @@ class ItsConverter : public rclcpp::Node {
   Subscriber<dom::ObjectArray> sub_objects_;
   Subscriber<cm::CarlaTrafficLightInfoList> sub_traffic_light_info_;
   Subscriber<cm::CarlaTrafficLightStatusList> sub_traffic_light_status_;
+  Subscriber<cm::CarlaWorldInfo> sub_world_info_;
 
   std::map<std::string, Subscriber<ssm::NavSatFix>> sub_gnss_map_;
   std::map<std::string, Subscriber<ssm::Imu>> sub_imu_map_;
@@ -91,6 +96,7 @@ class ItsConverter : public rclcpp::Node {
 
   Publisher<pi::ObjectList> pub_objects_carla_map_;
   Publisher<pi::ObjectList> pub_traffic_lights_carla_map_;
+  Publisher<stm::String> pub_map_info_;
   
   std::map<std::string, Publisher<pi::ObjectList>> pub_objects_map_;
   std::map<std::string, Publisher<pi::EgoData>> pub_ego_data_map_;
