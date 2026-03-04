@@ -61,6 +61,11 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
     std::bind(&ItsConverter::publishTrafficLights, this));
   ROS_LOG_STREAM(INFO, "Subscribed to /carla/traffic_lights/info and /carla/traffic_lights/status and publishing to /carla_its_converter/traffic_lights");
 
+  sub_world_info_ = this->create_subscription<cm::CarlaWorldInfo>(
+      "/carla/world_info", 1, std::bind(&ItsConverter::worldInfoCallback, this, std::placeholders::_1));
+  pub_map_info_ = this->create_publisher<stm::String>("/carla_its_converter/map_info", 1);
+  ROS_LOG_STREAM(INFO, "Subscribed to /carla/world_info and publishing map_name to /carla_its_converter/map_info");
+
   // setup subscriber and publisher depending on actor_name
   for (std::string& actor_name : ego_data_actors_) {
     // setup subscriber depending on actor_name
@@ -333,6 +338,33 @@ void ItsConverter::trafficLightStatusCallback(const cm::CarlaTrafficLightStatusL
   } catch (const std::exception& e) {
     RCLCPP_WARN(this->get_logger(), "Skip TrafficLightStatus processing: %s", e.what());
   }
+}
+
+void ItsConverter::worldInfoCallback(const cm::CarlaWorldInfo::ConstPtr msg) {
+  const std::string current_map_name = msg->map_name;
+  std::smatch match;
+  std::string carla_map_name;
+
+  // check if the string matches the default pattern
+  std::regex pattern_default_map(R"(Carla/Maps/([^/]+))");
+  if (std::regex_match(current_map_name, match, pattern_default_map)) {
+    carla_map_name = match[1];
+  }
+
+  // check if the string matches the custom pattern
+  std::regex pattern_custom_map(R"((.+)/Maps/([^/]+)/\2)");
+  if (std::regex_match(current_map_name, match, pattern_custom_map)) {
+    carla_map_name = match[2];
+  }
+
+  if (carla_map_name.empty()) {
+    RCLCPP_ERROR(this->get_logger(), "Wrong format of CARLA map name: '%s'", current_map_name.c_str());
+    return;
+  }
+
+  stm::String map_info_msg;
+  map_info_msg.data = carla_map_name;
+  pub_map_info_->publish(map_info_msg);
 }
 
 void ItsConverter::publishTrafficLights() {

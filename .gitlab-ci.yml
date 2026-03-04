@@ -5,7 +5,7 @@ variables:
   BASE_IMAGE: rwthika/ros2:jazzy
   RMW_IMPLEMENTATION: rmw_zenoh_cpp
   COMMAND: ros2 launch carla_its_converter carla_its_converter.launch.py
-  TARGET: dev, run
+  TARGET: dev,run
   PLATFORM: amd64
   ENABLE_INDUSTRIAL_CI: 'false'
   REMOTE_BUILDKIT: '134.130.20.221:29170'
