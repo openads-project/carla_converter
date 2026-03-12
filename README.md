@@ -2,8 +2,12 @@
 
 This package contains the CarlaItsConverterNode - a ROS 2 Node that converts incoming messages from the [carla-ros-bridge](https://gitlab.ika.rwth-aachen.de/fb-fi/simulation/carla/carla-ros-bridge) and publishes some of the [fb-fi defined ros messages](https://gitlab.ika.rwth-aachen.de/fb-fi/definitions) for various its-applications.
 
-- [Container Images](#container-images)
-- [carla_its_converter](#carla_its_converter-1)
+- [carla\_its\_converter](#carla_its_converter)
+  - [Container Images](#container-images)
+  - [`carla_its_converter`](#carla_its_converter-1)
+    - [Subscribed Topics](#subscribed-topics)
+    - [Published Topics](#published-topics)
+    - [Parameters](#parameters)
 
 
 ## Container Images
@@ -40,18 +44,6 @@ This package contains the CarlaItsConverterNode - a ROS 2 Node that converts inc
 | `/carla_its_converter/traffic_lights` | `perception_msgs/msg/ObjectList` | Traffic lights with pose and current signal status |
 | `/carla_its_converter/map_info` | `std_msgs/msg/String` | CARLA map name |
 | `/carla_its_converter/.*` | `perception_msgs/msg/ObjectList` | Converted output for each auto-subscribed custom topic |
-
-### Services
-
-| Service | Type | Description |
-| --- | --- | --- |
-| — | — | — |
-
-### Actions
-
-| Action | Type | Description |
-| --- | --- | --- |
-| — | — | — |
 
 ### Parameters
 
