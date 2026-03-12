@@ -51,6 +51,7 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        *remappable_topics,
         *args,
         SetParameter("use_sim_time", LaunchConfiguration("use_sim_time")),
         transforms,
