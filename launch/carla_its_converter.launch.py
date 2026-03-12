@@ -13,9 +13,9 @@ from launch_ros.actions import Node, SetParameter
 def generate_launch_description():
 
     remappable_topics = [
-        DeclareLaunchArgument("object_list_topic", default_value="/carla_its_converter/object_list", description="output topic for converted object list"),
-        DeclareLaunchArgument("traffic_lights_topic", default_value="/carla_its_converter/traffic_lights", description="output topic for converted traffic lights"),
-        DeclareLaunchArgument("map_info_topic", default_value="/carla_its_converter/map_info", description="output topic for map info"),
+        DeclareLaunchArgument("object_list_topic", default_value="~/object_list", description="output topic for converted object list"),
+        DeclareLaunchArgument("traffic_lights_topic", default_value="~/traffic_lights", description="output topic for converted traffic lights"),
+        DeclareLaunchArgument("map_info_topic", default_value="~/map_info", description="output topic for map info"),
     ]
 
     args = [
