@@ -12,21 +12,21 @@ CarlaItsConverter::CarlaItsConverter() : Node("carla_its_converter") {
   this->declareAndLoadParameter("object_data_actors", object_data_actors_string_,
     "Comma-separated list of actor names to publish object lists for", false, false, true);
   this->declareAndLoadParameter("pos_variances", pos_variances_,
-    "Position covariance value", true, false, false, -1.0, 1e9, 0.01);
+    "Position covariance value", true, false, false);
   this->declareAndLoadParameter("vel_variances", vel_variances_,
-    "Velocity covariance value", true, false, false, -1.0, 1e9, 0.01);
+    "Velocity covariance value", true, false, false);
   this->declareAndLoadParameter("acc_variances", acc_variances_,
-    "Acceleration covariance value", true, false, false, -1.0, 1e9, 0.01);
+    "Acceleration covariance value", true, false, false);
   this->declareAndLoadParameter("angle_variances", angle_variances_,
-    "Angle covariance value", true, false, false, -1.0, 1e9, 0.01);
+    "Angle covariance value", true, false, false);
   this->declareAndLoadParameter("angle_rate_variances", angle_rate_variances_,
-    "Angle rate covariance value", true, false, false, -1.0, 1e9, 0.01);
+    "Angle rate covariance value", true, false, false);
   this->declareAndLoadParameter("traffic_light_frequency", traffic_light_frequency_,
-    "Publishing frequency for traffic lights in Hz", false, false, true, 0.1, 100.0, 0.1);
+    "Publishing frequency for traffic lights in Hz", false, false, true);
   this->declareAndLoadParameter("carla_fixed_frame_id", carla_fixed_frame_id_,
     "Fixed frame ID used for the CARLA map");
   this->declareAndLoadParameter("acceleration_filter_alpha", acceleration_filter_alpha_,
-    "Low-pass filter alpha for IMU acceleration (0.0 = no update, 1.0 = no filtering)", true, false, false, 0.0, 1.0, 0.01);
+    "Low-pass filter alpha for IMU acceleration (0.0 = no update, 1.0 = no filtering)", true, false, false);
 
   this->setup();
 }
