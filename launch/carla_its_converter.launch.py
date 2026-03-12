@@ -13,10 +13,6 @@ from launch_ros.actions import Node, SetParameter
 def generate_launch_description():
 
     remappable_topics = [
-        DeclareLaunchArgument("objects_topic", default_value="/carla/objects", description="input topic for CARLA object array"),
-        DeclareLaunchArgument("traffic_light_info_topic", default_value="/carla/traffic_lights/info", description="input topic for CARLA traffic light info"),
-        DeclareLaunchArgument("traffic_light_status_topic", default_value="/carla/traffic_lights/status", description="input topic for CARLA traffic light status"),
-        DeclareLaunchArgument("world_info_topic", default_value="/carla/world_info", description="input topic for CARLA world info"),
         DeclareLaunchArgument("object_list_topic", default_value="/carla_its_converter/object_list", description="output topic for converted object list"),
         DeclareLaunchArgument("traffic_lights_topic", default_value="/carla_its_converter/traffic_lights", description="output topic for converted traffic lights"),
         DeclareLaunchArgument("map_info_topic", default_value="/carla_its_converter/map_info", description="output topic for map info"),
