@@ -37,13 +37,12 @@ This package contains the CarlaItsConverterNode - a ROS 2 Node that converts inc
 
 | Topic | Type | Description |
 | --- | --- | --- |
-| `/carla_its_converter/object_list` | `perception_msgs/msg/ObjectList` | Object list in carla map frame |
-| `/carla_its_converter/<actor_name>/object_list` | `perception_msgs/msg/ObjectList` | Object list in `actor_name` frame, for each actor in `object_data_actors` |
-| `/carla_its_converter/<actor_name>/ego_data` | `perception_msgs/msg/EgoData` | Ego state of `actor_name`, for each actor in `ego_data_actors` |
-| `/carla_its_converter/<actor_name>/etsi_cam` | `etsi_its_cam_msgs/msg/CAM` | Ego state converted to CAM (requires simulation time to be current unix time) |
-| `/carla_its_converter/traffic_lights` | `perception_msgs/msg/ObjectList` | Traffic lights with pose and current signal status |
-| `/carla_its_converter/map_info` | `std_msgs/msg/String` | CARLA map name |
-| `/carla_its_converter/.*` | `perception_msgs/msg/ObjectList` | Converted output for each auto-subscribed custom topic |
+| `~/object_list` | `perception_msgs/msg/ObjectList` | Object list in carla map frame |
+| `~/<actor_name>/object_list` | `perception_msgs/msg/ObjectList` | Object list in `actor_name` frame, for each actor in `object_data_actors` |
+| `~/<actor_name>/ego_data` | `perception_msgs/msg/EgoData` | Ego state of `actor_name`, for each actor in `ego_data_actors` |
+| `~/<actor_name>/etsi_cam` | `etsi_its_cam_msgs/msg/CAM` | Ego state converted to CAM (requires simulation time to be current unix time) |
+| `~/traffic_lights` | `perception_msgs/msg/ObjectList` | Traffic lights with pose and current signal status |
+| `~/map_info` | `std_msgs/msg/String` | CARLA map name |
 
 ### Parameters
 
