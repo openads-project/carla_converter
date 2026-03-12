@@ -101,27 +101,120 @@ class CarlaItsConverter : public rclcpp::Node {
   rcl_interfaces::msg::SetParametersResult parametersCallback(const std::vector<rclcpp::Parameter>& parameters);
 
   /**
-   * @brief Sets up subscribers, publishers, etc. to configure the node
+   * @brief Sets up subscribers, publishers, timers, and tf2 to configure the node
    */
   void setup();
 
+  /**
+   * @brief Periodically scans all active topics and subscribes to any new
+   *        CARLA ObjectArray topics not yet covered by a static subscription
+   */
   void subscribeCustomTopics();
 
+  /**
+   * @brief Stores the latest GNSS fix for the given actor
+   *
+   * @param msg incoming NavSatFix message
+   * @param actor_name name of the CARLA actor
+   */
   void gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string actor_name);
+
+  /**
+   * @brief Applies a low-pass filter to the IMU linear acceleration and stores the result
+   *
+   * @param msg incoming IMU message
+   * @param actor_name name of the CARLA actor
+   */
   void imuCallback(const ssm::Imu::ConstPtr msg, std::string actor_name);
+
+  /**
+   * @brief Stores the latest steering angle for the given actor
+   *
+   * @param msg incoming CarlaEgoVehicleStatus message
+   * @param actor_name name of the CARLA actor
+   */
   void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg, std::string actor_name);
+
+  /**
+   * @brief Stores the vehicle id, maximum steering angle, and marks ego info as set
+   *
+   * @param msg incoming CarlaEgoVehicleInfo message
+   * @param actor_name name of the CARLA actor
+   */
   void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string actor_name);
+
+  /**
+   * @brief Converts odometry to EgoData and publishes it; also attempts CAM conversion
+   *
+   * @param msg incoming Odometry message
+   * @param actor_name name of the CARLA actor
+   */
   void odometryCallback(const nm::Odometry::ConstPtr msg, std::string actor_name);
+
+  /**
+   * @brief Converts the global CARLA object array and publishes per-actor transformed object lists
+   *
+   * @param msg incoming ObjectArray message
+   */
   void objectsCallback(const dom::ObjectArray::ConstPtr msg);
+
+  /**
+   * @brief Converts a custom ObjectArray topic and publishes the result, optionally transformed
+   *
+   * @param msg incoming ObjectArray message
+   * @param topic_name source topic name (without the /carla/ prefix)
+   */
   void customObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string topic_name);
+
+  /**
+   * @brief Builds the internal traffic light object list from static CARLA traffic light info
+   *
+   * @param msg incoming CarlaTrafficLightInfoList message
+   */
   void trafficLightInfoCallback(const cm::CarlaTrafficLightInfoList::ConstPtr msg);
+
+  /**
+   * @brief Updates traffic light signal states in the internal object list
+   *
+   * @param msg incoming CarlaTrafficLightStatusList message
+   */
   void trafficLightStatusCallback(const cm::CarlaTrafficLightStatusList::ConstPtr msg);
+
+  /**
+   * @brief Extracts and publishes the CARLA map name from the world info message
+   *
+   * @param msg incoming CarlaWorldInfo message
+   */
   void worldInfoCallback(const cm::CarlaWorldInfo::ConstPtr msg);
 
+  /**
+   * @brief Publishes the current traffic light object list at the configured frequency
+   */
   void publishTrafficLights();
 
+  /**
+   * @brief Converts a CARLA ObjectArray to a perception_msgs ObjectList
+   *
+   * @param msg CARLA ObjectArray to convert
+   * @return converted ObjectList
+   */
   pi::ObjectList convertObjectArray(const dom::ObjectArray::ConstPtr msg);
+
+  /**
+   * @brief Converts an EgoData message to an ETSI CAM message using the UTM transform
+   *
+   * @param msg EgoData to convert
+   * @return converted CAM message
+   */
   etsi_cam::CAM convertEgoDataCam(const pi::EgoData msg);
+
+  /**
+   * @brief Transforms an ObjectList into the target TF frame, falling back to parent frames
+   *
+   * @param msg_object_list input ObjectList in source frame
+   * @param msg_object_list_transformed output ObjectList in target frame
+   * @param target_frame desired TF frame name
+   */
   bool transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed,
                       std::string target_frame);
 
