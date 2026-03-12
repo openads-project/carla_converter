@@ -1,106 +1,55 @@
+#!/usr/bin/env python3
+
 import os
 
-import launch
-from launch.actions import DeclareLaunchArgument
+from ament_index_python import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import LifecycleNode, Node
+from launch_ros.actions import Node, SetParameter
 
-from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
 
-    use_sim_time_lauch_arg = DeclareLaunchArgument(
-        name='use_sim_time',
-        default_value='True'
-    )
-    ego_data_actors_launch_arg = DeclareLaunchArgument(
-        name='ego_data_actors',
-        default_value='ego_vehicle'
-    )
-    object_data_actors_launch_arg = DeclareLaunchArgument(
-        name='object_data_actors',
-        default_value='ego_vehicle'
-    )
-    pos_variances_launch_arg = DeclareLaunchArgument(
-        name='pos_variances',
-        default_value='0.2'
-    )
-    vel_variances_launch_arg = DeclareLaunchArgument(
-        name='vel_variances',
-        default_value='-1.0'
-    )
-    acc_variances_launch_arg = DeclareLaunchArgument(
-        name='acc_variances',
-        default_value='-1.0'
-    )
-    angle_variances_launch_arg = DeclareLaunchArgument(
-        name='angle_variances',
-        default_value='0.1'
-    )
-    angle_rate_variances_launch_arg = DeclareLaunchArgument(
-        name='angle_rate_variances',
-        default_value='-1.0'
-    )
-    traffic_light_frequency_launch_arg = DeclareLaunchArgument(
-        name='traffic_light_frequency',
-        default_value='10.0'
-    )
-    carla_fixed_frame_id_launch_arg = DeclareLaunchArgument(
-        name='carla_fixed_frame_id',
-        default_value='carla_map'
-    )
-    acceleration_filter_alpha_launch_arg = DeclareLaunchArgument(
-        name='acceleration_filter_alpha',
-        default_value='1.0'
-    )
+    remappable_topics = [
+        DeclareLaunchArgument("object_list_topic", default_value="~/object_list", description="output topic for converted object list"),
+        DeclareLaunchArgument("traffic_lights_topic", default_value="~/traffic_lights", description="output topic for converted traffic lights"),
+        DeclareLaunchArgument("map_info_topic", default_value="~/map_info", description="output topic for map info"),
+    ]
 
-    carla_its_converter_node = LifecycleNode(
-        package="carla_its_converter",
-        executable="carla_its_converter_node",
-        name="carla_its_converter",
-        namespace="",
-        output="screen",
-        emulate_tty=True,
-        parameters=[
-            {
-                "ego_data_actors": LaunchConfiguration('ego_data_actors'),
-                "object_data_actors": LaunchConfiguration('object_data_actors'),
-                "pos_variances": LaunchConfiguration('pos_variances'),
-                "vel_variances": LaunchConfiguration('vel_variances'),
-                "acc_variances": LaunchConfiguration('acc_variances'),
-                "angle_variances": LaunchConfiguration('angle_variances'),
-                "angle_rate_variances": LaunchConfiguration('angle_rate_variances'),
-                "traffic_light_frequency": LaunchConfiguration('traffic_light_frequency'),
-                "carla_fixed_frame_id": LaunchConfiguration('carla_fixed_frame_id'),
-                "acceleration_filter_alpha": LaunchConfiguration('acceleration_filter_alpha'),
-                "use_sim_time": LaunchConfiguration('use_sim_time')
-            },
-        ],
-    )
+    args = [
+        DeclareLaunchArgument("name", default_value="carla_its_converter", description="node name"),
+        DeclareLaunchArgument("namespace", default_value="", description="node namespace"),
+        DeclareLaunchArgument("params", default_value=os.path.join(get_package_share_directory("carla_its_converter"), "config", "params.yml"), description="path to parameter file"),
+        DeclareLaunchArgument("log_level", default_value="info", description="ROS logging level (debug, info, warn, error, fatal)"),
+        DeclareLaunchArgument("use_sim_time", default_value="true", description="use simulation clock"),
+    ]
 
-    transforms = launch.actions.IncludeLaunchDescription(
-            launch.launch_description_sources.PythonLaunchDescriptionSource(
-                os.path.join(get_package_share_directory(
-                    'carla_its_converter'), 'launch', 'transforms.launch.py')
-            )
+    nodes = [
+        Node(
+            package="carla_its_converter",
+            executable="carla_its_converter",
+            namespace=LaunchConfiguration("namespace"),
+            name=LaunchConfiguration("name"),
+            parameters=[LaunchConfiguration("params")],
+            arguments=["--ros-args", "--log-level", LaunchConfiguration("log_level")],
+            remappings=[(la.default_value[0].text, LaunchConfiguration(la.name)) for la in remappable_topics],
+            output="screen",
+            emulate_tty=True,
         )
+    ]
 
-    return launch.LaunchDescription([
-        ego_data_actors_launch_arg,
-        object_data_actors_launch_arg,
-        pos_variances_launch_arg,
-        vel_variances_launch_arg,
-        acc_variances_launch_arg,
-        angle_variances_launch_arg,
-        angle_rate_variances_launch_arg,
-        traffic_light_frequency_launch_arg,
-        carla_fixed_frame_id_launch_arg,
-        acceleration_filter_alpha_launch_arg,
-        use_sim_time_lauch_arg,
+    transforms = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory("carla_its_converter"), "launch", "transforms.launch.py")
+        )
+    )
+
+    return LaunchDescription([
+        *remappable_topics,
+        *args,
+        SetParameter("use_sim_time", LaunchConfiguration("use_sim_time")),
         transforms,
-        carla_its_converter_node
+        *nodes,
     ])
-
-
-if __name__ == '__main__':
-    generate_launch_description()
