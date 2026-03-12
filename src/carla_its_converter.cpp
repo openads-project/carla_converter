@@ -1,38 +1,183 @@
-#include <CarlaItsConverterNode.h>
+#include <carla_its_converter/carla_its_converter.hpp>
 
-namespace carla {
 
-ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
-  // load Parameters
-  if (!loadParameters()) return;
+namespace carla_its_converter {
+
+
+CarlaItsConverter::CarlaItsConverter() : Node("carla_its_converter") {
+
+  // declare and load parameters
+  this->declareAndLoadParameter("ego_data_actors", ego_data_actors_string_,
+    "Comma-separated list of actor names to publish ego data for", false, false, true);
+  this->declareAndLoadParameter("object_data_actors", object_data_actors_string_,
+    "Comma-separated list of actor names to publish object lists for", false, false, true);
+  this->declareAndLoadParameter("pos_variances", pos_variances_,
+    "Position covariance value", true, false, false, -1.0, 1e9, 0.01);
+  this->declareAndLoadParameter("vel_variances", vel_variances_,
+    "Velocity covariance value", true, false, false, -1.0, 1e9, 0.01);
+  this->declareAndLoadParameter("acc_variances", acc_variances_,
+    "Acceleration covariance value", true, false, false, -1.0, 1e9, 0.01);
+  this->declareAndLoadParameter("angle_variances", angle_variances_,
+    "Angle covariance value", true, false, false, -1.0, 1e9, 0.01);
+  this->declareAndLoadParameter("angle_rate_variances", angle_rate_variances_,
+    "Angle rate covariance value", true, false, false, -1.0, 1e9, 0.01);
+  this->declareAndLoadParameter("traffic_light_frequency", traffic_light_frequency_,
+    "Publishing frequency for traffic lights in Hz", false, false, true, 0.1, 100.0, 0.1);
+  this->declareAndLoadParameter("carla_fixed_frame_id", carla_fixed_frame_id_,
+    "Fixed frame ID used for the CARLA map");
+  this->declareAndLoadParameter("acceleration_filter_alpha", acceleration_filter_alpha_,
+    "Low-pass filter alpha for IMU acceleration (0.0 = no update, 1.0 = no filtering)", true, false, false, 0.0, 1.0, 0.01);
+
+  this->setup();
+}
+
+
+template <typename T>
+void CarlaItsConverter::declareAndLoadParameter(const std::string& name,
+                                                T& param,
+                                                const std::string& description,
+                                                const bool add_to_auto_reconfigurable_params,
+                                                const bool is_required,
+                                                const bool read_only,
+                                                const std::optional<double>& from_value,
+                                                const std::optional<double>& to_value,
+                                                const std::optional<double>& step_value,
+                                                const std::string& additional_constraints) {
+
+  rcl_interfaces::msg::ParameterDescriptor param_desc;
+  param_desc.description = description;
+  param_desc.additional_constraints = additional_constraints;
+  param_desc.read_only = read_only;
+
+  auto type = rclcpp::ParameterValue(param).get_type();
+
+  if (from_value.has_value() && to_value.has_value()) {
+    if constexpr (std::is_integral_v<T>) {
+      rcl_interfaces::msg::IntegerRange range;
+      range.set__from_value(static_cast<T>(from_value.value())).set__to_value(static_cast<T>(to_value.value()));
+      if (step_value.has_value()) range.set__step(static_cast<T>(step_value.value()));
+      param_desc.integer_range = {range};
+    } else if constexpr (std::is_floating_point_v<T>) {
+      rcl_interfaces::msg::FloatingPointRange range;
+      range.set__from_value(static_cast<T>(from_value.value())).set__to_value(static_cast<T>(to_value.value()));
+      if (step_value.has_value()) range.set__step(static_cast<T>(step_value.value()));
+      param_desc.floating_point_range = {range};
+    } else {
+      RCLCPP_WARN(this->get_logger(), "Parameter type of parameter '%s' does not support specifying a range", name.c_str());
+    }
+  }
+
+  this->declare_parameter(name, type, param_desc);
+
+  try {
+    param = this->get_parameter(name).get_value<T>();
+    std::stringstream ss;
+    ss << "Loaded parameter '" << name << "': ";
+    if constexpr (is_vector_v<T>) {
+      ss << "[";
+      for (const auto& element : param) ss << element << (&element != &param.back() ? ", " : "");
+      ss << "]";
+    } else {
+      ss << param;
+    }
+    RCLCPP_INFO_STREAM(this->get_logger(), ss.str());
+  } catch (rclcpp::exceptions::ParameterUninitializedException&) {
+    if (is_required) {
+      RCLCPP_FATAL_STREAM(this->get_logger(), "Missing required parameter '" << name << "', exiting");
+      exit(EXIT_FAILURE);
+    } else {
+      std::stringstream ss;
+      ss << "Missing parameter '" << name << "', using default value: ";
+      if constexpr (is_vector_v<T>) {
+        ss << "[";
+        for (const auto& element : param) ss << element << (&element != &param.back() ? ", " : "");
+        ss << "]";
+      } else {
+        ss << param;
+      }
+      RCLCPP_WARN_STREAM(this->get_logger(), ss.str());
+      this->set_parameters({rclcpp::Parameter(name, rclcpp::ParameterValue(param))});
+    }
+  }
+
+  if (add_to_auto_reconfigurable_params) {
+    std::function<void(const rclcpp::Parameter&)> setter = [&param](const rclcpp::Parameter& p) {
+      param = p.get_value<T>();
+    };
+    auto_reconfigurable_params_.push_back(std::make_tuple(name, setter));
+  }
+}
+
+
+rcl_interfaces::msg::SetParametersResult CarlaItsConverter::parametersCallback(
+    const std::vector<rclcpp::Parameter>& parameters) {
+
+  for (const auto& param : parameters) {
+    for (auto& auto_reconfigurable_param : auto_reconfigurable_params_) {
+      if (param.get_name() == std::get<0>(auto_reconfigurable_param)) {
+        std::get<1>(auto_reconfigurable_param)(param);
+        RCLCPP_INFO(this->get_logger(), "Reconfigured parameter '%s' to: %s",
+                    param.get_name().c_str(), param.value_to_string().c_str());
+        break;
+      }
+    }
+  }
+
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+
+  return result;
+}
+
+
+void CarlaItsConverter::setup() {
+
+  // callback for dynamic parameter configuration
+  parameters_callback_ = this->add_on_set_parameters_callback(
+      std::bind(&CarlaItsConverter::parametersCallback, this, std::placeholders::_1));
+
+  // parse comma-separated actor name strings into vectors
+  std::string actor_name;
+  std::stringstream ego_data_actors_ss(ego_data_actors_string_);
+  while (std::getline(ego_data_actors_ss, actor_name, ',')) {
+    actor_name.erase(std::remove_if(actor_name.begin(), actor_name.end(), isspace), actor_name.end());
+    ego_data_actors_.push_back(actor_name);
+  }
+  std::stringstream object_data_actors_ss(object_data_actors_string_);
+  while (std::getline(object_data_actors_ss, actor_name, ',')) {
+    actor_name.erase(std::remove_if(actor_name.begin(), actor_name.end(), isspace), actor_name.end());
+    object_data_actors_.push_back(actor_name);
+  }
 
   // setup callback functions
   auto odometryArgCallback = [this](const std::string& actor_name) {
     return [this, actor_name](const nm::Odometry::ConstPtr msg) -> void {
-      ItsConverter::odometryCallback(msg, actor_name);
+      CarlaItsConverter::odometryCallback(msg, actor_name);
     };
   };
 
   auto vehicleStatusArgCallback = [this](const std::string& actor_name) {
     return [this, actor_name](const cm::CarlaEgoVehicleStatus::ConstPtr msg) -> void {
-      ItsConverter::vehicleStatusCallback(msg, actor_name);
+      CarlaItsConverter::vehicleStatusCallback(msg, actor_name);
     };
   };
 
   auto vehicleInfoArgCallback = [this](const std::string& actor_name) {
     return [this, actor_name](const cm::CarlaEgoVehicleInfo::ConstPtr msg) -> void {
-      ItsConverter::vehicleInfoCallback(msg, actor_name);
+      CarlaItsConverter::vehicleInfoCallback(msg, actor_name);
     };
   };
 
   auto gnssArgCallback = [this](const std::string& actor_name) {
-    return
-        [this, actor_name](const ssm::NavSatFix::ConstPtr msg) -> void { ItsConverter::gnssCallback(msg, actor_name); };
+    return [this, actor_name](const ssm::NavSatFix::ConstPtr msg) -> void {
+      CarlaItsConverter::gnssCallback(msg, actor_name);
+    };
   };
 
   auto imuArgCallback = [this](const std::string& actor_name) {
-    return
-        [this, actor_name](const ssm::Imu::ConstPtr msg) -> void { ItsConverter::imuCallback(msg, actor_name); };
+    return [this, actor_name](const ssm::Imu::ConstPtr msg) -> void {
+      CarlaItsConverter::imuCallback(msg, actor_name);
+    };
   };
 
   // setup tf2 buffer
@@ -47,38 +192,44 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
 
   // setup subscriber and publisher
   sub_objects_ = this->create_subscription<dom::ObjectArray>(
-      "/carla/objects", 1, std::bind(&ItsConverter::objectsCallback, this, std::placeholders::_1));
+      "/carla/objects", 1, std::bind(&CarlaItsConverter::objectsCallback, this, std::placeholders::_1));
   pub_objects_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/object_list", 1);
-  ROS_LOG_STREAM(INFO, "Subscribed to /carla/objects and publishing to /carla_its_converter/object_list");
+  RCLCPP_INFO(this->get_logger(), "Subscribed to '%s'", sub_objects_->get_topic_name());
+  RCLCPP_INFO(this->get_logger(), "Publishing to '%s'", pub_objects_carla_map_->get_topic_name());
 
   sub_traffic_light_info_ = this->create_subscription<cm::CarlaTrafficLightInfoList>(
-    "/carla/traffic_lights/info", 1, std::bind(&ItsConverter::trafficLightInfoCallback, this, std::placeholders::_1));
+      "/carla/traffic_lights/info", 1,
+      std::bind(&CarlaItsConverter::trafficLightInfoCallback, this, std::placeholders::_1));
   sub_traffic_light_status_ = this->create_subscription<cm::CarlaTrafficLightStatusList>(
-    "/carla/traffic_lights/status", 1, std::bind(&ItsConverter::trafficLightStatusCallback, this, std::placeholders::_1));
+      "/carla/traffic_lights/status", 1,
+      std::bind(&CarlaItsConverter::trafficLightStatusCallback, this, std::placeholders::_1));
   pub_traffic_lights_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/traffic_lights", 1);
   timer_traffic_lights_ = create_wall_timer(
-    std::chrono::milliseconds(int(1000 / traffic_light_frequency_)),
-    std::bind(&ItsConverter::publishTrafficLights, this));
-  ROS_LOG_STREAM(INFO, "Subscribed to /carla/traffic_lights/info and /carla/traffic_lights/status and publishing to /carla_its_converter/traffic_lights");
+      std::chrono::milliseconds(int(1000 / traffic_light_frequency_)),
+      std::bind(&CarlaItsConverter::publishTrafficLights, this));
+  RCLCPP_INFO(this->get_logger(), "Subscribed to '%s' and '%s'",
+              sub_traffic_light_info_->get_topic_name(), sub_traffic_light_status_->get_topic_name());
+  RCLCPP_INFO(this->get_logger(), "Publishing to '%s'", pub_traffic_lights_carla_map_->get_topic_name());
 
   sub_world_info_ = this->create_subscription<cm::CarlaWorldInfo>(
-      "/carla/world_info", 1, std::bind(&ItsConverter::worldInfoCallback, this, std::placeholders::_1));
+      "/carla/world_info", 1,
+      std::bind(&CarlaItsConverter::worldInfoCallback, this, std::placeholders::_1));
   pub_map_info_ = this->create_publisher<stm::String>("/carla_its_converter/map_info", 1);
-  ROS_LOG_STREAM(INFO, "Subscribed to /carla/world_info and publishing map_name to /carla_its_converter/map_info");
+  RCLCPP_INFO(this->get_logger(), "Subscribed to '%s'", sub_world_info_->get_topic_name());
+  RCLCPP_INFO(this->get_logger(), "Publishing to '%s'", pub_map_info_->get_topic_name());
 
   // setup subscriber and publisher depending on actor_name
   for (std::string& actor_name : ego_data_actors_) {
-    // setup subscriber depending on actor_name
     Subscriber<nm::Odometry> sub_odometry = this->create_subscription<nm::Odometry>(
         "/carla/" + actor_name + "/odometry", 1, odometryArgCallback(actor_name));
     Subscriber<cm::CarlaEgoVehicleStatus> sub_vehicle_status = this->create_subscription<cm::CarlaEgoVehicleStatus>(
         "/carla/" + actor_name + "/vehicle_status", 1, vehicleStatusArgCallback(actor_name));
     Subscriber<cm::CarlaEgoVehicleInfo> sub_vehicle_info = this->create_subscription<cm::CarlaEgoVehicleInfo>(
         "/carla/" + actor_name + "/vehicle_info", qosLatching, vehicleInfoArgCallback(actor_name));
-    Subscriber<ssm::NavSatFix> sub_gnss =
-        this->create_subscription<ssm::NavSatFix>("/carla/" + actor_name + "/gnss", 1, gnssArgCallback(actor_name));
-    Subscriber<ssm::Imu> sub_imu =
-        this->create_subscription<ssm::Imu>("/carla/" + actor_name + "/imu", 1, imuArgCallback(actor_name));
+    Subscriber<ssm::NavSatFix> sub_gnss = this->create_subscription<ssm::NavSatFix>(
+        "/carla/" + actor_name + "/gnss", 1, gnssArgCallback(actor_name));
+    Subscriber<ssm::Imu> sub_imu = this->create_subscription<ssm::Imu>(
+        "/carla/" + actor_name + "/imu", 1, imuArgCallback(actor_name));
 
     // save subscriber in map with actor_name as key
     sub_odometry_map_.insert({actor_name, sub_odometry});
@@ -122,84 +273,24 @@ ItsConverter::ItsConverter() : Node("CarlaItsConverter") {
   }
 
   // create 1s timer to subscribe to custom topics
-  timer_ = this->create_wall_timer(std::chrono::seconds(1), std::bind(&ItsConverter::subscribeCustomTopics, this));
+  timer_ = this->create_wall_timer(std::chrono::seconds(1),
+                                   std::bind(&CarlaItsConverter::subscribeCustomTopics, this));
 
   // init etsi msg timestamp
   last_cam_msg_ = this->now();
 
-  ROS_LOG_STREAM(INFO, "carla_its_converter running...");
+  RCLCPP_INFO(this->get_logger(), "carla_its_converter running...");
 }
 
-bool ItsConverter::loadParameters() {
-  std::string ego_data_actors_string;
-  std::string object_data_actors_string;
 
-  // load publish parameters
-  this->declare_parameter("ego_data_actors", "ego_vehicle");
-  try {
-    ego_data_actors_string = this->get_parameter("ego_data_actors").as_string();
-  } catch (rclcpp::exceptions::ParameterNotDeclaredException&) {
-    ego_data_actors_string = "ego_vehicle";
-    ROS_LOG_STREAM(WARN, "Parameter \'ego_data_actors\' not set, defaulting to " << ego_data_actors_string);
-  }
-
-  this->declare_parameter("object_data_actors", "ego_vehicle");
-  try {
-    object_data_actors_string = this->get_parameter("object_data_actors").as_string();
-  } catch (rclcpp::exceptions::ParameterNotDeclaredException&) {
-    object_data_actors_string = "ego_vehicle";
-    ROS_LOG_STREAM(WARN, "Parameter \'object_data_actors\' not set, defaulting to " << object_data_actors_string);
-  }
-
-  this->declare_parameter("pos_variances", oa::CONTINUOUS_STATE_COVARIANCE_INVALID);
-  pos_variances_ = this->get_parameter("pos_variances").as_double();
-  this->declare_parameter("vel_variances", oa::CONTINUOUS_STATE_COVARIANCE_INVALID);
-  vel_variances_ = this->get_parameter("vel_variances").as_double();
-  this->declare_parameter("acc_variances", oa::CONTINUOUS_STATE_COVARIANCE_INVALID);
-  acc_variances_ = this->get_parameter("acc_variances").as_double();
-  this->declare_parameter("angle_variances", oa::CONTINUOUS_STATE_COVARIANCE_INVALID);
-  angle_variances_ = this->get_parameter("angle_variances").as_double();
-  this->declare_parameter("angle_rate_variances", oa::CONTINUOUS_STATE_COVARIANCE_INVALID);
-  angle_rate_variances_ = this->get_parameter("angle_rate_variances").as_double();
-  this->declare_parameter("traffic_light_frequency", 10.0);
-  traffic_light_frequency_ = this->get_parameter("traffic_light_frequency").as_double();
-  this->declare_parameter("carla_fixed_frame_id", "carla_map");
-  carla_fixed_frame_id_ = this->get_parameter("carla_fixed_frame_id").as_string();
-  this->declare_parameter("acceleration_filter_alpha", 1.0);
-  acceleration_filter_alpha_ = this->get_parameter("acceleration_filter_alpha").as_double();
-
-  std::string actor_name;
-  std::stringstream ego_data_actors_string_stream(ego_data_actors_string);
-  std::stringstream object_data_actors_string_stream(object_data_actors_string);
-
-  while (std::getline(ego_data_actors_string_stream, actor_name, ',')) {
-    // remove spaces from actor_name
-    actor_name.erase(std::remove_if(actor_name.begin(), actor_name.end(), isspace), actor_name.end());
-
-    // save actor_name in vector
-    ego_data_actors_.push_back(actor_name);
-  }
-
-  while (std::getline(object_data_actors_string_stream, actor_name, ',')) {
-    // remove spaces from actor_name
-    actor_name.erase(std::remove_if(actor_name.begin(), actor_name.end(), isspace), actor_name.end());
-
-    // save actor_name in vector
-    object_data_actors_.push_back(actor_name);
-  }
-
-  return true;
-}
-
-void ItsConverter::subscribeCustomTopics() {
+void CarlaItsConverter::subscribeCustomTopics() {
   auto customObjectsArgCallback = [this](const std::string& topic_name) {
     return [this, topic_name](const dom::ObjectArray::ConstPtr msg) -> void {
-      ItsConverter::customObjectsCallback(msg, topic_name);
+      CarlaItsConverter::customObjectsCallback(msg, topic_name);
     };
   };
-
-  // iterate over all topic
-  std::map<std::string, std::vector<std::string> > topics = this->get_topic_names_and_types();
+  // iterate over all topics
+  std::map<std::string, std::vector<std::string>> topics = this->get_topic_names_and_types();
   for (const auto& topic : topics) {
     std::string topic_name = topic.first;
     std::string topic_type = topic.second[0];
@@ -214,34 +305,32 @@ void ItsConverter::subscribeCustomTopics() {
     // remove "/carla/"
     size_t pos = topic_name.find("/carla/");
     if (pos != std::string::npos) {
-      topic_name.erase(pos, 7);  // length of "/carla/" is 7
+      topic_name.erase(pos, 7);
     }
 
     // skip if topic is already subscribed
     if (sub_custom_objects_map_.find(topic_name) != sub_custom_objects_map_.end()) continue;
 
-    // setup subscriber depending on topic name and save subscriber in vector
     Subscriber<dom::ObjectArray> sub_custom_objects =
         this->create_subscription<dom::ObjectArray>("/carla/" + topic_name, 1, customObjectsArgCallback(topic_name));
     sub_custom_objects_map_.insert({topic_name, sub_custom_objects});
 
-    // setup publisher depending on topic name and save publisher in vector
     Publisher<pi::ObjectList> pub_custom_objects =
         this->create_publisher<pi::ObjectList>("/carla_its_converter/" + topic_name, 1);
     pub_custom_objects_map_.insert({topic_name, pub_custom_objects});
 
-    ROS_LOG_STREAM(
-        INFO, "Subscribed custom topic /carla/" << topic_name << " and publishing /carla_its_converter/" << topic_name);
+    ROS_LOG_STREAM(INFO, "Subscribed custom topic /carla/" << topic_name
+                                                           << " and publishing /carla_its_converter/" << topic_name);
   }
 }
 
-void ItsConverter::gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string actor_name) {
+void CarlaItsConverter::gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string actor_name) {
   // get gnss position from actor_name vehicle
   ego_gnss_map_[actor_name] = *msg;
   ego_gnss_set_map_[actor_name] = true;
 }
 
-void ItsConverter::imuCallback(const ssm::Imu::ConstPtr msg, std::string actor_name) {
+void CarlaItsConverter::imuCallback(const ssm::Imu::ConstPtr msg, std::string actor_name) {
   // get imu acceleration from actor_name vehicle and apply low-pass filter
   if (!ego_acceleration_initialized_map_[actor_name]) {
     // Initialize filter with first measurement
@@ -249,39 +338,38 @@ void ItsConverter::imuCallback(const ssm::Imu::ConstPtr msg, std::string actor_n
     ego_acceleration_initialized_map_[actor_name] = true;
   } else {
     // Apply low-pass filter: filtered = alpha * new + (1 - alpha) * previous
-    ego_acceleration_filtered_map_[actor_name].x = 
-        acceleration_filter_alpha_ * msg->linear_acceleration.x + 
+    ego_acceleration_filtered_map_[actor_name].x =
+        acceleration_filter_alpha_ * msg->linear_acceleration.x +
         (1.0 - acceleration_filter_alpha_) * ego_acceleration_filtered_map_[actor_name].x;
-    ego_acceleration_filtered_map_[actor_name].y = 
-        acceleration_filter_alpha_ * msg->linear_acceleration.y + 
+    ego_acceleration_filtered_map_[actor_name].y =
+        acceleration_filter_alpha_ * msg->linear_acceleration.y +
         (1.0 - acceleration_filter_alpha_) * ego_acceleration_filtered_map_[actor_name].y;
-    ego_acceleration_filtered_map_[actor_name].z = 
-        acceleration_filter_alpha_ * msg->linear_acceleration.z + 
+    ego_acceleration_filtered_map_[actor_name].z =
+        acceleration_filter_alpha_ * msg->linear_acceleration.z +
         (1.0 - acceleration_filter_alpha_) * ego_acceleration_filtered_map_[actor_name].z;
   }
   ego_acceleration_map_[actor_name].linear = ego_acceleration_filtered_map_[actor_name];
 }
 
-void ItsConverter::vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg, std::string actor_name) {
+void CarlaItsConverter::vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg, std::string actor_name) {
   // get steering_angle and acceleration from actor_name vehicle
   ego_steering_angle_map_[actor_name] = msg->control.steer;
   ego_status_set_map_[actor_name] = true;
 }
 
-void ItsConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string actor_name) {
+void CarlaItsConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string actor_name) {
   // get id from actor_name vehicle
   ego_id_map_[actor_name] = msg->id;
   ego_steering_angle_max_map_[actor_name] = 0.0;
-  for (int i = 0; i < msg->wheels.size(); i++) {
+  for (int i = 0; i < (int)msg->wheels.size(); i++) {
     ego_steering_angle_max_map_[actor_name] =
         std::max(ego_steering_angle_max_map_[actor_name], (double)msg->wheels[i].max_steer_angle);
   }
-
   ego_info_set_map_[actor_name] = true;
 }
 
 
-void ItsConverter::trafficLightInfoCallback(const cm::CarlaTrafficLightInfoList::ConstPtr msg) {
+void CarlaItsConverter::trafficLightInfoCallback(const cm::CarlaTrafficLightInfoList::ConstPtr msg) {
   try {
     msg_traffic_lights_ = std::make_shared<pi::ObjectList>();
 
@@ -303,34 +391,30 @@ void ItsConverter::trafficLightInfoCallback(const cm::CarlaTrafficLightInfoList:
 
 int convert_traffic_status(const int status_carla) {
   switch (status_carla) {
-  case carla_msgs::msg::CarlaTrafficLightStatus::RED:
-    return pi::TRAFFICLIGHT::STATE_RED;
-  case carla_msgs::msg::CarlaTrafficLightStatus::YELLOW:
-    return pi::TRAFFICLIGHT::STATE_YELLOW;    
-  case carla_msgs::msg::CarlaTrafficLightStatus::GREEN:
-    return pi::TRAFFICLIGHT::STATE_GREEN;
-  case carla_msgs::msg::CarlaTrafficLightStatus::UNKNOWN:
-  return pi::TRAFFICLIGHT::STATE_UNKNOWN;
-  default:
-    return pi::TRAFFICLIGHT::STATE_UNKNOWN;
+    case carla_msgs::msg::CarlaTrafficLightStatus::RED:
+      return pi::TRAFFICLIGHT::STATE_RED;
+    case carla_msgs::msg::CarlaTrafficLightStatus::YELLOW:
+      return pi::TRAFFICLIGHT::STATE_YELLOW;
+    case carla_msgs::msg::CarlaTrafficLightStatus::GREEN:
+      return pi::TRAFFICLIGHT::STATE_GREEN;
+    case carla_msgs::msg::CarlaTrafficLightStatus::UNKNOWN:
+      return pi::TRAFFICLIGHT::STATE_UNKNOWN;
+    default:
+      return pi::TRAFFICLIGHT::STATE_UNKNOWN;
   }
 }
 
-void ItsConverter::trafficLightStatusCallback(const cm::CarlaTrafficLightStatusList::ConstPtr msg) {
+void CarlaItsConverter::trafficLightStatusCallback(const cm::CarlaTrafficLightStatusList::ConstPtr msg) {
   try {
-
     if (!msg_traffic_lights_ || msg_traffic_lights_->objects.empty()) {
       RCLCPP_WARN(this->get_logger(), "No traffic lights available to process status.");
       return;
     }
 
     for (const auto carla_traffic_light : msg->traffic_lights) {
-      // loop over msg_traffic_lights_ vector
-      for (auto &pi_traffic_light : msg_traffic_lights_->objects) {
-
+      for (auto& pi_traffic_light : msg_traffic_lights_->objects) {
         if (pi_traffic_light.id == carla_traffic_light.id) {
-          oa::setTrafficLightState(pi_traffic_light.state, 
-            convert_traffic_status(carla_traffic_light.state));
+          oa::setTrafficLightState(pi_traffic_light.state, convert_traffic_status(carla_traffic_light.state));
           break;
         }
       }
@@ -340,7 +424,7 @@ void ItsConverter::trafficLightStatusCallback(const cm::CarlaTrafficLightStatusL
   }
 }
 
-void ItsConverter::worldInfoCallback(const cm::CarlaWorldInfo::ConstPtr msg) {
+void CarlaItsConverter::worldInfoCallback(const cm::CarlaWorldInfo::ConstPtr msg) {
   const std::string current_map_name = msg->map_name;
   std::smatch match;
   std::string carla_map_name;
@@ -367,20 +451,17 @@ void ItsConverter::worldInfoCallback(const cm::CarlaWorldInfo::ConstPtr msg) {
   pub_map_info_->publish(map_info_msg);
 }
 
-void ItsConverter::publishTrafficLights() {
-  if (msg_traffic_lights_ == nullptr)
-  {
+void CarlaItsConverter::publishTrafficLights() {
+  if (msg_traffic_lights_ == nullptr) {
     RCLCPP_INFO(this->get_logger(), "No traffic lights available to publish.");
-  }
-  else
-  {
+  } else {
     msg_traffic_lights_->header.frame_id = carla_fixed_frame_id_;
     msg_traffic_lights_->header.stamp = this->now();
     pub_traffic_lights_carla_map_->publish(*msg_traffic_lights_);
   }
 }
 
-void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::string actor_name) {
+void CarlaItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::string actor_name) {
   // map ego data from CARLA to the perception_msgs EgoData format
   if (ego_shape_set_map_[actor_name] && ego_status_set_map_[actor_name]) {
     msg_ego_data_.header = msg->header;
@@ -396,15 +477,11 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::strin
     oa::initializeState(msg_ego_data_, pi::EGO::MODEL_ID);
     msg_ego_data_.state.header = msg_ego_data_.header;
     oa::setPose(msg_ego_data_.state, msg->pose.pose);
-    oa::setZ(msg_ego_data_, msg->pose.pose.position.z +
-                                ego_shape_map_[actor_name].dimensions[2] / 2.0);  // set z to the center of the object
+    oa::setZ(msg_ego_data_, msg->pose.pose.position.z + ego_shape_map_[actor_name].dimensions[2] / 2.0);
 
-    // twist in
-    oa::setYawRate(msg_ego_data_.state,
-                   msg->twist.twist.angular.z);  // twist is defined in child frame (no transformation needed)
-    oa::setVelocity(msg_ego_data_.state,
-                    msg->twist.twist.linear);  // twist is defined in child frame (no transformation needed)
-    oa::setAcceleration(msg_ego_data_.state, ego_acceleration_map_[actor_name].linear); // imu accleration defined in vehicle frame (no transformation needed)
+    oa::setYawRate(msg_ego_data_.state, msg->twist.twist.angular.z);  // twist is defined in child frame (no transformation needed)
+    oa::setVelocity(msg_ego_data_.state, msg->twist.twist.linear);    // twist is defined in child frame (no transformation needed)
+    oa::setAcceleration(msg_ego_data_.state, ego_acceleration_map_[actor_name].linear);
 
     // SteeringAngleMax is given in rad (contrary to the description in the documentation)
     // https://github.com/carla-simulator/ros-bridge/blob/e9063d97ff5a724f76adbb1b852dc71da1dcfeec/carla_ros_bridge/src/carla_ros_bridge/ego_vehicle.py#L145C46-L145C81
@@ -428,16 +505,8 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::strin
     oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::ROLL, pi::EGO::ROLL, angle_variances_);
     oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::PITCH, pi::EGO::PITCH, angle_variances_);
     oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::YAW, pi::EGO::YAW, angle_variances_);
-    oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::YAW_RATE, pi::EGO::YAW_RATE, angle_rate_variances_);
-
-    // # Planned trajectory of the ego_vehicle
-    // ObjectState[] trajectory_planned
-
-    // # Past trajectory of the ego_vehicle
-    // ObjectState[] trajectory_past
-
-    // # Planned route of the ego_vehicle
-    // geometry_msgs/Point[] route_planned
+    oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::YAW_RATE, pi::EGO::YAW_RATE,
+                                       angle_rate_variances_);
 
     // set vehicle id and dimensions
     msg_ego_data_.vehicle_id = ego_id_map_[actor_name];
@@ -455,15 +524,16 @@ void ItsConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::strin
     } catch (const std::exception& e) {
       if (this->now() - last_cam_msg_ > rclcpp::Duration(1, 0)) {
         RCLCPP_WARN(this->get_logger(),
-                    "Skip EgoData to CAM conversion: %s (Make sure that utm frame exist and unix time is used!)", e.what());
+                    "Skip EgoData to CAM conversion: %s (Make sure that utm frame exist and unix time is used!)",
+                    e.what());
         last_cam_msg_ = this->now();
       }
     }
   }
 }
 
-void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
-  pi::ObjectList msg_object_list_ = ItsConverter::convertObjectArray(msg);
+void CarlaItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
+  pi::ObjectList msg_object_list_ = CarlaItsConverter::convertObjectArray(msg);
 
   // publish object_list in carla_map frame
   pub_objects_carla_map_->publish(msg_object_list_);
@@ -485,25 +555,25 @@ void ItsConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
 
     // transform the object_list from carla_map to actor_name frame
     pi::ObjectList msg_object_list_transformed;
-    if (ItsConverter::transformFrame(msg_object_list_copy, msg_object_list_transformed, actor_name)) {
+    if (CarlaItsConverter::transformFrame(msg_object_list_copy, msg_object_list_transformed, actor_name)) {
       pub_objects_map_[actor_name]->publish(msg_object_list_transformed);
-    };
+    }
   }
 }
 
-void ItsConverter::customObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string topic_name) {
-  pi::ObjectList msg_object_list_ = ItsConverter::convertObjectArray(msg);
+void CarlaItsConverter::customObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string topic_name) {
+  pi::ObjectList msg_object_list_ = CarlaItsConverter::convertObjectArray(msg);
   pi::ObjectList msg_object_list_transformed;
 
   // transform the object_list from carla_map to topic frame if possible
-  if (ItsConverter::transformFrame(msg_object_list_, msg_object_list_transformed, topic_name)) {
+  if (CarlaItsConverter::transformFrame(msg_object_list_, msg_object_list_transformed, topic_name)) {
     pub_custom_objects_map_[topic_name]->publish(msg_object_list_transformed);
   } else {
     pub_custom_objects_map_[topic_name]->publish(msg_object_list_);
   }
 }
 
-pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr msg) {
+pi::ObjectList CarlaItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr msg) {
   // map the objects from the CARLA format to the perception_msgs format
   pi::ObjectList msg_object_list_;
   msg_object_list_.header = msg->header;
@@ -525,7 +595,7 @@ pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr
 
     pi::Object objectTemp;
     objectTemp.id = msg->objects[i].id;
-    objectTemp.existence_probability = 1.0;  // probability that the object exists is always 1.0 as source is CARLA
+    objectTemp.existence_probability = 1.0; // always 1.0 as source is CARLA
 
     // get yaw angle
     double roll, pitch, yaw;
@@ -547,7 +617,7 @@ pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr
     oa::setWidth(objectTemp, msg->objects[i].shape.dimensions[1]);
     oa::setHeight(objectTemp, msg->objects[i].shape.dimensions[2]);
 
-    // Fill variances
+    // fill variances
     oa::setContinuousStateCovarianceAt(objectTemp, pi::HEXAMOTION::X, pi::HEXAMOTION::X, pos_variances_);
     oa::setContinuousStateCovarianceAt(objectTemp, pi::HEXAMOTION::Y, pi::HEXAMOTION::Y, pos_variances_);
     oa::setContinuousStateCovarianceAt(objectTemp, pi::HEXAMOTION::Z, pi::HEXAMOTION::Z, pos_variances_);
@@ -568,13 +638,11 @@ pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr
     oa::setContinuousStateCovarianceAt(objectTemp, pi::HEXAMOTION::WIDTH, pi::HEXAMOTION::WIDTH, pos_variances_);
     oa::setContinuousStateCovarianceAt(objectTemp, pi::HEXAMOTION::HEIGHT, pi::HEXAMOTION::HEIGHT, pos_variances_);
 
-    // Global object list: Sensor ID 0
+    // global object list: Sensor ID 0
     objectTemp.state.sensor_id.push_back(0);
 
-    // classification for object state
     objectTemp.state.classifications.resize(1);
-    objectTemp.state.classifications[0].probability =
-        1.0;  // probability that the object is of this type is always 1.0 as source is CARLA
+    objectTemp.state.classifications[0].probability = 1.0; // always 1.0 as source is CARLA
     switch ((int)msg->objects[i].classification) {
       case dom::Object::CLASSIFICATION_PEDESTRIAN:
         objectTemp.state.classifications[0].type = pi::ObjectClassification::PEDESTRIAN;
@@ -598,22 +666,18 @@ pi::ObjectList ItsConverter::convertObjectArray(const dom::ObjectArray::ConstPtr
 
     // set z for vehicles to center
     if (objectTemp.state.classifications[0].type != pi::ObjectClassification::PEDESTRIAN) {
-      oa::setZ(objectTemp, msg->objects[i].pose.position.z +
-                               msg->objects[i].shape.dimensions[2] / 2.0);  // Set z to the center of the object
+      oa::setZ(objectTemp, msg->objects[i].pose.position.z + msg->objects[i].shape.dimensions[2] / 2.0);
     }
 
-    // reference point for object state position
     objectTemp.state.reference_point.value = pi::ObjectReferencePoint::GEOMETRIC_CENTER;
 
-    // add object to object list
     msg_object_list_.objects.push_back(objectTemp);
   }
   return msg_object_list_;
 }
 
-etsi_cam::CAM ItsConverter::convertEgoDataCam(const pi::EgoData msg) {
+etsi_cam::CAM CarlaItsConverter::convertEgoDataCam(const pi::EgoData msg) {
   etsi_cam::CAM msg_cam;
-  
   // TODO: get direct parent frame of carla_map dynamically
   if (tf2_buffer_->_frameExists("utm_32N") &&
       tf2_buffer_->canTransform("utm_32N", msg.header.frame_id, msg.header.stamp)) {
@@ -628,15 +692,16 @@ etsi_cam::CAM ItsConverter::convertEgoDataCam(const pi::EgoData msg) {
   return msg_cam;
 }
 
-bool ItsConverter::transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed,
-                                  std::string target_frame) {
+bool CarlaItsConverter::transformFrame(const pi::ObjectList& msg_object_list,
+                                       pi::ObjectList& msg_object_list_transformed,
+                                       std::string target_frame) {
   if (msg_object_list.objects.size() == 0) return false;
 
   try {
     while (true) {
-      // try to transform to target_frame
       if (tf2_buffer_->_frameExists(target_frame)) {
-        msg_object_list_transformed = tf2_buffer_->transform(msg_object_list, target_frame, tf2::durationFromSec(0.1));
+        msg_object_list_transformed =
+            tf2_buffer_->transform(msg_object_list, target_frame, tf2::durationFromSec(0.1));
         return true;
       }
 
@@ -655,11 +720,20 @@ bool ItsConverter::transformFrame(const pi::ObjectList& msg_object_list, pi::Obj
   }
 }
 
-}  // namespace carla
 
-int main(int argc, char** argv) {
+}  // namespace carla_its_converter
+
+
+int main(int argc, char* argv[]) {
+
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<carla::ItsConverter>());
+  auto node = std::make_shared<carla_its_converter::CarlaItsConverter>();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  RCLCPP_INFO(node->get_logger(), "Spinning node '%s' with %s", node->get_fully_qualified_name(),
+              "SingleThreadedExecutor");
+  executor.add_node(node);
+  executor.spin();
   rclcpp::shutdown();
+
   return 0;
 }

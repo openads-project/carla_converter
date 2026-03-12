@@ -3,10 +3,11 @@
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_listener.h>
+#include <chrono>
 #include <map>
-#include <memory>
-#include <sstream>
+#include <optional>
 #include <string>
+#include <vector>
 
 #include <rclcpp/rclcpp.hpp>
 #include <regex>
@@ -46,14 +47,64 @@ template <typename T>
 using Subscriber = typename rclcpp::Subscription<T>::SharedPtr;
 template <typename T>
 using Publisher = typename rclcpp::Publisher<T>::SharedPtr;
-namespace carla {
 
-class ItsConverter : public rclcpp::Node {
+namespace carla_its_converter {
+
+template <typename C> struct is_vector : std::false_type {};
+template <typename T, typename A> struct is_vector<std::vector<T, A>> : std::true_type {};
+template <typename C> inline constexpr bool is_vector_v = is_vector<C>::value;
+
+
+/**
+ * @brief CarlaItsConverter class
+ */
+class CarlaItsConverter : public rclcpp::Node {
+
  public:
-  ItsConverter();
+
+  CarlaItsConverter();
 
  private:
-  bool loadParameters();
+
+  /**
+   * @brief Declares and loads a ROS parameter
+   *
+   * @param name name
+   * @param param parameter variable to load into
+   * @param description description
+   * @param add_to_auto_reconfigurable_params enable reconfiguration of parameter
+   * @param is_required whether failure to load parameter will stop node
+   * @param read_only set parameter to read-only
+   * @param from_value parameter range minimum
+   * @param to_value parameter range maximum
+   * @param step_value parameter range step
+   * @param additional_constraints additional constraints description
+   */
+  template <typename T>
+  void declareAndLoadParameter(const std::string& name,
+                               T& param,
+                               const std::string& description,
+                               const bool add_to_auto_reconfigurable_params = true,
+                               const bool is_required = false,
+                               const bool read_only = false,
+                               const std::optional<double>& from_value = std::nullopt,
+                               const std::optional<double>& to_value = std::nullopt,
+                               const std::optional<double>& step_value = std::nullopt,
+                               const std::string& additional_constraints = "");
+
+  /**
+   * @brief Handles reconfiguration when a parameter value is changed
+   *
+   * @param parameters parameters
+   * @return parameter change result
+   */
+  rcl_interfaces::msg::SetParametersResult parametersCallback(const std::vector<rclcpp::Parameter>& parameters);
+
+  /**
+   * @brief Sets up subscribers, publishers, etc. to configure the node
+   */
+  void setup();
+
   void subscribeCustomTopics();
 
   void gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string actor_name);
@@ -68,11 +119,23 @@ class ItsConverter : public rclcpp::Node {
   void worldInfoCallback(const cm::CarlaWorldInfo::ConstPtr msg);
 
   void publishTrafficLights();
-  
+
   pi::ObjectList convertObjectArray(const dom::ObjectArray::ConstPtr msg);
   etsi_cam::CAM convertEgoDataCam(const pi::EgoData msg);
   bool transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed,
                       std::string target_frame);
+
+ private:
+
+  /**
+   * @brief Auto-reconfigurable parameters for dynamic reconfiguration
+   */
+  std::vector<std::tuple<std::string, std::function<void(const rclcpp::Parameter&)>>> auto_reconfigurable_params_;
+
+  /**
+   * @brief Callback handle for dynamic parameter reconfiguration
+   */
+  OnSetParametersCallbackHandle::SharedPtr parameters_callback_;
 
   // tf and timing variables
   std::unique_ptr<tf2_ros::Buffer> tf2_buffer_;
@@ -97,23 +160,25 @@ class ItsConverter : public rclcpp::Node {
   Publisher<pi::ObjectList> pub_objects_carla_map_;
   Publisher<pi::ObjectList> pub_traffic_lights_carla_map_;
   Publisher<stm::String> pub_map_info_;
-  
+
   std::map<std::string, Publisher<pi::ObjectList>> pub_objects_map_;
   std::map<std::string, Publisher<pi::EgoData>> pub_ego_data_map_;
   std::map<std::string, Publisher<etsi_cam::CAM>> pub_etsi_cam_map_;
   std::map<std::string, Publisher<pi::ObjectList>> pub_custom_objects_map_;
 
   // ros parameters
+  std::string ego_data_actors_string_ = "ego_vehicle";
+  std::string object_data_actors_string_ = "ego_vehicle";
   std::vector<std::string> ego_data_actors_;
   std::vector<std::string> object_data_actors_;
-  double pos_variances_;
-  double vel_variances_;
-  double acc_variances_;
-  double angle_variances_;
-  double angle_rate_variances_;
-  double traffic_light_frequency_;
-  std::string carla_fixed_frame_id_;
-  double acceleration_filter_alpha_;
+  double pos_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
+  double vel_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
+  double acc_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
+  double angle_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
+  double angle_rate_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
+  double traffic_light_frequency_ = 10.0;
+  std::string carla_fixed_frame_id_ = "carla_map";
+  double acceleration_filter_alpha_ = 1.0;
 
   // ego information
   std::map<std::string, int> ego_id_map_;
@@ -135,4 +200,5 @@ class ItsConverter : public rclcpp::Node {
   std::map<std::string, bool> ego_info_set_map_;
 };
 
-}  // end of namespace carla
+
+}  // namespace carla_its_converter

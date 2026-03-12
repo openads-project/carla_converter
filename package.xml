@@ -1,36 +1,37 @@
 <?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
+
   <name>carla_its_converter</name>
   <version>1.0.0</version>
   <description>This package contains the CarlaConverterNode that acts as an Converter to the FB-FI definitions.</description>
 
   <maintainer email="guido.kueppers@ika.rwth-aachen.de">Guido Küppers</maintainer>
-
-  <license>TODO</license>
-
   <author email="guido.kueppers@ika.rwth-aachen.de">Guido Küppers</author>
   <author email="jean-pierre.busch@ika.rwth-aachen.de">Jean-Pierre Busch</author>
   <author email="lars.ippen@ika.rwth-aachen.de">Lars Ippen</author>
+  <author email="christian.geller@ika.rwth-aachen.de>">Christian Geller</author>
+  <author email="silas.damaschke@ika.rwth-aachen.de>">Silas Damaschke</author>
 
-  <!-- Common -->
+  <license>TODO</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>ad2etsi_converters</depend>
+  <depend>carla_msgs</depend>
   <depend>derived_object_msgs</depend>
   <depend>geometry_msgs</depend>
-  <depend>sensor_msgs</depend>
+  <depend>nav_msgs</depend>
   <depend>perception_msgs</depend>
   <depend>perception_msgs_utils</depend>
+  <depend>rclcpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>shape_msgs</depend>
   <depend>std_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_geometry_msgs</depend>
   <depend>tf2_perception_msgs</depend>
   <depend>tf2_ros</depend>
-  <depend>tf2</depend>
-  <depend>shape_msgs</depend>
-  <depend>carla_msgs</depend>
-  <depend>ad2etsi_converters</depend>
-
-  <!-- ROS2 -->
-  <buildtool_depend>ament_cmake</buildtool_depend>
-  <depend>nav_msgs</depend>
-  <depend>rclcpp</depend>
-  <depend>tf2_geometry_msgs</depend>
 
   <export>
     <build_type>ament_cmake</build_type>
