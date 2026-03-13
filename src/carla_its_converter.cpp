@@ -212,9 +212,9 @@ void CarlaItsConverter::setup() {
   RCLCPP_INFO(this->get_logger(), "Publishing to '%s'", pub_traffic_lights_carla_map_->get_topic_name());
 
   sub_world_info_ = this->create_subscription<cm::CarlaWorldInfo>(
-      "/carla/world_info", 1,
+      "/carla/world_info", qosLatching,
       std::bind(&CarlaItsConverter::worldInfoCallback, this, std::placeholders::_1));
-  pub_map_info_ = this->create_publisher<stm::String>("/carla_its_converter/map_info", 1);
+  pub_map_info_ = this->create_publisher<stm::String>("/carla_its_converter/map_info", qosLatching);
   RCLCPP_INFO(this->get_logger(), "Subscribed to '%s'", sub_world_info_->get_topic_name());
   RCLCPP_INFO(this->get_logger(), "Publishing to '%s'", pub_map_info_->get_topic_name());
 
@@ -445,6 +445,8 @@ void CarlaItsConverter::worldInfoCallback(const cm::CarlaWorldInfo::ConstPtr msg
     RCLCPP_ERROR(this->get_logger(), "Wrong format of CARLA map name: '%s'", current_map_name.c_str());
     return;
   }
+
+  RCLCPP_INFO(this->get_logger(), "Received world info for map '%s'.", carla_map_name.c_str());
 
   stm::String map_info_msg;
   map_info_msg.data = carla_map_name;
