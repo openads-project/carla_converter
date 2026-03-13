@@ -181,11 +181,16 @@ class CarlaItsConverter : public rclcpp::Node {
   void trafficLightStatusCallback(const cm::CarlaTrafficLightStatusList::ConstPtr msg);
 
   /**
-   * @brief Extracts and publishes the CARLA map name from the world info message
+   * @brief Extracts and stores the CARLA map name from the world info message
    *
    * @param msg incoming CarlaWorldInfo message
    */
   void worldInfoCallback(const cm::CarlaWorldInfo::ConstPtr msg);
+
+  /**
+   * @brief Publishes the stored CARLA map name at 1 Hz
+   */
+  void publishMapInfo();
 
   /**
    * @brief Publishes the current traffic light object list at the configured frequency
@@ -235,6 +240,7 @@ class CarlaItsConverter : public rclcpp::Node {
   std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::TimerBase::SharedPtr timer_traffic_lights_;
+  rclcpp::TimerBase::SharedPtr timer_map_info_;
   rclcpp::Time last_cam_msg_;
 
   // subscriber and publisher
@@ -285,6 +291,7 @@ class CarlaItsConverter : public rclcpp::Node {
 
   pi::EgoData msg_ego_data_;
   pi::ObjectList::SharedPtr msg_traffic_lights_;
+  std::optional<stm::String> msg_map_info_;
 
   // set flags
   std::map<std::string, bool> ego_shape_set_map_;
