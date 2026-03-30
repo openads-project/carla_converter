@@ -24,6 +24,8 @@ def generate_launch_description():
         DeclareLaunchArgument("params", default_value=os.path.join(get_package_share_directory("carla_its_converter"), "config", "params.yml"), description="path to parameter file"),
         DeclareLaunchArgument("log_level", default_value="info", description="ROS logging level (debug, info, warn, error, fatal)"),
         DeclareLaunchArgument("use_sim_time", default_value="true", description="use simulation clock"),
+        DeclareLaunchArgument("acceleration_filter_alpha", default_value="1.0", description="Low-pass filter alpha for IMU acceleration (0.0 = no update, 1.0 = no filtering"),
+        *remappable_topics
     ]
 
     nodes = [
@@ -47,7 +49,6 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        *remappable_topics,
         *args,
         SetParameter("use_sim_time", LaunchConfiguration("use_sim_time")),
         transforms,

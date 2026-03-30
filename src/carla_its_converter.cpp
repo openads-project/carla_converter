@@ -193,7 +193,7 @@ void CarlaItsConverter::setup() {
   // setup subscriber and publisher
   sub_objects_ = this->create_subscription<dom::ObjectArray>(
       "/carla/objects", 1, std::bind(&CarlaItsConverter::objectsCallback, this, std::placeholders::_1));
-  pub_objects_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/object_list", 1);
+  pub_objects_carla_map_ = this->create_publisher<pi::ObjectList>("~/object_list", 1);
   RCLCPP_INFO(this->get_logger(), "Subscribed to '%s'", sub_objects_->get_topic_name());
   RCLCPP_INFO(this->get_logger(), "Publishing to '%s'", pub_objects_carla_map_->get_topic_name());
 
@@ -203,7 +203,7 @@ void CarlaItsConverter::setup() {
   sub_traffic_light_status_ = this->create_subscription<cm::CarlaTrafficLightStatusList>(
       "/carla/traffic_lights/status", 1,
       std::bind(&CarlaItsConverter::trafficLightStatusCallback, this, std::placeholders::_1));
-  pub_traffic_lights_carla_map_ = this->create_publisher<pi::ObjectList>("/carla_its_converter/traffic_lights", 1);
+  pub_traffic_lights_carla_map_ = this->create_publisher<pi::ObjectList>("~/traffic_lights", 1);
   timer_traffic_lights_ = create_wall_timer(
       std::chrono::milliseconds(int(1000 / traffic_light_frequency_)),
       std::bind(&CarlaItsConverter::publishTrafficLights, this));
@@ -214,7 +214,7 @@ void CarlaItsConverter::setup() {
   sub_world_info_ = this->create_subscription<cm::CarlaWorldInfo>(
       "/carla/world_info", qosLatching,
       std::bind(&CarlaItsConverter::worldInfoCallback, this, std::placeholders::_1));
-  pub_map_info_ = this->create_publisher<stm::String>("/carla_its_converter/map_info", qosLatching);
+  pub_map_info_ = this->create_publisher<stm::String>("~/map_info", qosLatching);
   RCLCPP_INFO(this->get_logger(), "Subscribed to '%s'", sub_world_info_->get_topic_name());
   RCLCPP_INFO(this->get_logger(), "Publishing to '%s'", pub_map_info_->get_topic_name());
 
@@ -240,16 +240,16 @@ void CarlaItsConverter::setup() {
 
     // setup publisher depending on actor_name
     Publisher<pi::EgoData> pub_ego_data =
-        this->create_publisher<pi::EgoData>("/carla_its_converter/" + actor_name + "/ego_data", 1);
+        this->create_publisher<pi::EgoData>("~/" + actor_name + "/ego_data", 1);
     Publisher<etsi_cam::CAM> pub_etsi_cam =
-        this->create_publisher<etsi_cam::CAM>("/carla_its_converter/" + actor_name + "/etsi_cam", 1);
+        this->create_publisher<etsi_cam::CAM>("~/" + actor_name + "/etsi_cam", 1);
 
     // save publisher in map with actor_name as key
     pub_ego_data_map_.insert({actor_name, pub_ego_data});
     pub_etsi_cam_map_.insert({actor_name, pub_etsi_cam});
 
     ROS_LOG_STREAM(INFO, "Subscribed /carla state topics for actor "
-                             << actor_name << " and publishing /carla_its_converter/" << actor_name << "/ego_data");
+                             << actor_name << " and publishing ~/" << actor_name << "/ego_data");
   }
 
   // setup object subscriber and publisher for object_data_actors_
@@ -263,13 +263,13 @@ void CarlaItsConverter::setup() {
 
     // setup publisher depending on actor_name
     Publisher<pi::ObjectList> pub_objects =
-        this->create_publisher<pi::ObjectList>("/carla_its_converter/" + actor_name + "/object_list", 1);
+        this->create_publisher<pi::ObjectList>("~/" + actor_name + "/object_list", 1);
 
     // save publisher in map with actor_name as key
     pub_objects_map_.insert({actor_name, pub_objects});
 
     ROS_LOG_STREAM(INFO, "Subscribed /carla object topics for actor "
-                             << actor_name << " and publishing /carla_its_converter/" << actor_name << "/object_list");
+                             << actor_name << " and publishing ~/" << actor_name << "/object_list");
   }
 
   // create 1s timer to subscribe to custom topics
@@ -316,11 +316,11 @@ void CarlaItsConverter::subscribeCustomTopics() {
     sub_custom_objects_map_.insert({topic_name, sub_custom_objects});
 
     Publisher<pi::ObjectList> pub_custom_objects =
-        this->create_publisher<pi::ObjectList>("/carla_its_converter/" + topic_name, 1);
+        this->create_publisher<pi::ObjectList>("~/" + topic_name, 1);
     pub_custom_objects_map_.insert({topic_name, pub_custom_objects});
 
     ROS_LOG_STREAM(INFO, "Subscribed custom topic /carla/" << topic_name
-                                                           << " and publishing /carla_its_converter/" << topic_name);
+                                                           << " and publishing ~/" << topic_name);
   }
 }
 
