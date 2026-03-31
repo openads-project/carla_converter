@@ -249,9 +249,9 @@ class CarlaConverter : public rclcpp::Node {
 
   // ros parameters
   std::string ego_data_actors_string_ = "ego_vehicle";
-  std::string object_data_actors_string_ = "ego_vehicle";
+  std::string object_list_actors_string_ = "ego_vehicle";
   std::vector<std::string> ego_data_actors_;
-  std::vector<std::string> object_data_actors_;
+  std::vector<std::string> object_list_actors_;
   double pos_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
   double vel_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
   double acc_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;

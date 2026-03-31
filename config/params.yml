@@ -1,7 +1,7 @@
 /**/*:
   ros__parameters:
     ego_data_actors: "ego_vehicle"
-    object_data_actors: "ego_vehicle"
+    object_list_actors: "ego_vehicle"
     pos_variances: 0.2
     vel_variances: -1.0
     acc_variances: -1.0

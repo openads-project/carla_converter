@@ -38,7 +38,7 @@ This package contains the carla_converter - a ROS 2 Node that converts incoming 
 | Topic | Type | Description |
 | --- | --- | --- |
 | `~/object_list` | `perception_msgs/msg/ObjectList` | Object list in carla map frame |
-| `~/<actor_name>/object_list` | `perception_msgs/msg/ObjectList` | Object list in `actor_name` frame, for each actor in `object_data_actors` |
+| `~/<actor_name>/object_list` | `perception_msgs/msg/ObjectList` | Object list in `actor_name` frame, for each actor in `object_list_actors` |
 | `~/<actor_name>/ego_data` | `perception_msgs/msg/EgoData` | Ego state of `actor_name`, for each actor in `ego_data_actors` |
 | `~/traffic_lights` | `perception_msgs/msg/ObjectList` | Traffic lights with pose and current signal status |
 | `~/map_info` | `std_msgs/msg/String` | CARLA map name |
@@ -48,7 +48,7 @@ This package contains the carla_converter - a ROS 2 Node that converts incoming 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
 | `ego_data_actors` | `string` | `"ego_vehicle"` | Comma-separated list of actor names to publish ego data for (e.g. `"hero, hero1"`). `EgoData` is published for each actor. |
-| `object_data_actors` | `string` | `"ego_vehicle"` | Comma-separated list of actor names to publish object lists for. The global `ObjectList` is transformed into each actor's frame. |
+| `object_list_actors` | `string` | `"ego_vehicle"` | Comma-separated list of actor names to publish object lists for. The global `ObjectList` is transformed into each actor's frame. |
 | `pos_variances` | `double` | `0.2` | Position covariance value (`-1.0` = invalid/unset) |
 | `vel_variances` | `double` | `-1.0` | Velocity covariance value (`-1.0` = invalid/unset) |
 | `acc_variances` | `double` | `-1.0` | Acceleration covariance value (`-1.0` = invalid/unset) |

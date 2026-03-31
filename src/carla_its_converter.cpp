@@ -9,7 +9,7 @@ CarlaConverter::CarlaConverter() : Node("carla_converter") {
   // declare and load parameters
   this->declareAndLoadParameter("ego_data_actors", ego_data_actors_string_,
     "Comma-separated list of actor names to publish ego data for", false, false, true);
-  this->declareAndLoadParameter("object_data_actors", object_data_actors_string_,
+  this->declareAndLoadParameter("object_list_actors", object_list_actors_string_,
     "Comma-separated list of actor names to publish object lists for", false, false, true);
   this->declareAndLoadParameter("pos_variances", pos_variances_,
     "Position covariance value", true, false, false);
@@ -143,10 +143,10 @@ void CarlaConverter::setup() {
     actor_name.erase(std::remove_if(actor_name.begin(), actor_name.end(), isspace), actor_name.end());
     ego_data_actors_.push_back(actor_name);
   }
-  std::stringstream object_data_actors_ss(object_data_actors_string_);
-  while (std::getline(object_data_actors_ss, actor_name, ',')) {
+  std::stringstream object_list_actors_ss(object_list_actors_string_);
+  while (std::getline(object_list_actors_ss, actor_name, ',')) {
     actor_name.erase(std::remove_if(actor_name.begin(), actor_name.end(), isspace), actor_name.end());
-    object_data_actors_.push_back(actor_name);
+    object_list_actors_.push_back(actor_name);
   }
 
   // setup callback functions
@@ -249,8 +249,8 @@ void CarlaConverter::setup() {
                              << actor_name << " and publishing ~/" << actor_name << "/ego_data");
   }
 
-  // setup object subscriber and publisher for object_data_actors_
-  for (std::string& actor_name : object_data_actors_) {
+  // setup object subscriber and publisher for object_list_actors_
+  for (std::string& actor_name : object_list_actors_) {
     // setup subscriber depending on actor_name
     Subscriber<cm::CarlaEgoVehicleInfo> sub_vehicle_info = this->create_subscription<cm::CarlaEgoVehicleInfo>(
         "/carla/" + actor_name + "/vehicle_info", qosLatching, vehicleInfoArgCallback(actor_name));
@@ -522,7 +522,7 @@ void CarlaConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
   pub_objects_carla_map_->publish(msg_object_list_);
 
   // iterate over each actor_name
-  for (std::string& actor_name : object_data_actors_) {
+  for (std::string& actor_name : object_list_actors_) {
     pi::ObjectList msg_object_list_copy = msg_object_list_;
 
     // Set increasing sensor ID per role name. As `ego_data_actors_` doesnt change, this assigns a fixed sensor ID to each role.
