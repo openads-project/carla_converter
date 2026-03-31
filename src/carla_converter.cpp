@@ -473,6 +473,8 @@ void CarlaConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::str
     oa::initializeState(msg_ego_data_, pi::EGO::MODEL_ID);
     msg_ego_data_.state.header = msg_ego_data_.header;
     oa::setPose(msg_ego_data_.state, msg->pose.pose);
+    oa::setPitch(msg_ego_data_.state, 0.0);
+    oa::setRoll(msg_ego_data_.state, 0.0);
     oa::setZ(msg_ego_data_, msg->pose.pose.position.z + ego_shape_map_[actor_name].dimensions[2] / 2.0);
 
     oa::setYawRate(msg_ego_data_.state, msg->twist.twist.angular.z);  // twist is defined in child frame (no transformation needed)
