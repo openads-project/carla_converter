@@ -20,7 +20,6 @@
 #include <shape_msgs/msg/solid_primitive.hpp>
 #include <tf2_perception_msgs/tf2_perception_msgs.hpp>
 
-#include <ad2etsi_converters/Converters.hpp>
 #include <carla_msgs/msg/carla_ego_vehicle_info.hpp>
 #include <carla_msgs/msg/carla_ego_vehicle_status.hpp>
 #include <carla_msgs/msg/carla_traffic_light_info_list.hpp>
@@ -40,7 +39,6 @@ namespace ssm = sensor_msgs::msg;
 
 namespace cm = carla_msgs::msg;
 namespace oa = perception_msgs::object_access;
-namespace etsi_cam = etsi_its_cam_msgs::msg;
 namespace stm = std_msgs::msg;
 
 template <typename T>
@@ -144,7 +142,7 @@ class CarlaConverter : public rclcpp::Node {
   void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string actor_name);
 
   /**
-   * @brief Converts odometry to EgoData and publishes it; also attempts CAM conversion
+   * @brief Converts odometry to EgoData and publishes it
    *
    * @param msg incoming Odometry message
    * @param actor_name name of the CARLA actor
@@ -201,14 +199,6 @@ class CarlaConverter : public rclcpp::Node {
   pi::ObjectList convertObjectArray(const dom::ObjectArray::ConstPtr msg);
 
   /**
-   * @brief Converts an EgoData message to an ETSI CAM message using the UTM transform
-   *
-   * @param msg EgoData to convert
-   * @return converted CAM message
-   */
-  etsi_cam::CAM convertEgoDataCam(const pi::EgoData msg);
-
-  /**
    * @brief Transforms an ObjectList into the target TF frame, falling back to parent frames
    *
    * @param msg_object_list input ObjectList in source frame
@@ -235,7 +225,6 @@ class CarlaConverter : public rclcpp::Node {
   std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::TimerBase::SharedPtr timer_traffic_lights_;
-  rclcpp::Time last_cam_msg_;
 
   // subscriber and publisher
   Subscriber<dom::ObjectArray> sub_objects_;
@@ -256,7 +245,6 @@ class CarlaConverter : public rclcpp::Node {
 
   std::map<std::string, Publisher<pi::ObjectList>> pub_objects_map_;
   std::map<std::string, Publisher<pi::EgoData>> pub_ego_data_map_;
-  std::map<std::string, Publisher<etsi_cam::CAM>> pub_etsi_cam_map_;
   std::map<std::string, Publisher<pi::ObjectList>> pub_custom_objects_map_;
 
   // ros parameters

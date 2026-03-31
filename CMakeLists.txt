@@ -20,7 +20,6 @@ find_package(tf2_ros REQUIRED)
 find_package(carla_msgs REQUIRED)
 find_package(perception_msgs REQUIRED)
 find_package(perception_msgs_utils REQUIRED)
-find_package(ad2etsi_converters REQUIRED)
 
 set(TARGET_NAME carla_converter)
 
@@ -47,7 +46,6 @@ ament_target_dependencies(${TARGET_NAME}
   carla_msgs
   perception_msgs
   perception_msgs_utils
-  ad2etsi_converters
 )
 
 install(TARGETS ${TARGET_NAME}
