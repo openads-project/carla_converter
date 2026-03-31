@@ -48,7 +48,7 @@ using Subscriber = typename rclcpp::Subscription<T>::SharedPtr;
 template <typename T>
 using Publisher = typename rclcpp::Publisher<T>::SharedPtr;
 
-namespace carla_its_converter {
+namespace carla_converter {
 
 template <typename C> struct is_vector : std::false_type {};
 template <typename T, typename A> struct is_vector<std::vector<T, A>> : std::true_type {};
@@ -56,13 +56,13 @@ template <typename C> inline constexpr bool is_vector_v = is_vector<C>::value;
 
 
 /**
- * @brief CarlaItsConverter class
+ * @brief CarlaConverter class
  */
-class CarlaItsConverter : public rclcpp::Node {
+class CarlaConverter : public rclcpp::Node {
 
  public:
 
-  CarlaItsConverter();
+  CarlaConverter();
 
  private:
 
@@ -294,4 +294,4 @@ class CarlaItsConverter : public rclcpp::Node {
 };
 
 
-}  // namespace carla_its_converter
+}  // namespace carla_converter

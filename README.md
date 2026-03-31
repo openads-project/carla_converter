@@ -1,10 +1,10 @@
-# carla_its_converter
+# carla_converter
 
-This package contains the CarlaItsConverterNode - a ROS 2 Node that converts incoming messages from the [carla-ros-bridge](https://gitlab.ika.rwth-aachen.de/fb-fi/simulation/carla/carla-ros-bridge) and publishes some of the [fb-fi defined ros interfaces](https://github.com/ika-rwth-aachen#interfaces--v2x-communication) for various its-applications.
+This package contains the carla_converter - a ROS 2 Node that converts incoming messages from the [carla-ros-bridge](https://gitlab.ika.rwth-aachen.de/fb-fi/simulation/carla/carla-ros-bridge) and publishes some of the [fb-fi defined ros interfaces](https://github.com/ika-rwth-aachen#interfaces--v2x-communication) for various its-applications.
 
-- [carla\_its\_converter](#carla_its_converter)
+- [carla\_its\_converter](#carla_converter)
   - [Container Images](#container-images)
-  - [`carla_its_converter`](#carla_its_converter-1)
+  - [`carla_converter`](#carla_converter-1)
     - [Subscribed Topics](#subscribed-topics)
     - [Published Topics](#published-topics)
     - [Parameters](#parameters)
@@ -14,9 +14,9 @@ This package contains the CarlaItsConverterNode - a ROS 2 Node that converts inc
 
 | Description | Image:Tag | Default Command |
 | --- | --- | --- |
-| ROS 2 Node to convert carla to fb-fi ros messages | `gitlab.ika.rwth-aachen.de:5050/fb-fi/simulation/carla/carla_its_converter:latest` | `ros2 launch carla_its_converter carla_its_converter.launch.py` |
+| ROS 2 Node to convert carla to fb-fi ros messages | `gitlab.ika.rwth-aachen.de:5050/fb-fi/simulation/carla/carla_converter:latest` | `ros2 launch carla_converter carla_converter.launch.py` |
 
-## `carla_its_converter`
+## `carla_converter`
 
 ### Subscribed Topics
 

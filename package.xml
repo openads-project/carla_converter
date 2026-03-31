@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
 
-  <name>carla_its_converter</name>
+  <name>carla_converter</name>
   <version>1.0.0</version>
   <description>This package contains the CarlaConverterNode that acts as an Converter to the FB-FI definitions.</description>
 
