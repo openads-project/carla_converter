@@ -48,7 +48,7 @@ using Subscriber = typename rclcpp::Subscription<T>::SharedPtr;
 template <typename T>
 using Publisher = typename rclcpp::Publisher<T>::SharedPtr;
 
-namespace carla_its_converter {
+namespace carla_converter {
 
 template <typename C> struct is_vector : std::false_type {};
 template <typename T, typename A> struct is_vector<std::vector<T, A>> : std::true_type {};
@@ -56,13 +56,13 @@ template <typename C> inline constexpr bool is_vector_v = is_vector<C>::value;
 
 
 /**
- * @brief CarlaItsConverter class
+ * @brief CarlaConverter class
  */
-class CarlaItsConverter : public rclcpp::Node {
+class CarlaConverter : public rclcpp::Node {
 
  public:
 
-  CarlaItsConverter();
+  CarlaConverter();
 
  private:
 
@@ -261,9 +261,9 @@ class CarlaItsConverter : public rclcpp::Node {
 
   // ros parameters
   std::string ego_data_actors_string_ = "ego_vehicle";
-  std::string object_data_actors_string_ = "ego_vehicle";
+  std::string object_list_actors_string_ = "ego_vehicle";
   std::vector<std::string> ego_data_actors_;
-  std::vector<std::string> object_data_actors_;
+  std::vector<std::string> object_list_actors_;
   double pos_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
   double vel_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
   double acc_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
@@ -294,4 +294,4 @@ class CarlaItsConverter : public rclcpp::Node {
 };
 
 
-}  // namespace carla_its_converter
+}  // namespace carla_converter

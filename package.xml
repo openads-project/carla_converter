@@ -2,14 +2,13 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
 
-  <name>carla_its_converter</name>
-  <version>1.0.0</version>
+  <name>carla_converter</name>
+  <version>1.2.0</version>
   <description>This package contains the CarlaConverterNode that acts as an Converter to the FB-FI definitions.</description>
 
-  <maintainer email="guido.kueppers@ika.rwth-aachen.de">Guido Küppers</maintainer>
-  <author email="guido.kueppers@ika.rwth-aachen.de">Guido Küppers</author>
-  <author email="jean-pierre.busch@ika.rwth-aachen.de">Jean-Pierre Busch</author>
+  <maintainer email="silas.damaschke@ika.rwth-aachen.de">Silas Damaschke</maintainer>
   <author email="christian.geller@ika.rwth-aachen.de">Christian Geller</author>
+  <author email="guido.linden@ika.rwth-aachen.de">Guido Linden</author>
   <author email="silas.damaschke@ika.rwth-aachen.de">Silas Damaschke</author>
 
   <license>TODO</license>

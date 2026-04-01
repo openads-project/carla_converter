@@ -1,10 +1,10 @@
-# carla_its_converter
+# carla_converter
 
-This package contains the CarlaItsConverterNode - a ROS 2 Node that converts incoming messages from the [carla-ros-bridge](https://gitlab.ika.rwth-aachen.de/fb-fi/simulation/carla/carla-ros-bridge) and publishes some of the [fb-fi defined ros interfaces](https://github.com/ika-rwth-aachen#interfaces--v2x-communication) for various its-applications.
+This package contains the carla_converter - a ROS 2 Node that converts incoming messages from the [carla-ros-bridge](https://gitlab.ika.rwth-aachen.de/fb-fi/simulation/carla/carla-ros-bridge) and publishes some of the [fb-fi defined ros interfaces](https://github.com/ika-rwth-aachen#interfaces--v2x-communication) for various its-applications.
 
-- [carla\_its\_converter](#carla_its_converter)
+- [carla\_converter](#carla_converter)
   - [Container Images](#container-images)
-  - [`carla_its_converter`](#carla_its_converter-1)
+  - [`carla_converter`](#carla_converter-1)
     - [Subscribed Topics](#subscribed-topics)
     - [Published Topics](#published-topics)
     - [Parameters](#parameters)
@@ -14,9 +14,9 @@ This package contains the CarlaItsConverterNode - a ROS 2 Node that converts inc
 
 | Description | Image:Tag | Default Command |
 | --- | --- | --- |
-| ROS 2 Node to convert carla to fb-fi ros messages | `gitlab.ika.rwth-aachen.de:5050/fb-fi/simulation/carla/carla_its_converter:latest` | `ros2 launch carla_its_converter carla_its_converter.launch.py` |
+| ROS 2 Node to convert carla to fb-fi ros messages | `gitlab.ika.rwth-aachen.de:5050/fb-fi/simulation/carla/carla_converter:latest` | `ros2 launch carla_converter carla_converter.launch.py` |
 
-## `carla_its_converter`
+## `carla_converter`
 
 ### Subscribed Topics
 
@@ -38,7 +38,7 @@ This package contains the CarlaItsConverterNode - a ROS 2 Node that converts inc
 | Topic | Type | Description |
 | --- | --- | --- |
 | `~/object_list` | `perception_msgs/msg/ObjectList` | Object list in carla map frame |
-| `~/<actor_name>/object_list` | `perception_msgs/msg/ObjectList` | Object list in `actor_name` frame, for each actor in `object_data_actors` |
+| `~/<actor_name>/object_list` | `perception_msgs/msg/ObjectList` | Object list in `actor_name` frame, for each actor in `object_list_actors` |
 | `~/<actor_name>/ego_data` | `perception_msgs/msg/EgoData` | Ego state of `actor_name`, for each actor in `ego_data_actors` |
 | `~/<actor_name>/etsi_cam` | `etsi_its_cam_msgs/msg/CAM` | Ego state converted to CAM (requires simulation time to be current unix time) |
 | `~/traffic_lights` | `perception_msgs/msg/ObjectList` | Traffic lights with pose and current signal status |
@@ -49,7 +49,7 @@ This package contains the CarlaItsConverterNode - a ROS 2 Node that converts inc
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
 | `ego_data_actors` | `string` | `"ego_vehicle"` | Comma-separated list of actor names to publish ego data for (e.g. `"hero, hero1"`). `EgoData` and `CAM` are published for each actor. |
-| `object_data_actors` | `string` | `"ego_vehicle"` | Comma-separated list of actor names to publish object lists for. The global `ObjectList` is transformed into each actor's frame. |
+| `object_list_actors` | `string` | `"ego_vehicle"` | Comma-separated list of actor names to publish object lists for. The global `ObjectList` is transformed into each actor's frame. |
 | `pos_variances` | `double` | `0.2` | Position covariance value (`-1.0` = invalid/unset) |
 | `vel_variances` | `double` | `-1.0` | Velocity covariance value (`-1.0` = invalid/unset) |
 | `acc_variances` | `double` | `-1.0` | Acceleration covariance value (`-1.0` = invalid/unset) |

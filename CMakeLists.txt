@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(carla_its_converter)
+project(carla_converter)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -22,9 +22,9 @@ find_package(perception_msgs REQUIRED)
 find_package(perception_msgs_utils REQUIRED)
 find_package(ad2etsi_converters REQUIRED)
 
-set(TARGET_NAME carla_its_converter)
+set(TARGET_NAME carla_converter)
 
-add_executable(${TARGET_NAME} src/carla_its_converter.cpp)
+add_executable(${TARGET_NAME} src/carla_converter.cpp)
 
 target_include_directories(${TARGET_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
