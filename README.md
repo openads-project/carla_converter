@@ -2,7 +2,7 @@
 
 This package contains the carla_converter - a ROS 2 Node that converts incoming messages from the [carla-ros-bridge](https://gitlab.ika.rwth-aachen.de/fb-fi/simulation/carla/carla-ros-bridge) and publishes some of the [fb-fi defined ros interfaces](https://github.com/ika-rwth-aachen#interfaces--v2x-communication) for various its-applications.
 
-- [carla\_its\_converter](#carla_converter)
+- [carla\_converter](#carla_converter)
   - [Container Images](#container-images)
   - [`carla_converter`](#carla_converter-1)
     - [Subscribed Topics](#subscribed-topics)
