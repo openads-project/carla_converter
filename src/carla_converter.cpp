@@ -241,9 +241,12 @@ void CarlaConverter::setup() {
     // setup publisher depending on actor_name
     Publisher<pi::EgoData> pub_ego_data =
         this->create_publisher<pi::EgoData>("~/" + actor_name + "/ego_data", 1);
+    Publisher<etsi_cam::CAM> pub_etsi_cam =
+        this->create_publisher<etsi_cam::CAM>("~/" + actor_name + "/etsi_cam", 1);
 
     // save publisher in map with actor_name as key
     pub_ego_data_map_.insert({actor_name, pub_ego_data});
+    pub_etsi_cam_map_.insert({actor_name, pub_etsi_cam});
 
     ROS_LOG_STREAM(INFO, "Subscribed /carla state topics for actor "
                              << actor_name << " and publishing ~/" << actor_name << "/ego_data");
@@ -272,6 +275,9 @@ void CarlaConverter::setup() {
   // create 1s timer to subscribe to custom topics
   timer_ = this->create_wall_timer(std::chrono::seconds(1),
                                    std::bind(&CarlaConverter::subscribeCustomTopics, this));
+
+  // init etsi msg timestamp
+  last_cam_msg_ = this->now();
 
   RCLCPP_INFO(this->get_logger(), "carla_converter running...");
 }
@@ -512,6 +518,19 @@ void CarlaConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::str
 
     // publish ego_data in carla_map frame
     pub_ego_data_map_[actor_name]->publish(msg_ego_data_);
+
+    // try to convert ego_data to CAM
+    try {
+      etsi_cam::CAM msg_cam = convertEgoDataCam(msg_ego_data_);
+      pub_etsi_cam_map_[actor_name]->publish(msg_cam);
+    } catch (const std::exception& e) {
+      if (this->now() - last_cam_msg_ > rclcpp::Duration(1, 0)) {
+        RCLCPP_WARN(this->get_logger(),
+                    "Skip EgoData to CAM conversion: %s (Make sure that utm frame exist and unix time is used!)",
+                    e.what());
+        last_cam_msg_ = this->now();
+      }
+    }
   }
 }
 
@@ -657,6 +676,22 @@ pi::ObjectList CarlaConverter::convertObjectArray(const dom::ObjectArray::ConstP
     msg_object_list_.objects.push_back(objectTemp);
   }
   return msg_object_list_;
+}
+
+etsi_cam::CAM CarlaConverter::convertEgoDataCam(const pi::EgoData msg) {
+  etsi_cam::CAM msg_cam;
+  // TODO: get direct parent frame of carla_map dynamically
+  if (tf2_buffer_->_frameExists("utm_32N") &&
+      tf2_buffer_->canTransform("utm_32N", msg.header.frame_id, msg.header.stamp)) {
+    ad2etsi::egodata2cam(msg_ego_data_, msg_cam, *tf2_buffer_.get(), 32, true);
+  } else if (tf2_buffer_->_frameExists("utm_31N") &&
+             tf2_buffer_->canTransform("utm_31N", msg.header.frame_id, msg.header.stamp)) {
+    ad2etsi::egodata2cam(msg_ego_data_, msg_cam, *tf2_buffer_.get(), 31, true);
+  } else {
+    RCLCPP_ERROR(this->get_logger(), "Tranformation to global utm frame not found.");
+  }
+
+  return msg_cam;
 }
 
 bool CarlaConverter::transformFrame(const pi::ObjectList& msg_object_list,
