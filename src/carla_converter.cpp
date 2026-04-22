@@ -162,12 +162,6 @@ void CarlaConverter::setup() {
     };
   };
 
-  auto vehicleInfoArgCallback = [this](const std::string& actor_name) {
-    return [this, actor_name](const cm::CarlaEgoVehicleInfo::ConstPtr msg) -> void {
-      CarlaConverter::vehicleInfoCallback(msg, actor_name);
-    };
-  };
-
   auto gnssArgCallback = [this](const std::string& actor_name) {
     return [this, actor_name](const ssm::NavSatFix::ConstPtr msg) -> void {
       CarlaConverter::gnssCallback(msg, actor_name);
@@ -224,8 +218,7 @@ void CarlaConverter::setup() {
         "/carla/" + actor_name + "/odometry", 1, odometryArgCallback(actor_name));
     Subscriber<cm::CarlaEgoVehicleStatus> sub_vehicle_status = this->create_subscription<cm::CarlaEgoVehicleStatus>(
         "/carla/" + actor_name + "/vehicle_status", 1, vehicleStatusArgCallback(actor_name));
-    Subscriber<cm::CarlaEgoVehicleInfo> sub_vehicle_info = this->create_subscription<cm::CarlaEgoVehicleInfo>(
-        "/carla/" + actor_name + "/vehicle_info", qosLatching, vehicleInfoArgCallback(actor_name));
+    Subscriber<cm::CarlaEgoVehicleInfo> sub_vehicle_info = createVehicleInfoSubscription(actor_name);
     Subscriber<ssm::NavSatFix> sub_gnss = this->create_subscription<ssm::NavSatFix>(
         "/carla/" + actor_name + "/gnss", 1, gnssArgCallback(actor_name));
     Subscriber<ssm::Imu> sub_imu = this->create_subscription<ssm::Imu>(
@@ -254,12 +247,7 @@ void CarlaConverter::setup() {
 
   // setup object subscriber and publisher for object_list_actors_
   for (std::string& actor_name : object_list_actors_) {
-    // setup subscriber depending on actor_name
-    Subscriber<cm::CarlaEgoVehicleInfo> sub_vehicle_info = this->create_subscription<cm::CarlaEgoVehicleInfo>(
-        "/carla/" + actor_name + "/vehicle_info", qosLatching, vehicleInfoArgCallback(actor_name));
-
-    // save subscriber in map with actor_name as key
-    sub_vehicle_info_map_.insert({actor_name, sub_vehicle_info});
+    sub_vehicle_info_map_.insert({actor_name, createVehicleInfoSubscription(actor_name)});
 
     // setup publisher depending on actor_name
     Publisher<pi::ObjectList> pub_objects =
@@ -275,6 +263,8 @@ void CarlaConverter::setup() {
   // create 1s timer to subscribe to custom topics
   timer_ = this->create_wall_timer(std::chrono::seconds(1),
                                    std::bind(&CarlaConverter::subscribeCustomTopics, this));
+  timer_vehicle_info_retry_ = this->create_wall_timer(
+      std::chrono::seconds(1), std::bind(&CarlaConverter::retryVehicleInfoSubscriptions, this));
 
   // init etsi msg timestamp
   last_cam_msg_ = this->now();
@@ -324,6 +314,32 @@ void CarlaConverter::subscribeCustomTopics() {
   }
 }
 
+Subscriber<cm::CarlaEgoVehicleInfo> CarlaConverter::createVehicleInfoSubscription(const std::string& actor_name) {
+  rclcpp::QoS qos_latching(rclcpp::KeepLast(1));
+  qos_latching.transient_local();
+  qos_latching.reliable();
+
+  return this->create_subscription<cm::CarlaEgoVehicleInfo>(
+      "/carla/" + actor_name + "/vehicle_info", qos_latching,
+      [this, actor_name](const cm::CarlaEgoVehicleInfo::ConstPtr msg) -> void {
+        CarlaConverter::vehicleInfoCallback(msg, actor_name);
+      });
+}
+
+void CarlaConverter::retryVehicleInfoSubscriptions() {
+  bool missing_vehicle_info = false;
+
+  for (auto& [actor_name, sub_vehicle_info] : sub_vehicle_info_map_) {
+    if (ego_info_set_map_[actor_name]) continue;
+    missing_vehicle_info = true;
+    sub_vehicle_info = createVehicleInfoSubscription(actor_name);
+  }
+
+  if (!missing_vehicle_info && timer_vehicle_info_retry_) {
+    timer_vehicle_info_retry_->cancel();
+  }
+}
+
 void CarlaConverter::gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string actor_name) {
   // get gnss position from actor_name vehicle
   ego_gnss_map_[actor_name] = *msg;
@@ -366,6 +382,18 @@ void CarlaConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr
         std::max(ego_steering_angle_max_map_[actor_name], (double)msg->wheels[i].max_steer_angle);
   }
   ego_info_set_map_[actor_name] = true;
+
+  bool all_vehicle_info_received = true;
+  for (const auto& entry : sub_vehicle_info_map_) {
+    if (!ego_info_set_map_[entry.first]) {
+      all_vehicle_info_received = false;
+      break;
+    }
+  }
+
+  if (all_vehicle_info_received && timer_vehicle_info_retry_) {
+    timer_vehicle_info_retry_->cancel();
+  }
 }
 
 
