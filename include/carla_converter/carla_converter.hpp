@@ -274,6 +274,7 @@ class CarlaConverter : public rclcpp::Node {
   std::map<std::string, Publisher<pi::ObjectList>> pub_custom_objects_map_;
 
   // ros parameters
+  std::string carla_fixed_frame_id_ = "carla_map";
   std::string ego_data_actors_string_ = "ego_vehicle";
   std::string object_list_actors_string_ = "ego_vehicle";
   std::vector<std::string> ego_data_actors_;
@@ -283,8 +284,8 @@ class CarlaConverter : public rclcpp::Node {
   double acc_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
   double angle_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
   double angle_rate_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
+  bool enable_traffic_lights_ = false;
   double traffic_light_frequency_ = 10.0;
-  std::string carla_fixed_frame_id_ = "carla_map";
   double acceleration_filter_alpha_ = 1.0;
 
   // ego information

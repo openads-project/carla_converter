@@ -20,9 +20,11 @@ CarlaConverter::CarlaConverter() : Node("carla_converter") {
     "Angle covariance value", true, false, false);
   this->declareAndLoadParameter("angle_rate_variances", angle_rate_variances_,
     "Angle rate covariance value", true, false, false);
-  this->declareAndLoadParameter("traffic_light_frequency", traffic_light_frequency_,
+  this->declareAndLoadParameter("enable_traffic_lights", enable_traffic_lights_,
+    "Enable traffic light subscriptions and publishing", false, false, true);
+   this->declareAndLoadParameter("traffic_light_frequency", traffic_light_frequency_,
     "Publishing frequency for traffic lights in Hz", false, false, true);
-  this->declareAndLoadParameter("carla_fixed_frame_id", carla_fixed_frame_id_,
+ this->declareAndLoadParameter("carla_fixed_frame_id", carla_fixed_frame_id_,
     "Fixed frame ID used for the CARLA map");
   this->declareAndLoadParameter("acceleration_filter_alpha", acceleration_filter_alpha_,
     "Low-pass filter alpha for IMU acceleration (0.0 = no update, 1.0 = no filtering)", true, false, false);
@@ -190,19 +192,23 @@ void CarlaConverter::setup() {
   RCLCPP_INFO(this->get_logger(), "Subscribed to '%s'", sub_objects_->get_topic_name());
   RCLCPP_INFO(this->get_logger(), "Publishing to '%s'", pub_objects_carla_map_->get_topic_name());
 
-  sub_traffic_light_info_ = this->create_subscription<cm::CarlaTrafficLightInfoList>(
-      "/carla/traffic_lights/info", 1,
-      std::bind(&CarlaConverter::trafficLightInfoCallback, this, std::placeholders::_1));
-  sub_traffic_light_status_ = this->create_subscription<cm::CarlaTrafficLightStatusList>(
-      "/carla/traffic_lights/status", 1,
-      std::bind(&CarlaConverter::trafficLightStatusCallback, this, std::placeholders::_1));
-  pub_traffic_lights_carla_map_ = this->create_publisher<pi::ObjectList>("~/traffic_lights", 1);
-  timer_traffic_lights_ = create_wall_timer(
-      std::chrono::milliseconds(int(1000 / traffic_light_frequency_)),
-      std::bind(&CarlaConverter::publishTrafficLights, this));
-  RCLCPP_INFO(this->get_logger(), "Subscribed to '%s' and '%s'",
-              sub_traffic_light_info_->get_topic_name(), sub_traffic_light_status_->get_topic_name());
-  RCLCPP_INFO(this->get_logger(), "Publishing to '%s'", pub_traffic_lights_carla_map_->get_topic_name());
+  if (enable_traffic_lights_) {
+    sub_traffic_light_info_ = this->create_subscription<cm::CarlaTrafficLightInfoList>(
+        "/carla/traffic_lights/info", 1,
+        std::bind(&CarlaConverter::trafficLightInfoCallback, this, std::placeholders::_1));
+    sub_traffic_light_status_ = this->create_subscription<cm::CarlaTrafficLightStatusList>(
+        "/carla/traffic_lights/status", 1,
+        std::bind(&CarlaConverter::trafficLightStatusCallback, this, std::placeholders::_1));
+    pub_traffic_lights_carla_map_ = this->create_publisher<pi::ObjectList>("~/traffic_lights", 1);
+    timer_traffic_lights_ = create_wall_timer(
+        std::chrono::milliseconds(int(1000 / traffic_light_frequency_)),
+        std::bind(&CarlaConverter::publishTrafficLights, this));
+    RCLCPP_INFO(this->get_logger(), "Subscribed to '%s' and '%s'",
+                sub_traffic_light_info_->get_topic_name(), sub_traffic_light_status_->get_topic_name());
+    RCLCPP_INFO(this->get_logger(), "Publishing to '%s'", pub_traffic_lights_carla_map_->get_topic_name());
+  } else {
+    RCLCPP_INFO(this->get_logger(), "Traffic light subscriptions and publishing are disabled.");
+  }
 
   sub_world_info_ = this->create_subscription<cm::CarlaWorldInfo>(
       "/carla/world_info", qosLatching,
