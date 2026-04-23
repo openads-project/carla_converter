@@ -1,8 +1,5 @@
 #include <carla_converter/carla_converter.hpp>
 
-#include <sstream>
-
-
 namespace carla_converter {
 
 
@@ -376,39 +373,8 @@ void CarlaConverter::vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::Cons
 }
 
 void CarlaConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string actor_name) {
-  std::ostringstream debug_stream;
-  debug_stream << "Received vehicle_info for actor '" << actor_name << "':"
-               << "\n  id: " << msg->id
-               << "\n  type: " << msg->type
-               << "\n  rolename: " << msg->rolename
-               << "\n  max_rpm: " << msg->max_rpm
-               << "\n  moi: " << msg->moi
-               << "\n  damping_rate_full_throttle: " << msg->damping_rate_full_throttle
-               << "\n  damping_rate_zero_throttle_clutch_engaged: "
-               << msg->damping_rate_zero_throttle_clutch_engaged
-               << "\n  damping_rate_zero_throttle_clutch_disengaged: "
-               << msg->damping_rate_zero_throttle_clutch_disengaged
-               << "\n  use_gear_autobox: " << std::boolalpha << msg->use_gear_autobox
-               << "\n  gear_switch_time: " << msg->gear_switch_time
-               << "\n  clutch_strength: " << msg->clutch_strength
-               << "\n  mass: " << msg->mass
-               << "\n  drag_coefficient: " << msg->drag_coefficient
-               << "\n  center_of_mass: [" << msg->center_of_mass.x << ", " << msg->center_of_mass.y << ", "
-               << msg->center_of_mass.z << "]"
-               << "\n  wheels (" << msg->wheels.size() << "):";
-
-  for (size_t i = 0; i < msg->wheels.size(); ++i) {
-    const auto& wheel = msg->wheels[i];
-    debug_stream << "\n    [" << i << "] tire_friction=" << wheel.tire_friction
-                 << ", damping_rate=" << wheel.damping_rate
-                 << ", max_steer_angle=" << wheel.max_steer_angle
-                 << ", radius=" << wheel.radius
-                 << ", max_brake_torque=" << wheel.max_brake_torque
-                 << ", max_handbrake_torque=" << wheel.max_handbrake_torque
-                 << ", position=[" << wheel.position.x << ", " << wheel.position.y << ", "
-                 << wheel.position.z << "]";
-  }
-  ROS_LOG_STREAM(DEBUG, debug_stream.str());
+  RCLCPP_INFO(this->get_logger(), "Received vehicle_info for actor '%s': id=%u, type='%s', rolename='%s', wheels=%zu",
+              actor_name.c_str(), msg->id, msg->type.c_str(), msg->rolename.c_str(), msg->wheels.size());
 
   // get id from actor_name vehicle
   ego_id_map_[actor_name] = msg->id;
