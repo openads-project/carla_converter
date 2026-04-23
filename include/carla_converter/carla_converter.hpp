@@ -112,19 +112,6 @@ class CarlaConverter : public rclcpp::Node {
   void subscribeCustomTopics();
 
   /**
-   * @brief Recreates vehicle_info subscriptions until the latched sample was received
-   */
-  void retryVehicleInfoSubscriptions();
-
-  /**
-   * @brief Creates the vehicle_info subscription for one actor
-   *
-   * @param actor_name name of the CARLA actor
-   * @return created subscription
-   */
-  Subscriber<cm::CarlaEgoVehicleInfo> createVehicleInfoSubscription(const std::string& actor_name);
-
-  /**
    * @brief Stores the latest GNSS fix for the given actor
    *
    * @param msg incoming NavSatFix message
@@ -247,7 +234,6 @@ class CarlaConverter : public rclcpp::Node {
   std::unique_ptr<tf2_ros::Buffer> tf2_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
   rclcpp::TimerBase::SharedPtr timer_;
-  rclcpp::TimerBase::SharedPtr timer_vehicle_info_retry_;
   rclcpp::TimerBase::SharedPtr timer_traffic_lights_;
   rclcpp::Time last_cam_msg_;
 
