@@ -42,7 +42,6 @@ namespace ssm = sensor_msgs::msg;
 
 namespace cm = carla_msgs::msg;
 namespace oa = perception_msgs::object_access;
-namespace etsi_cam = etsi_its_cam_msgs::msg;
 namespace stm = std_msgs::msg;
 
 template <typename T>
@@ -201,13 +200,14 @@ class CarlaConverter : public rclcpp::Node {
    */
   pi::ObjectList convertObjectArray(const dom::ObjectArray::ConstPtr msg);
 
-  /**
-   * @brief Converts an EgoData message to an ETSI CAM message using the UTM transform
-   *
-   * @param msg EgoData to convert
-   * @return converted CAM message
-   */
-  etsi_cam::CAM convertEgoDataCam(const pi::EgoData msg);
+  // TODO: open-source etsi conversion
+  // /**
+  //  * @brief Converts an EgoData message to an ETSI CAM message using the UTM transform
+  //  *
+  //  * @param msg EgoData to convert
+  //  * @return converted CAM message
+  //  */
+  // etsi_cam::CAM convertEgoDataCam(const pi::EgoData msg);
 
   /**
    * @brief Transforms an ObjectList into the target TF frame, falling back to parent frames
@@ -257,7 +257,6 @@ class CarlaConverter : public rclcpp::Node {
 
   std::map<std::string, Publisher<pi::ObjectList>> pub_objects_map_;
   std::map<std::string, Publisher<pi::EgoData>> pub_ego_data_map_;
-  std::map<std::string, Publisher<etsi_cam::CAM>> pub_etsi_cam_map_;
   std::map<std::string, Publisher<pi::ObjectList>> pub_custom_objects_map_;
 
   // ros parameters

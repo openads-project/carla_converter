@@ -9,23 +9,20 @@ Converter for CARLA specific ROS 2 data to OpenADS interfaces.
 ```mermaid
 flowchart LR
     NODE("carla_converter")
-    S0:::hidden -->|/carla/objects| NODE
-    S1:::hidden -->|/carla/traffic_lights/info| NODE
-    S2:::hidden -->|/carla/traffic_lights/status| NODE
-    S3:::hidden -->|/carla/world_info| NODE
-    S4:::hidden -->|/carla/<actor_name>/odometry| NODE
-    S5:::hidden -->|/carla/<actor_name>/vehicle_status| NODE
-    S6:::hidden -->|/carla/<actor_name>/vehicle_info| NODE
-    S7:::hidden -->|/carla/<actor_name>/gnss| NODE
-    S8:::hidden -->|/carla/<actor_name>/imu| NODE
-    S9:::hidden -->|/carla/.*| NODE
+    S0:::hidden -->|/carla/| NODE
+    S1:::hidden -->|/carla/| NODE
+    S2:::hidden -->|/carla/| NODE
+    S3:::hidden -->|/carla/| NODE
+    S4:::hidden -->|/carla/| NODE
+    S5:::hidden -->|/carla/| NODE
+    S6:::hidden -->|/carla/| NODE
     NODE -->|~/object_list| P0:::hidden
     NODE -->|~/traffic_lights| P1:::hidden
     NODE -->|~/map_info| P2:::hidden
-    NODE -->|~/<actor_name>/ego_data| P3:::hidden
-    NODE -->|~/<actor_name>/etsi_cam| P4:::hidden
-    NODE -->|~/<actor_name>/object_list| P5:::hidden
-    NODE -->|~/.*| P6:::hidden
+    NODE -->|~/| P3:::hidden
+    NODE -->|~/| P4:::hidden
+    NODE -->|~/| P5:::hidden
+    NODE -->|~/| P6:::hidden
     classDef hidden display: none;
 ```
 
@@ -33,28 +30,24 @@ flowchart LR
 
 | Topic | Type | Description |
 | --- | --- | --- |
-| `/carla/objects` | `derived_object_msgs/msg/ObjectArray` | Objects in the CARLA environment |
-| `/carla/traffic_lights/info` | `carla_msgs/msg/CarlaTrafficLightInfoList` | Global traffic light information |
-| `/carla/traffic_lights/status` | `carla_msgs/msg/CarlaTrafficLightStatusList` | Global traffic light status |
-| `/carla/world_info` | `carla_msgs/msg/CarlaWorldInfo` | CARLA world/map info |
-| `/carla/<actor_name>/odometry` | `nav_msgs/msg/Odometry` | Odometry of each actor from `ego_data_actors` |
-| `/carla/<actor_name>/vehicle_status` | `carla_msgs/msg/CarlaEgoVehicleStatus` | Steering angle and control status of each actor from `ego_data_actors` |
-| `/carla/<actor_name>/vehicle_info` | `carla_msgs/msg/CarlaEgoVehicleInfo` | Vehicle metadata for actors from `ego_data_actors` and `object_list_actors` |
-| `/carla/<actor_name>/gnss` | `sensor_msgs/msg/NavSatFix` | GNSS fix of each actor from `ego_data_actors` |
-| `/carla/<actor_name>/imu` | `sensor_msgs/msg/Imu` | IMU data of each actor from `ego_data_actors` |
-| `/carla/.*` | `derived_object_msgs/msg/ObjectArray` | Custom CARLA ObjectArray topics that are subscribed and converted automatically |
+| `/carla/` | `nm/Odometry` | TODO |
+| `/carla/` | `cm/CarlaEgoVehicleStatus` | TODO |
+| `/carla/` | `cm/CarlaEgoVehicleInfo` | TODO |
+| `/carla/` | `ssm/NavSatFix` | TODO |
+| `/carla/` | `ssm/Imu` | TODO |
+| `/carla/` | `cm/CarlaEgoVehicleInfo` | TODO |
+| `/carla/` | `dom/ObjectArray` | TODO |
 
 #### Published Topics
 
 | Topic | Type | Description |
 | --- | --- | --- |
-| `~/object_list` | `perception_msgs/msg/ObjectList` | Object list in CARLA map frame |
-| `~/traffic_lights` | `perception_msgs/msg/ObjectList` | Traffic lights with pose and current signal status |
-| `~/map_info` | `std_msgs/msg/String` | CARLA map name |
-| `~/<actor_name>/ego_data` | `perception_msgs/msg/EgoData` | Ego state of each actor from `ego_data_actors` |
-| `~/<actor_name>/etsi_cam` | `etsi_its_cam_msgs/msg/CAM` | Ego state converted to CAM for each actor from `ego_data_actors` |
-| `~/<actor_name>/object_list` | `perception_msgs/msg/ObjectList` | Object list transformed into each actor frame from `object_list_actors` |
-| `~/.*` | `perception_msgs/msg/ObjectList` | Converted output for each custom CARLA ObjectArray topic |
+| `~/object_list` | `pi/ObjectList` | TODO |
+| `~/traffic_lights` | `pi/ObjectList` | TODO |
+| `~/map_info` | `stm/String` | TODO |
+| `~/` | `pi/EgoData` | TODO |
+| `~/` | `pi/ObjectList` | TODO |
+| `~/` | `pi/ObjectList` | TODO |
 
 #### Parameters
 
