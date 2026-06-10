@@ -1,6 +1,6 @@
 # `carla_converter`
 
-Converter for CARLA specific ROS 2 data to OpenADS interfaces.
+Converter for CARLA specific ROS 2 data to OpenADS perception_interfaces.
 
 ## Nodes
 

@@ -12,7 +12,7 @@
   <a href="https://github.com/openads-project/carla_converter/actions/workflows/consistency.yml"><img src="https://github.com/openads-project/carla_converter/actions/workflows/consistency.yml/badge.svg"/></a>
 </p>
 
-**Converter for CARLA specific ROS 2 data to OpenADS interfaces**
+**Converter for CARLA specific ROS 2 data to OpenADS perception_interfaces**
 
 The [carla_converter](carla_converter/README.md) node bridges CARLA and OpenADS ROS 2 interfaces by converting CARLA actor, object, traffic light, and world information into OpenADS-compatible messages. It consumes CARLA object arrays, ego vehicle state topics, traffic light streams, and world info, then publishes object lists, ego data, and map information for the configured actors and frames. Key features:
 
@@ -105,7 +105,7 @@ Package and node interfaces are documented in the respective package READMEs lis
 
 | Package | Description |
 | --- | --- |
-| [carla_converter](carla_converter/README.md) | Converter for CARLA specific ROS 2 data to OpenADS interfaces. |
+| [carla_converter](carla_converter/README.md) | Converter for CARLA specific ROS 2 data to OpenADS perception_interfaces. |
 
 ## ⚖️ Licensing
 

@@ -4,7 +4,7 @@
 
   <name>carla_converter</name>
   <version>1.3.0</version>
-  <description>Converter for CARLA specific ROS 2 data to OpenADS interfaces.</description>
+  <description>Converter for CARLA specific ROS 2 data to OpenADS perception_interfaces.</description>
 
   <maintainer email="silas.damaschke@ika.rwth-aachen.de">Silas Damaschke</maintainer>
   <author email="christian.geller@ika.rwth-aachen.de">Christian Geller</author>
