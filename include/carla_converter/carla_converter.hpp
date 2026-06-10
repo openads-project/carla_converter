@@ -120,7 +120,7 @@ class CarlaConverter : public rclcpp::Node {
   void gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string actor_name);
 
   /**
-   * @brief Applies a low-pass filter to the IMU linear acceleration and stores the result
+   * @brief Stores the latest IMU linear acceleration for the given actor
    *
    * @param msg incoming IMU message
    * @param actor_name name of the CARLA actor
@@ -260,6 +260,7 @@ class CarlaConverter : public rclcpp::Node {
   std::map<std::string, Publisher<pi::ObjectList>> pub_custom_objects_map_;
 
   // ros parameters
+  std::string carla_fixed_frame_id_ = "carla_map";
   std::string ego_data_actors_string_ = "ego_vehicle";
   std::string object_list_actors_string_ = "ego_vehicle";
   std::vector<std::string> ego_data_actors_;
@@ -269,17 +270,14 @@ class CarlaConverter : public rclcpp::Node {
   double acc_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
   double angle_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
   double angle_rate_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
+  bool enable_traffic_lights_ = false;
   double traffic_light_frequency_ = 10.0;
-  std::string carla_fixed_frame_id_ = "carla_map";
-  double acceleration_filter_alpha_ = 1.0;
 
   // ego information
   std::map<std::string, int> ego_id_map_;
   std::map<std::string, float> ego_steering_angle_map_;
   std::map<std::string, double> ego_steering_angle_max_map_;
   std::map<std::string, gm::Accel> ego_acceleration_map_;
-  std::map<std::string, gm::Vector3> ego_acceleration_filtered_map_;
-  std::map<std::string, bool> ego_acceleration_initialized_map_;
   std::map<std::string, sm::SolidPrimitive> ego_shape_map_;
   std::map<std::string, ssm::NavSatFix> ego_gnss_map_;
 

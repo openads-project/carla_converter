@@ -56,5 +56,5 @@ This package contains the carla_converter - a ROS 2 Node that converts incoming 
 | `angle_variances` | `double` | `0.1` | Angle covariance value (`-1.0` = invalid/unset) |
 | `angle_rate_variances` | `double` | `-1.0` | Angle rate covariance value (`-1.0` = invalid/unset) |
 | `traffic_light_frequency` | `double` | `10.0` | Publishing frequency for traffic lights in Hz |
+| `enable_traffic_lights` | `bool` | `false` | Enables traffic light subscriptions and `~/traffic_lights` publishing |
 | `carla_fixed_frame_id` | `string` | `"carla_map"` | Fixed frame ID used for the CARLA map |
-| `acceleration_filter_alpha` | `double` | `1.0` | Low-pass filter alpha for IMU acceleration: `filtered = alpha * new + (1 - alpha) * previous`. `1.0` disables filtering. |
