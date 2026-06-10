@@ -7,10 +7,10 @@ namespace carla_converter {
 
 namespace {
 
-constexpr char kCarlaObjectsTopic[] = "/carla/objects";
-constexpr char kCarlaTrafficLightsInfoTopic[] = "/carla/traffic_lights/info";
-constexpr char kCarlaTrafficLightsStatusTopic[] = "/carla/traffic_lights/status";
-constexpr char kCarlaWorldInfoTopic[] = "/carla/world_info";
+const std::string kCarlaObjectsTopic = "/carla/objects";
+const std::string kCarlaTrafficLightsInfoTopic = "/carla/traffic_lights/info";
+const std::string kCarlaTrafficLightsStatusTopic = "/carla/traffic_lights/status";
+const std::string kCarlaWorldInfoTopic = "/carla/world_info";
 
 }  // namespace
 
@@ -145,27 +145,29 @@ void CarlaConverter::setup() {
 
   // setup callback functions
   auto odometryArgCallback = [this](const std::string& actor_name) {
-    return [this, actor_name](const nm::Odometry::ConstPtr msg) -> void { CarlaConverter::odometryCallback(msg, actor_name); };
+    return
+        [this, actor_name](const nm::Odometry::ConstSharedPtr msg) -> void { CarlaConverter::odometryCallback(msg, actor_name); };
   };
 
   auto vehicleStatusArgCallback = [this](const std::string& actor_name) {
-    return [this, actor_name](const cm::CarlaEgoVehicleStatus::ConstPtr msg) -> void {
+    return [this, actor_name](const cm::CarlaEgoVehicleStatus::ConstSharedPtr msg) -> void {
       CarlaConverter::vehicleStatusCallback(msg, actor_name);
     };
   };
 
   auto vehicleInfoArgCallback = [this](const std::string& actor_name) {
-    return [this, actor_name](const cm::CarlaEgoVehicleInfo::ConstPtr msg) -> void {
+    return [this, actor_name](const cm::CarlaEgoVehicleInfo::ConstSharedPtr msg) -> void {
       CarlaConverter::vehicleInfoCallback(msg, actor_name);
     };
   };
 
   auto gnssArgCallback = [this](const std::string& actor_name) {
-    return [this, actor_name](const ssm::NavSatFix::ConstPtr msg) -> void { CarlaConverter::gnssCallback(msg, actor_name); };
+    return
+        [this, actor_name](const ssm::NavSatFix::ConstSharedPtr msg) -> void { CarlaConverter::gnssCallback(msg, actor_name); };
   };
 
   auto imuArgCallback = [this](const std::string& actor_name) {
-    return [this, actor_name](const ssm::Imu::ConstPtr msg) -> void { CarlaConverter::imuCallback(msg, actor_name); };
+    return [this, actor_name](const ssm::Imu::ConstSharedPtr msg) -> void { CarlaConverter::imuCallback(msg, actor_name); };
   };
 
   // setup tf2 buffer
@@ -191,7 +193,7 @@ void CarlaConverter::setup() {
     sub_traffic_light_status_ = this->create_subscription<cm::CarlaTrafficLightStatusList>(
         kCarlaTrafficLightsStatusTopic, 1, std::bind(&CarlaConverter::trafficLightStatusCallback, this, std::placeholders::_1));
     pub_traffic_lights_carla_map_ = this->create_publisher<pi::ObjectList>("~/traffic_lights", 1);
-    timer_traffic_lights_ = create_wall_timer(std::chrono::milliseconds(int(1000 / traffic_light_frequency_)),
+    timer_traffic_lights_ = create_wall_timer(std::chrono::milliseconds(static_cast<int>(1000 / traffic_light_frequency_)),
                                               std::bind(&CarlaConverter::publishTrafficLights, this));
     RCLCPP_INFO(this->get_logger(), "Subscribed to '%s' and '%s'", sub_traffic_light_info_->get_topic_name(),
                 sub_traffic_light_status_->get_topic_name());
@@ -263,7 +265,7 @@ void CarlaConverter::setup() {
 
 void CarlaConverter::subscribeCustomTopics() {
   auto customObjectsArgCallback = [this](const std::string& topic_name) {
-    return [this, topic_name](const dom::ObjectArray::ConstPtr msg) -> void {
+    return [this, topic_name](const dom::ObjectArray::ConstSharedPtr msg) -> void {
       CarlaConverter::customObjectsCallback(msg, topic_name);
     };
   };
@@ -300,35 +302,35 @@ void CarlaConverter::subscribeCustomTopics() {
   }
 }
 
-void CarlaConverter::gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string actor_name) {
+void CarlaConverter::gnssCallback(const ssm::NavSatFix::ConstSharedPtr msg, std::string actor_name) {
   // get gnss position from actor_name vehicle
   ego_gnss_map_[actor_name] = *msg;
   ego_gnss_set_map_[actor_name] = true;
 }
 
-void CarlaConverter::imuCallback(const ssm::Imu::ConstPtr msg, std::string actor_name) {
+void CarlaConverter::imuCallback(const ssm::Imu::ConstSharedPtr msg, std::string actor_name) {
   // get imu acceleration from actor_name vehicle
   ego_acceleration_map_[actor_name].linear = msg->linear_acceleration;
 }
 
-void CarlaConverter::vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg, std::string actor_name) {
+void CarlaConverter::vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstSharedPtr msg, std::string actor_name) {
   // get steering_angle and acceleration from actor_name vehicle
   ego_steering_angle_map_[actor_name] = msg->control.steer;
   ego_status_set_map_[actor_name] = true;
 }
 
-void CarlaConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string actor_name) {
+void CarlaConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstSharedPtr msg, std::string actor_name) {
   // get id from actor_name vehicle
   ego_id_map_[actor_name] = msg->id;
   ego_steering_angle_max_map_[actor_name] = 0.0;
-  for (int i = 0; i < (int)msg->wheels.size(); i++) {
+  for (size_t i = 0; i < msg->wheels.size(); i++) {
     ego_steering_angle_max_map_[actor_name] =
-        std::max(ego_steering_angle_max_map_[actor_name], (double)msg->wheels[i].max_steer_angle);
+        std::max(ego_steering_angle_max_map_[actor_name], static_cast<double>(msg->wheels[i].max_steer_angle));
   }
   ego_info_set_map_[actor_name] = true;
 }
 
-void CarlaConverter::trafficLightInfoCallback(const cm::CarlaTrafficLightInfoList::ConstPtr msg) {
+void CarlaConverter::trafficLightInfoCallback(const cm::CarlaTrafficLightInfoList::ConstSharedPtr msg) {
   try {
     msg_traffic_lights_ = std::make_shared<pi::ObjectList>();
 
@@ -363,7 +365,7 @@ int convert_traffic_status(const int status_carla) {
   }
 }
 
-void CarlaConverter::trafficLightStatusCallback(const cm::CarlaTrafficLightStatusList::ConstPtr msg) {
+void CarlaConverter::trafficLightStatusCallback(const cm::CarlaTrafficLightStatusList::ConstSharedPtr msg) {
   try {
     if (!msg_traffic_lights_ || msg_traffic_lights_->objects.empty()) {
       RCLCPP_WARN(this->get_logger(), "No traffic lights available to process status.");
@@ -383,7 +385,7 @@ void CarlaConverter::trafficLightStatusCallback(const cm::CarlaTrafficLightStatu
   }
 }
 
-void CarlaConverter::worldInfoCallback(const cm::CarlaWorldInfo::ConstPtr msg) {
+void CarlaConverter::worldInfoCallback(const cm::CarlaWorldInfo::ConstSharedPtr msg) {
   const std::string current_map_name = msg->map_name;
   std::smatch match;
   std::string carla_map_name;
@@ -422,13 +424,15 @@ void CarlaConverter::publishTrafficLights() {
   }
 }
 
-void CarlaConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::string actor_name) {
+void CarlaConverter::odometryCallback(const nm::Odometry::ConstSharedPtr msg, std::string actor_name) {
   // map ego data from CARLA to the perception_msgs EgoData format
   if (ego_shape_set_map_[actor_name] && ego_status_set_map_[actor_name]) {
     msg_ego_data_.header = msg->header;
 
     // get euler angles
-    double roll, pitch, yaw;
+    double roll = 0.0;
+    double pitch = 0.0;
+    double yaw = 0.0;
     tf2::Quaternion quat_tf;
     tf2::fromMsg(msg->pose.pose.orientation, quat_tf);
     tf2::Matrix3x3 matrix(quat_tf);
@@ -476,7 +480,7 @@ void CarlaConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::str
     // publish ego_data in carla_map frame
     pub_ego_data_map_[actor_name]->publish(msg_ego_data_);
 
-    // TODO: open-source etsi conversion
+    // TODO(ika): open-source etsi conversion
     // // try to convert ego_data to CAM
     // try {
     //   etsi_cam::CAM msg_cam = convertEgoDataCam(msg_ego_data_);
@@ -491,7 +495,7 @@ void CarlaConverter::odometryCallback(const nm::Odometry::ConstPtr msg, std::str
   }
 }
 
-void CarlaConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
+void CarlaConverter::objectsCallback(const dom::ObjectArray::ConstSharedPtr msg) {
   pi::ObjectList msg_object_list_ = CarlaConverter::convertObjectArray(msg);
 
   // publish object_list in carla_map frame
@@ -520,7 +524,7 @@ void CarlaConverter::objectsCallback(const dom::ObjectArray::ConstPtr msg) {
   }
 }
 
-void CarlaConverter::customObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string topic_name) {
+void CarlaConverter::customObjectsCallback(const dom::ObjectArray::ConstSharedPtr msg, std::string topic_name) {
   pi::ObjectList msg_object_list_ = CarlaConverter::convertObjectArray(msg);
   pi::ObjectList msg_object_list_transformed;
 
@@ -532,7 +536,7 @@ void CarlaConverter::customObjectsCallback(const dom::ObjectArray::ConstPtr msg,
   }
 }
 
-pi::ObjectList CarlaConverter::convertObjectArray(const dom::ObjectArray::ConstPtr msg) {
+pi::ObjectList CarlaConverter::convertObjectArray(const dom::ObjectArray::ConstSharedPtr msg) {
   // map the objects from the CARLA format to the perception_msgs format
   pi::ObjectList msg_object_list_;
   msg_object_list_.header = msg->header;
@@ -557,7 +561,9 @@ pi::ObjectList CarlaConverter::convertObjectArray(const dom::ObjectArray::ConstP
     objectTemp.existence_probability = 1.0;  // always 1.0 as source is CARLA
 
     // get yaw angle
-    double roll, pitch, yaw;
+    double roll = 0.0;
+    double pitch = 0.0;
+    double yaw = 0.0;
     tf2::Quaternion quat_tf;
     tf2::fromMsg(msg->objects[i].pose.orientation, quat_tf);
     tf2::Matrix3x3 matrix(quat_tf);
@@ -599,7 +605,7 @@ pi::ObjectList CarlaConverter::convertObjectArray(const dom::ObjectArray::ConstP
 
     objectTemp.state.classifications.resize(1);
     objectTemp.state.classifications[0].probability = 1.0;  // always 1.0 as source is CARLA
-    switch ((int)msg->objects[i].classification) {
+    switch (static_cast<int>(msg->objects[i].classification)) {
       case dom::Object::CLASSIFICATION_PEDESTRIAN:
         objectTemp.state.classifications[0].type = pi::ObjectClassification::PEDESTRIAN;
         break;
@@ -632,10 +638,10 @@ pi::ObjectList CarlaConverter::convertObjectArray(const dom::ObjectArray::ConstP
   return msg_object_list_;
 }
 
-// TODO: open-source etsi conversion
+// TODO(ika): open-source etsi conversion
 // etsi_cam::CAM CarlaConverter::convertEgoDataCam(const pi::EgoData msg) {
 //   etsi_cam::CAM msg_cam;
-//   // TODO: get direct parent frame of carla_map dynamically
+//   // TODO(ika): get direct parent frame of carla_map dynamically
 //   if (tf2_buffer_->_frameExists("utm_32N") && tf2_buffer_->canTransform("utm_32N", msg.header.frame_id, msg.header.stamp)) {
 //     ad2etsi::egodata2cam(msg_ego_data_, msg_cam, *tf2_buffer_.get(), 32, true);
 //   } else if (tf2_buffer_->_frameExists("utm_31N") &&
