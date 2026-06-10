@@ -26,8 +26,6 @@ CarlaConverter::CarlaConverter() : Node("carla_converter") {
     "Publishing frequency for traffic lights in Hz", false, false, true);
  this->declareAndLoadParameter("carla_fixed_frame_id", carla_fixed_frame_id_,
     "Fixed frame ID used for the CARLA map");
-  this->declareAndLoadParameter("acceleration_filter_alpha", acceleration_filter_alpha_,
-    "Low-pass filter alpha for IMU acceleration (0.0 = no update, 1.0 = no filtering)", true, false, false);
 
   this->setup();
 }
@@ -336,24 +334,8 @@ void CarlaConverter::gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::strin
 }
 
 void CarlaConverter::imuCallback(const ssm::Imu::ConstPtr msg, std::string actor_name) {
-  // get imu acceleration from actor_name vehicle and apply low-pass filter
-  if (!ego_acceleration_initialized_map_[actor_name]) {
-    // Initialize filter with first measurement
-    ego_acceleration_filtered_map_[actor_name] = msg->linear_acceleration;
-    ego_acceleration_initialized_map_[actor_name] = true;
-  } else {
-    // Apply low-pass filter: filtered = alpha * new + (1 - alpha) * previous
-    ego_acceleration_filtered_map_[actor_name].x =
-        acceleration_filter_alpha_ * msg->linear_acceleration.x +
-        (1.0 - acceleration_filter_alpha_) * ego_acceleration_filtered_map_[actor_name].x;
-    ego_acceleration_filtered_map_[actor_name].y =
-        acceleration_filter_alpha_ * msg->linear_acceleration.y +
-        (1.0 - acceleration_filter_alpha_) * ego_acceleration_filtered_map_[actor_name].y;
-    ego_acceleration_filtered_map_[actor_name].z =
-        acceleration_filter_alpha_ * msg->linear_acceleration.z +
-        (1.0 - acceleration_filter_alpha_) * ego_acceleration_filtered_map_[actor_name].z;
-  }
-  ego_acceleration_map_[actor_name].linear = ego_acceleration_filtered_map_[actor_name];
+  // get imu acceleration from actor_name vehicle
+  ego_acceleration_map_[actor_name].linear = msg->linear_acceleration;
 }
 
 void CarlaConverter::vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg, std::string actor_name) {
@@ -363,9 +345,6 @@ void CarlaConverter::vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::Cons
 }
 
 void CarlaConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string actor_name) {
-  RCLCPP_INFO(this->get_logger(), "Received vehicle_info for actor '%s': id=%u, type='%s', rolename='%s', wheels=%zu",
-              actor_name.c_str(), msg->id, msg->type.c_str(), msg->rolename.c_str(), msg->wheels.size());
-
   // get id from actor_name vehicle
   ego_id_map_[actor_name] = msg->id;
   ego_steering_angle_max_map_[actor_name] = 0.0;

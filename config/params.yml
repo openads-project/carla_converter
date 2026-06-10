@@ -10,4 +10,3 @@
     angle_rate_variances: -1.0
     enable_traffic_lights: false
     traffic_light_frequency: 10.0
-    acceleration_filter_alpha: 1.0
