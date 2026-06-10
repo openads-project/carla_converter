@@ -1,3 +1,6 @@
+// Copyright Institute for Automotive Engineering (ika), RWTH Aachen University
+// SPDX-License-Identifier: Apache-2.0
+
 #pragma once
 
 #include <tf2_ros/buffer.h>
@@ -20,7 +23,6 @@
 #include <shape_msgs/msg/solid_primitive.hpp>
 #include <tf2_perception_msgs/tf2_perception_msgs.hpp>
 
-#include <ad2etsi_converters/Converters.hpp>
 #include <carla_msgs/msg/carla_ego_vehicle_info.hpp>
 #include <carla_msgs/msg/carla_ego_vehicle_status.hpp>
 #include <carla_msgs/msg/carla_traffic_light_info_list.hpp>
@@ -50,22 +52,21 @@ using Publisher = typename rclcpp::Publisher<T>::SharedPtr;
 
 namespace carla_converter {
 
-template <typename C> struct is_vector : std::false_type {};
-template <typename T, typename A> struct is_vector<std::vector<T, A>> : std::true_type {};
-template <typename C> inline constexpr bool is_vector_v = is_vector<C>::value;
-
+template <typename C>
+struct is_vector : std::false_type {};
+template <typename T, typename A>
+struct is_vector<std::vector<T, A>> : std::true_type {};
+template <typename C>
+inline constexpr bool is_vector_v = is_vector<C>::value;
 
 /**
  * @brief CarlaConverter class
  */
 class CarlaConverter : public rclcpp::Node {
-
  public:
-
   CarlaConverter();
 
  private:
-
   /**
    * @brief Declares and loads a ROS parameter
    *
@@ -215,11 +216,11 @@ class CarlaConverter : public rclcpp::Node {
    * @param msg_object_list_transformed output ObjectList in target frame
    * @param target_frame desired TF frame name
    */
-  bool transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed,
+  bool transformFrame(const pi::ObjectList& msg_object_list,
+                      pi::ObjectList& msg_object_list_transformed,
                       std::string target_frame);
 
  private:
-
   /**
    * @brief Auto-reconfigurable parameters for dynamic reconfiguration
    */
@@ -290,6 +291,5 @@ class CarlaConverter : public rclcpp::Node {
   std::map<std::string, bool> ego_gnss_set_map_;
   std::map<std::string, bool> ego_info_set_map_;
 };
-
 
 }  // namespace carla_converter

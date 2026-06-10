@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# Copyright Institute for Automotive Engineering (ika), RWTH Aachen University
+# SPDX-License-Identifier: Apache-2.0
+
 import os
 
 from ament_index_python import get_package_share_directory
@@ -11,20 +14,31 @@ from launch_ros.actions import Node, SetParameter
 
 
 def generate_launch_description():
+    """Generate the simulation adapter launch description."""
 
     remappable_topics = [
-        DeclareLaunchArgument("object_list_topic", default_value="~/object_list", description="output topic for converted object list"),
-        DeclareLaunchArgument("traffic_lights_topic", default_value="~/traffic_lights", description="output topic for converted traffic lights"),
+        DeclareLaunchArgument(
+            "object_list_topic", default_value="~/object_list", description="output topic for converted object list"
+        ),
+        DeclareLaunchArgument(
+            "traffic_lights_topic", default_value="~/traffic_lights", description="output topic for converted traffic lights"
+        ),
         DeclareLaunchArgument("map_info_topic", default_value="~/map_info", description="output topic for map info"),
     ]
 
     args = [
         DeclareLaunchArgument("name", default_value="carla_converter", description="node name"),
         DeclareLaunchArgument("namespace", default_value="", description="node namespace"),
-        DeclareLaunchArgument("params", default_value=os.path.join(get_package_share_directory("carla_converter"), "config", "params.yml"), description="path to parameter file"),
-        DeclareLaunchArgument("log_level", default_value="info", description="ROS logging level (debug, info, warn, error, fatal)"),
+        DeclareLaunchArgument(
+            "params",
+            default_value=os.path.join(get_package_share_directory("carla_converter"), "config", "params.yml"),
+            description="path to parameter file",
+        ),
+        DeclareLaunchArgument(
+            "log_level", default_value="info", description="ROS logging level (debug, info, warn, error, fatal)"
+        ),
         DeclareLaunchArgument("use_sim_time", default_value="true", description="use simulation clock"),
-        *remappable_topics
+        *remappable_topics,
     ]
 
     nodes = [
@@ -47,9 +61,11 @@ def generate_launch_description():
         )
     )
 
-    return LaunchDescription([
-        *args,
-        SetParameter("use_sim_time", LaunchConfiguration("use_sim_time")),
-        transforms,
-        *nodes,
-    ])
+    return LaunchDescription(
+        [
+            *args,
+            SetParameter("use_sim_time", LaunchConfiguration("use_sim_time")),
+            transforms,
+            *nodes,
+        ]
+    )
