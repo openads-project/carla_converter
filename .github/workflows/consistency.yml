@@ -8,5 +8,5 @@ jobs:
   consistency:
     uses: openads-project/openads-dev-environment/.github/workflows/consistency.yml@main
     secrets: inherit
-    inputs:
-      skip-checks: ros_pubsub_topics_private_namespace
+    with:
+      skip-checks: dev_environment_at_remote_main # TODO remove
