@@ -63,6 +63,9 @@ inline constexpr bool is_vector_v = is_vector<C>::value;
  */
 class CarlaConverter : public rclcpp::Node {
  public:
+  /**
+   * @brief Creates the CARLA converter node, loads parameters, and initializes interfaces
+   */
   CarlaConverter();
 
  private:

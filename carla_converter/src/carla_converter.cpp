@@ -350,6 +350,12 @@ void CarlaConverter::trafficLightInfoCallback(const cm::CarlaTrafficLightInfoLis
   }
 }
 
+/**
+ * @brief Converts a CARLA traffic light status value to a perception traffic light state
+ *
+ * @param status_carla CARLA traffic light status value
+ * @return matching perception traffic light state, or unknown if unsupported
+ */
 int convert_traffic_status(const int status_carla) {
   switch (status_carla) {
     case carla_msgs::msg::CarlaTrafficLightStatus::RED:
@@ -683,6 +689,13 @@ bool CarlaConverter::transformFrame(const pi::ObjectList& msg_object_list,
 
 }  // namespace carla_converter
 
+/**
+ * @brief Starts the carla_converter ROS node
+ *
+ * @param argc command-line argument count
+ * @param argv command-line argument values
+ * @return process exit code
+ */
 int main(int argc, char* argv[]) {
   rclcpp::init(argc, argv);
   auto node = std::make_shared<carla_converter::CarlaConverter>();
