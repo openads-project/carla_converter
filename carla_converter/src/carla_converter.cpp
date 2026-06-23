@@ -663,7 +663,7 @@ pi::ObjectList CarlaConverter::convertObjectArray(const dom::ObjectArray::ConstS
 bool CarlaConverter::transformFrame(const pi::ObjectList& msg_object_list,
                                     pi::ObjectList& msg_object_list_transformed,
                                     std::string target_frame) {
-  if (msg_object_list.objects.size() == 0) return false;
+  if (msg_object_list.objects.empty()) return false;
 
   try {
     while (true) {

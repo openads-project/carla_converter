@@ -223,7 +223,6 @@ class CarlaConverter : public rclcpp::Node {
                       pi::ObjectList& msg_object_list_transformed,
                       std::string target_frame);
 
- private:
   /**
    * @brief Auto-reconfigurable parameters for dynamic reconfiguration
    */
