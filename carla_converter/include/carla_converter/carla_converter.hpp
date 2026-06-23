@@ -1,3 +1,6 @@
+// Copyright Institute for Automotive Engineering (ika), RWTH Aachen University
+// SPDX-License-Identifier: Apache-2.0
+
 #pragma once
 
 #include <tf2_ros/buffer.h>
@@ -20,7 +23,6 @@
 #include <shape_msgs/msg/solid_primitive.hpp>
 #include <tf2_perception_msgs/tf2_perception_msgs.hpp>
 
-#include <ad2etsi_converters/Converters.hpp>
 #include <carla_msgs/msg/carla_ego_vehicle_info.hpp>
 #include <carla_msgs/msg/carla_ego_vehicle_status.hpp>
 #include <carla_msgs/msg/carla_traffic_light_info_list.hpp>
@@ -40,7 +42,6 @@ namespace ssm = sensor_msgs::msg;
 
 namespace cm = carla_msgs::msg;
 namespace oa = perception_msgs::object_access;
-namespace etsi_cam = etsi_its_cam_msgs::msg;
 namespace stm = std_msgs::msg;
 
 template <typename T>
@@ -50,22 +51,24 @@ using Publisher = typename rclcpp::Publisher<T>::SharedPtr;
 
 namespace carla_converter {
 
-template <typename C> struct is_vector : std::false_type {};
-template <typename T, typename A> struct is_vector<std::vector<T, A>> : std::true_type {};
-template <typename C> inline constexpr bool is_vector_v = is_vector<C>::value;
-
+template <typename C>
+struct is_vector : std::false_type {};
+template <typename T, typename A>
+struct is_vector<std::vector<T, A>> : std::true_type {};
+template <typename C>
+inline constexpr bool is_vector_v = is_vector<C>::value;
 
 /**
  * @brief CarlaConverter class
  */
 class CarlaConverter : public rclcpp::Node {
-
  public:
-
+  /**
+   * @brief Creates the CARLA converter node, loads parameters, and initializes interfaces
+   */
   CarlaConverter();
 
  private:
-
   /**
    * @brief Declares and loads a ROS parameter
    *
@@ -117,7 +120,7 @@ class CarlaConverter : public rclcpp::Node {
    * @param msg incoming NavSatFix message
    * @param actor_name name of the CARLA actor
    */
-  void gnssCallback(const ssm::NavSatFix::ConstPtr msg, std::string actor_name);
+  void gnssCallback(const ssm::NavSatFix::ConstSharedPtr msg, std::string actor_name);
 
   /**
    * @brief Stores the latest IMU linear acceleration for the given actor
@@ -125,7 +128,7 @@ class CarlaConverter : public rclcpp::Node {
    * @param msg incoming IMU message
    * @param actor_name name of the CARLA actor
    */
-  void imuCallback(const ssm::Imu::ConstPtr msg, std::string actor_name);
+  void imuCallback(const ssm::Imu::ConstSharedPtr msg, std::string actor_name);
 
   /**
    * @brief Stores the latest steering angle for the given actor
@@ -133,7 +136,7 @@ class CarlaConverter : public rclcpp::Node {
    * @param msg incoming CarlaEgoVehicleStatus message
    * @param actor_name name of the CARLA actor
    */
-  void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstPtr msg, std::string actor_name);
+  void vehicleStatusCallback(const cm::CarlaEgoVehicleStatus::ConstSharedPtr msg, std::string actor_name);
 
   /**
    * @brief Stores the vehicle id, maximum steering angle, and marks ego info as set
@@ -141,7 +144,7 @@ class CarlaConverter : public rclcpp::Node {
    * @param msg incoming CarlaEgoVehicleInfo message
    * @param actor_name name of the CARLA actor
    */
-  void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstPtr msg, std::string actor_name);
+  void vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstSharedPtr msg, std::string actor_name);
 
   /**
    * @brief Converts odometry to EgoData and publishes it; also attempts CAM conversion
@@ -149,14 +152,14 @@ class CarlaConverter : public rclcpp::Node {
    * @param msg incoming Odometry message
    * @param actor_name name of the CARLA actor
    */
-  void odometryCallback(const nm::Odometry::ConstPtr msg, std::string actor_name);
+  void odometryCallback(const nm::Odometry::ConstSharedPtr msg, std::string actor_name);
 
   /**
    * @brief Converts the global CARLA object array and publishes per-actor transformed object lists
    *
    * @param msg incoming ObjectArray message
    */
-  void objectsCallback(const dom::ObjectArray::ConstPtr msg);
+  void objectsCallback(const dom::ObjectArray::ConstSharedPtr msg);
 
   /**
    * @brief Converts a custom ObjectArray topic and publishes the result, optionally transformed
@@ -164,28 +167,28 @@ class CarlaConverter : public rclcpp::Node {
    * @param msg incoming ObjectArray message
    * @param topic_name source topic name (without the /carla/ prefix)
    */
-  void customObjectsCallback(const dom::ObjectArray::ConstPtr msg, std::string topic_name);
+  void customObjectsCallback(const dom::ObjectArray::ConstSharedPtr msg, std::string topic_name);
 
   /**
    * @brief Builds the internal traffic light object list from static CARLA traffic light info
    *
    * @param msg incoming CarlaTrafficLightInfoList message
    */
-  void trafficLightInfoCallback(const cm::CarlaTrafficLightInfoList::ConstPtr msg);
+  void trafficLightInfoCallback(const cm::CarlaTrafficLightInfoList::ConstSharedPtr msg);
 
   /**
    * @brief Updates traffic light signal states in the internal object list
    *
    * @param msg incoming CarlaTrafficLightStatusList message
    */
-  void trafficLightStatusCallback(const cm::CarlaTrafficLightStatusList::ConstPtr msg);
+  void trafficLightStatusCallback(const cm::CarlaTrafficLightStatusList::ConstSharedPtr msg);
 
   /**
    * @brief Extracts and publishes the CARLA map name from the world info message
    *
    * @param msg incoming CarlaWorldInfo message
    */
-  void worldInfoCallback(const cm::CarlaWorldInfo::ConstPtr msg);
+  void worldInfoCallback(const cm::CarlaWorldInfo::ConstSharedPtr msg);
 
   /**
    * @brief Publishes the current traffic light object list at the configured frequency
@@ -198,15 +201,16 @@ class CarlaConverter : public rclcpp::Node {
    * @param msg CARLA ObjectArray to convert
    * @return converted ObjectList
    */
-  pi::ObjectList convertObjectArray(const dom::ObjectArray::ConstPtr msg);
+  pi::ObjectList convertObjectArray(const dom::ObjectArray::ConstSharedPtr msg);
 
-  /**
-   * @brief Converts an EgoData message to an ETSI CAM message using the UTM transform
-   *
-   * @param msg EgoData to convert
-   * @return converted CAM message
-   */
-  etsi_cam::CAM convertEgoDataCam(const pi::EgoData msg);
+  // TODO(ika): open-source etsi conversion
+  // /**
+  //  * @brief Converts an EgoData message to an ETSI CAM message using the UTM transform
+  //  *
+  //  * @param msg EgoData to convert
+  //  * @return converted CAM message
+  //  */
+  // etsi_cam::CAM convertEgoDataCam(const pi::EgoData msg);
 
   /**
    * @brief Transforms an ObjectList into the target TF frame, falling back to parent frames
@@ -215,10 +219,9 @@ class CarlaConverter : public rclcpp::Node {
    * @param msg_object_list_transformed output ObjectList in target frame
    * @param target_frame desired TF frame name
    */
-  bool transformFrame(const pi::ObjectList& msg_object_list, pi::ObjectList& msg_object_list_transformed,
+  bool transformFrame(const pi::ObjectList& msg_object_list,
+                      pi::ObjectList& msg_object_list_transformed,
                       std::string target_frame);
-
- private:
 
   /**
    * @brief Auto-reconfigurable parameters for dynamic reconfiguration
@@ -256,7 +259,6 @@ class CarlaConverter : public rclcpp::Node {
 
   std::map<std::string, Publisher<pi::ObjectList>> pub_objects_map_;
   std::map<std::string, Publisher<pi::EgoData>> pub_ego_data_map_;
-  std::map<std::string, Publisher<etsi_cam::CAM>> pub_etsi_cam_map_;
   std::map<std::string, Publisher<pi::ObjectList>> pub_custom_objects_map_;
 
   // ros parameters
@@ -274,7 +276,7 @@ class CarlaConverter : public rclcpp::Node {
   double traffic_light_frequency_ = 10.0;
 
   // ego information
-  std::map<std::string, int> ego_id_map_;
+  std::map<std::string, cm::CarlaEgoVehicleInfo::_id_type> ego_id_map_;
   std::map<std::string, float> ego_steering_angle_map_;
   std::map<std::string, double> ego_steering_angle_max_map_;
   std::map<std::string, gm::Accel> ego_acceleration_map_;
@@ -290,6 +292,5 @@ class CarlaConverter : public rclcpp::Node {
   std::map<std::string, bool> ego_gnss_set_map_;
   std::map<std::string, bool> ego_info_set_map_;
 };
-
 
 }  // namespace carla_converter

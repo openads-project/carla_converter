@@ -20,7 +20,6 @@ find_package(tf2_ros REQUIRED)
 find_package(carla_msgs REQUIRED)
 find_package(perception_msgs REQUIRED)
 find_package(perception_msgs_utils REQUIRED)
-find_package(ad2etsi_converters REQUIRED)
 
 set(TARGET_NAME carla_converter)
 
@@ -47,7 +46,6 @@ ament_target_dependencies(${TARGET_NAME}
   carla_msgs
   perception_msgs
   perception_msgs_utils
-  ad2etsi_converters
 )
 
 install(TARGETS ${TARGET_NAME}
@@ -63,5 +61,13 @@ install(DIRECTORY config
   DESTINATION share/${PROJECT_NAME}
   OPTIONAL
 )
+
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  set(ament_cmake_clang_format_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../.vscode/format/.clang-format)
+  set(ament_cmake_clang_tidy_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../.vscode/lint/.clang-tidy)
+  set(ament_cmake_flake8_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../.vscode/lint/ament_flake8.ini)
+  ament_lint_auto_find_test_dependencies()
+endif()
 
 ament_package()
