@@ -47,9 +47,9 @@ flowchart LR
 
 | Topic | Type | Description |
 | --- | --- | --- |
-| `~/object_list` | `perception_msgs/msg/ObjectList` | output topic for converted object list |
-| `~/traffic_lights` | `perception_msgs/msg/ObjectList` | output topic for converted traffic lights |
-| `~/map_info` | `std_msgs/msg/String` | output topic for map info |
+| `~/object_list` | `perception_msgs/msg/ObjectList` | Output topic for converted object list |
+| `~/traffic_lights` | `perception_msgs/msg/ObjectList` | Output topic for converted traffic lights |
+| `~/map_info` | `std_msgs/msg/String` | Output topic for map info |
 | `"~/" + actor_name + "/ego_data"` | `perception_msgs/msg/EgoData` | Ego state for each actor from `ego_data_actors` |
 | `"~/" + actor_name + "/object_list"` | `perception_msgs/msg/ObjectList` | Object list transformed into each actor frame from `object_list_actors` |
 | `"~/" + topic_name` | `perception_msgs/msg/ObjectList` | Converted output for each custom CARLA ObjectArray topic |
