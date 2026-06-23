@@ -75,13 +75,13 @@ flowchart LR
 
 | Argument | Default | Description |
 | --- | --- | --- |
-| `object_list_topic` | `"~/object_list"` | output topic for converted object list |
-| `traffic_lights_topic` | `"~/traffic_lights"` | output topic for converted traffic lights |
-| `map_info_topic` | `"~/map_info"` | output topic for map info |
-| `name` | `"carla_converter"` | node name |
-| `namespace` | `""` | node namespace |
-| `params` | `os.path.join(get_package_share_directory("carla_converter"), "config", "params.yml")` | path to parameter file |
+| `object_list_topic` | `"~/object_list"` | Output topic for converted object list |
+| `traffic_lights_topic` | `"~/traffic_lights"` | Output topic for converted traffic lights |
+| `map_info_topic` | `"~/map_info"` | Output topic for map info |
+| `name` | `"carla_converter"` | Node name |
+| `namespace` | `""` | Node namespace |
+| `params` | `os.path.join(get_package_share_directory("carla_converter"), "config", "params.yml")` | Path to parameter file |
 | `log_level` | `"info"` | ROS logging level (debug, info, warn, error, fatal) |
-| `use_sim_time` | `"true"` | use simulation clock |
+| `use_sim_time` | `"true"` | Use simulation clock |
 
 ### [`transforms.launch.py`](launch/transforms.launch.py)
