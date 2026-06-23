@@ -14,7 +14,7 @@
 
 **Converter for CARLA specific ROS 2 data to OpenADS perception_interfaces**
 
-The [carla_converter](carla_converter/README.md) node bridges CARLA and OpenADS ROS 2 interfaces by converting CARLA actor, object, traffic light, and world information into OpenADS-compatible messages. It consumes CARLA object arrays, ego vehicle state topics, traffic light streams, and world info, then publishes object lists, ego data, and map information for the configured actors and frames. Key features:
+The [carla_converter](carla_converter/README.md) node bridges CARLA and OpenADS ROS 2 interfaces by converting CARLA actor, object, traffic light, and world information into OpenADS-compatible messages. Key features:
 
 - **Object conversion**: converts CARLA object arrays into OpenADS object list outputs.
 - **Per-actor ego outputs**: publishes ego data from odometry, vehicle status, vehicle info, GNSS, and IMU inputs.

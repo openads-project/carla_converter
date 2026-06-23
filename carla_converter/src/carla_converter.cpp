@@ -323,9 +323,9 @@ void CarlaConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstSha
   // get id from actor_name vehicle
   ego_id_map_[actor_name] = msg->id;
   ego_steering_angle_max_map_[actor_name] = 0.0;
-  for (size_t i = 0; i < msg->wheels.size(); i++) {
+  for (const auto& wheel : msg->wheels) {
     ego_steering_angle_max_map_[actor_name] =
-        std::max(ego_steering_angle_max_map_[actor_name], static_cast<double>(msg->wheels[i].max_steer_angle));
+        std::max(ego_steering_angle_max_map_[actor_name], static_cast<double>(wheel.max_steer_angle));
   }
   ego_info_set_map_[actor_name] = true;
 }
