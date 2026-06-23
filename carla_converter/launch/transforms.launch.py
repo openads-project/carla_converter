@@ -8,7 +8,7 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    """Generate the simulation adapter launch description."""
+    """Generate the carla converter launch description."""
 
     transform_utm_31N = Node(
         package="tf2_ros",
