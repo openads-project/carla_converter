@@ -1,7 +1,7 @@
 services:
 
   carla-converter:
-    image: ghcr.io/openads-project/carla_converter:v1.3.1
+    image: ghcr.io/openads-project/carla_converter:v1.3.2
     environment:
       # --- name ------
       NAMESPACE: /
@@ -13,7 +13,7 @@ services:
       # --- other -----
       LOG_LEVEL: ${LOG_LEVEL:-info}
       USE_SIM_TIME: ${USE_SIM_TIME:-true}
-      PARAMS: ${PARAMS:-/docker-ros/ws/install/carla_converter/share/carla_converter/config/params.yml}
+      PARAMS: /docker-ros/ws/install/carla_converter/share/carla_converter/config/params.yml
     command:
       - /bin/bash
       - -ic
