@@ -20,6 +20,8 @@ CarlaConverter::CarlaConverter() : Node("carla_converter") {
                                 "Comma-separated list of actor names to publish ego data for", false, false, true);
   this->declareAndLoadParameter("object_list_actors", object_list_actors_string_,
                                 "Comma-separated list of actor names to publish object lists for", false, false, true);
+  this->declareAndLoadParameter("object_range", object_range_, "Maximum object distance from the actor [m]", true, false, false,
+                                0.0, std::numeric_limits<double>::max());
   this->declareAndLoadParameter("pos_variances", pos_variances_, "Position covariance value", true, false, false);
   this->declareAndLoadParameter("vel_variances", vel_variances_, "Velocity covariance value", true, false, false);
   this->declareAndLoadParameter("acc_variances", acc_variances_, "Acceleration covariance value", true, false, false);
@@ -527,6 +529,15 @@ void CarlaConverter::objectsCallback(const dom::ObjectArray::ConstSharedPtr msg)
     // transform the object_list from carla_map to actor_name frame
     pi::ObjectList msg_object_list_transformed;
     if (CarlaConverter::transformFrame(msg_object_list_copy, msg_object_list_transformed, actor_name)) {
+      const double object_range_squared = object_range_ * object_range_;
+      msg_object_list_transformed.objects.erase(
+          std::remove_if(msg_object_list_transformed.objects.begin(), msg_object_list_transformed.objects.end(),
+                         [object_range_squared](const pi::Object& obj) {
+                           const double x = oa::getX(obj);
+                           const double y = oa::getY(obj);
+                           return x * x + y * y > object_range_squared;
+                         }),
+          msg_object_list_transformed.objects.end());
       pub_objects_map_[actor_name]->publish(msg_object_list_transformed);
     }
   }
