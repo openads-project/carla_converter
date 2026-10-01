@@ -25,6 +25,8 @@ CarlaConverter::CarlaConverter() : Node("carla_converter") {
   this->declareAndLoadParameter("acc_variances", acc_variances_, "Acceleration covariance value", true, false, false);
   this->declareAndLoadParameter("angle_variances", angle_variances_, "Angle covariance value", true, false, false);
   this->declareAndLoadParameter("angle_rate_variances", angle_rate_variances_, "Angle rate covariance value", true, false, false);
+  this->declareAndLoadParameter("standstill_thr", standstill_thr_, "Velocity threshold to indicate standstill of vehicle [m/s]",
+                                true, false, false);
   this->declareAndLoadParameter("enable_traffic_lights", enable_traffic_lights_,
                                 "Enable traffic light subscriptions and publishing", false, false, true);
   this->declareAndLoadParameter("traffic_light_frequency", traffic_light_frequency_,
@@ -459,7 +461,7 @@ void CarlaConverter::odometryCallback(const nm::Odometry::ConstSharedPtr msg, st
     // https://github.com/carla-simulator/ros-bridge/blob/e9063d97ff5a724f76adbb1b852dc71da1dcfeec/carla_ros_bridge/src/carla_ros_bridge/ego_vehicle.py#L145C46-L145C81
     oa::setSteeringAngleAck(msg_ego_data_.state, -ego_steering_angle_map_[actor_name] * ego_steering_angle_max_map_[actor_name]);
     oa::setStandstill(msg_ego_data_.state, std::sqrt(pow(msg->twist.twist.linear.x, 2) + pow(msg->twist.twist.linear.y, 2) +
-                                                     pow(msg->twist.twist.linear.z, 2)) <= 0.01);
+                                                     pow(msg->twist.twist.linear.z, 2)) <= standstill_thr_);
 
     // reference point for object position
     msg_ego_data_.state.reference_point.value = pi::ObjectReferencePoint::GEOMETRIC_CENTER;

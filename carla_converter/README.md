@@ -65,6 +65,7 @@ flowchart LR
 | `acc_variances` | `float` | `oa::CONTINUOUS_STATE_COVARIANCE_INVALID` | Acceleration covariance value |
 | `angle_variances` | `float` | `oa::CONTINUOUS_STATE_COVARIANCE_INVALID` | Angle covariance value |
 | `angle_rate_variances` | `float` | `oa::CONTINUOUS_STATE_COVARIANCE_INVALID` | Angle rate covariance value |
+| `standstill_thr` | `float` | `0.01` | Velocity threshold to indicate standstill of vehicle [m/s] |
 | `enable_traffic_lights` | `bool` | `false` | Enable traffic light subscriptions and publishing |
 | `traffic_light_frequency` | `float` | `10.0` | Publishing frequency for traffic lights in Hz |
 | `carla_fixed_frame_id` | `string` | `"carla_map"` | Fixed frame ID used for the CARLA map |
