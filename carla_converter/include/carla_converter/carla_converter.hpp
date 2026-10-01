@@ -272,6 +272,7 @@ class CarlaConverter : public rclcpp::Node {
   double acc_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
   double angle_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
   double angle_rate_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
+  double standstill_threshold_ = 0.01;
   bool enable_traffic_lights_ = false;
   double traffic_light_frequency_ = 10.0;
 

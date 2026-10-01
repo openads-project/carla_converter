@@ -8,5 +8,6 @@
     acc_variances: -1.0
     angle_variances: 0.1
     angle_rate_variances: -1.0
+    standstill_threshold: 0.01 # velocity threshold to indicate standstill of vehicle [m/s]
     enable_traffic_lights: false
     traffic_light_frequency: 10.0
