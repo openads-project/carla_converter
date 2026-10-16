@@ -22,6 +22,6 @@ jobs:
           base-image: rwthika/ros2:jazzy
           rmw-implementation: rmw_zenoh_cpp
           command: ros2 launch carla_converter carla_converter.launch.py
-          enable-industrial-ci: true
+          enable-industrial-ci: false # reenable once recursive perception/planning_interfaces dependency is merged/released: https://github.com/ika-rwth-aachen/rviz_2d_overlay_plugins/pull/2
         env:
           TARGET_CMAKE_ARGS: -DCMAKE_EXPORT_COMPILE_COMMANDS=1
