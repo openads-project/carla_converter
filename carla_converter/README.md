@@ -60,14 +60,15 @@ flowchart LR
 | --- | --- | --- | --- |
 | `ego_data_actors` | `string` | `"ego_vehicle"` | Comma-separated list of actor names to publish ego data for |
 | `object_list_actors` | `string` | `"ego_vehicle"` | Comma-separated list of actor names to publish object lists for |
-| `pos_variances` | `float` | `oa::CONTINUOUS_STATE_COVARIANCE_INVALID` | Position covariance value |
-| `vel_variances` | `float` | `oa::CONTINUOUS_STATE_COVARIANCE_INVALID` | Velocity covariance value |
-| `acc_variances` | `float` | `oa::CONTINUOUS_STATE_COVARIANCE_INVALID` | Acceleration covariance value |
-| `angle_variances` | `float` | `oa::CONTINUOUS_STATE_COVARIANCE_INVALID` | Angle covariance value |
-| `angle_rate_variances` | `float` | `oa::CONTINUOUS_STATE_COVARIANCE_INVALID` | Angle rate covariance value |
+| `pos_variances` | `float` | `0.0` | Position variance [m^2] |
+| `vel_variances` | `float` | `0.0` | Velocity variance [m^2/s^2] |
+| `acc_variances` | `float` | `0.0` | Acceleration variance [m^2/s^4] |
+| `angle_variances` | `float` | `0.0` | Angle variance [rad^2] |
+| `angle_rate_variances` | `float` | `0.0` | Angle rate variance [rad^2/s^2] |
+| `steering_angle_ack_variance` | `float` | `0.0` | Ackermann steering angle variance [rad^2] |
 | `standstill_threshold` | `float` | `0.01` | Velocity threshold to indicate standstill of vehicle [m/s] |
 | `enable_traffic_lights` | `bool` | `false` | Enable traffic light subscriptions and publishing |
-| `traffic_light_frequency` | `float` | `10.0` | Publishing frequency for traffic lights in Hz |
+| `traffic_light_frequency` | `float` | `10.0` | Publishing frequency for traffic lights [Hz] |
 | `carla_fixed_frame_id` | `string` | `"carla_map"` | Fixed frame ID used for the CARLA map |
 
 ## Launch Files
