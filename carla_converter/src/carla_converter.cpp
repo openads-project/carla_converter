@@ -24,7 +24,8 @@ CarlaConverter::CarlaConverter() : Node("carla_converter") {
   this->declareAndLoadParameter("vel_variances", vel_variances_, "Velocity variance [m^2/s^2]", true, false, false);
   this->declareAndLoadParameter("acc_variances", acc_variances_, "Acceleration variance [m^2/s^4]", true, false, false);
   this->declareAndLoadParameter("angle_variances", angle_variances_, "Angle variance [rad^2]", true, false, false);
-  this->declareAndLoadParameter("angle_rate_variances", angle_rate_variances_, "Angle rate variance [rad^2/s^2]", true, false, false);
+  this->declareAndLoadParameter("angle_rate_variances", angle_rate_variances_, "Angle rate variance [rad^2/s^2]", true, false,
+                                false);
   this->declareAndLoadParameter("steering_angle_ack_variance", steering_angle_ack_variance_,
                                 "Ackermann steering angle variance [rad^2]", true, false, false);
   this->declareAndLoadParameter("standstill_threshold", standstill_threshold_,
@@ -484,7 +485,7 @@ void CarlaConverter::odometryCallback(const nm::Odometry::ConstSharedPtr msg, st
     oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::YAW, pi::EGO::YAW, angle_variances_);
     oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::YAW_RATE, pi::EGO::YAW_RATE, angle_rate_variances_);
     oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::STEERING_ANGLE_ACK, pi::EGO::STEERING_ANGLE_ACK,
-                                     steering_angle_ack_variance_);
+                                       steering_angle_ack_variance_);
 
     // set vehicle id and dimensions
     msg_ego_data_.vehicle_id = ego_id_map_[actor_name];
