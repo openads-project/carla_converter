@@ -340,7 +340,7 @@ void CarlaConverter::trafficLightInfoCallback(const cm::CarlaTrafficLightInfoLis
       pi::Object pi_light;
       pi_light.id = traffic_light.id;
       pi_light.existence_probability = 1.0;
-      oa::initializeState(pi_light, pi::TRAFFICLIGHT::MODEL_ID, false);
+      oa::initializeState(pi_light, pi::TRAFFICLIGHT::MODEL_ID);
       oa::setPose(pi_light.state, traffic_light.transform);
       oa::setTrafficLightType(pi_light.state, pi::TRAFFICLIGHT::TYPE_UNKNOWN);
       oa::setTrafficLightState(pi_light.state, pi::TRAFFICLIGHT::STATE_UNKNOWN);
@@ -447,7 +447,7 @@ void CarlaConverter::odometryCallback(const nm::Odometry::ConstSharedPtr msg, st
     matrix.getRPY(roll, pitch, yaw);
 
     // fill state
-    oa::initializeState(msg_ego_data_, pi::EGO::MODEL_ID, true);
+    oa::initializeState(msg_ego_data_, pi::EGO::MODEL_ID);
     msg_ego_data_.state.header = msg_ego_data_.header;
     oa::setPose(msg_ego_data_.state, msg->pose.pose);
     oa::setZ(msg_ego_data_, msg->pose.pose.position.z + ego_shape_map_[actor_name].dimensions[2] / 2.0);
@@ -578,7 +578,7 @@ pi::ObjectList CarlaConverter::convertObjectArray(const dom::ObjectArray::ConstS
     matrix.getRPY(roll, pitch, yaw);
 
     // fill state
-    oa::initializeState(objectTemp, pi::HEXAMOTION::MODEL_ID, true);
+    oa::initializeState(objectTemp, pi::HEXAMOTION::MODEL_ID);
     objectTemp.state.header = msg->objects[i].header;
     oa::setPose(objectTemp.state, msg->objects[i].pose);
     oa::setVelocityXYZYaw(objectTemp.state, msg->objects[i].twist.linear, yaw);
