@@ -267,11 +267,12 @@ class CarlaConverter : public rclcpp::Node {
   std::string object_list_actors_string_ = "ego_vehicle";
   std::vector<std::string> ego_data_actors_;
   std::vector<std::string> object_list_actors_;
-  double pos_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
-  double vel_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
-  double acc_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
-  double angle_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
-  double angle_rate_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
+  double pos_variances_ = 0.0;
+  double vel_variances_ = 0.0;
+  double acc_variances_ = 0.0;
+  double angle_variances_ = 0.0;
+  double angle_rate_variances_ = 0.0;
+  double steering_angle_ack_variance_ = 0.0;
   double standstill_threshold_ = 0.01;
   bool enable_traffic_lights_ = false;
   double traffic_light_frequency_ = 10.0;
