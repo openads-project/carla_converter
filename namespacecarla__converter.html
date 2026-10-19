@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">carla_converter<span id="projectnumber">&#160;v1.3.2</span>
+   <div id="projectname">carla_converter<span id="projectnumber">&#160;v1.4.0</span>
    </div>
   </td>
  </tr>
@@ -152,21 +152,21 @@ Variables</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>matching perception traffic light state, or unknown if unsupported </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="carla__converter_8cpp_source.html#l00359">359</a> of file <a class="el" href="carla__converter_8cpp_source.html">carla_converter.cpp</a>.</p>
-<div class="fragment"><div class="line"><span class="lineno">  359</span>                                                   {</div>
-<div class="line"><span class="lineno">  360</span>  <span class="keywordflow">switch</span> (status_carla) {</div>
-<div class="line"><span class="lineno">  361</span>    <span class="keywordflow">case</span> carla_msgs::msg::CarlaTrafficLightStatus::RED:</div>
-<div class="line"><span class="lineno">  362</span>      <span class="keywordflow">return</span> pi::TRAFFICLIGHT::STATE_RED;</div>
-<div class="line"><span class="lineno">  363</span>    <span class="keywordflow">case</span> carla_msgs::msg::CarlaTrafficLightStatus::YELLOW:</div>
-<div class="line"><span class="lineno">  364</span>      <span class="keywordflow">return</span> pi::TRAFFICLIGHT::STATE_YELLOW;</div>
-<div class="line"><span class="lineno">  365</span>    <span class="keywordflow">case</span> carla_msgs::msg::CarlaTrafficLightStatus::GREEN:</div>
-<div class="line"><span class="lineno">  366</span>      <span class="keywordflow">return</span> pi::TRAFFICLIGHT::STATE_GREEN;</div>
-<div class="line"><span class="lineno">  367</span>    <span class="keywordflow">case</span> carla_msgs::msg::CarlaTrafficLightStatus::UNKNOWN:</div>
-<div class="line"><span class="lineno">  368</span>      <span class="keywordflow">return</span> pi::TRAFFICLIGHT::STATE_UNKNOWN;</div>
-<div class="line"><span class="lineno">  369</span>    <span class="keywordflow">default</span>:</div>
-<div class="line"><span class="lineno">  370</span>      <span class="keywordflow">return</span> pi::TRAFFICLIGHT::STATE_UNKNOWN;</div>
-<div class="line"><span class="lineno">  371</span>  }</div>
-<div class="line"><span class="lineno">  372</span>}</div>
+<p class="definition">Definition at line <a class="el" href="carla__converter_8cpp_source.html#l00367">367</a> of file <a class="el" href="carla__converter_8cpp_source.html">carla_converter.cpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  367</span>                                                   {</div>
+<div class="line"><span class="lineno">  368</span>  <span class="keywordflow">switch</span> (status_carla) {</div>
+<div class="line"><span class="lineno">  369</span>    <span class="keywordflow">case</span> carla_msgs::msg::CarlaTrafficLightStatus::RED:</div>
+<div class="line"><span class="lineno">  370</span>      <span class="keywordflow">return</span> pi::TRAFFICLIGHT::STATE_RED;</div>
+<div class="line"><span class="lineno">  371</span>    <span class="keywordflow">case</span> carla_msgs::msg::CarlaTrafficLightStatus::YELLOW:</div>
+<div class="line"><span class="lineno">  372</span>      <span class="keywordflow">return</span> pi::TRAFFICLIGHT::STATE_YELLOW;</div>
+<div class="line"><span class="lineno">  373</span>    <span class="keywordflow">case</span> carla_msgs::msg::CarlaTrafficLightStatus::GREEN:</div>
+<div class="line"><span class="lineno">  374</span>      <span class="keywordflow">return</span> pi::TRAFFICLIGHT::STATE_GREEN;</div>
+<div class="line"><span class="lineno">  375</span>    <span class="keywordflow">case</span> carla_msgs::msg::CarlaTrafficLightStatus::UNKNOWN:</div>
+<div class="line"><span class="lineno">  376</span>      <span class="keywordflow">return</span> pi::TRAFFICLIGHT::STATE_UNKNOWN;</div>
+<div class="line"><span class="lineno">  377</span>    <span class="keywordflow">default</span>:</div>
+<div class="line"><span class="lineno">  378</span>      <span class="keywordflow">return</span> pi::TRAFFICLIGHT::STATE_UNKNOWN;</div>
+<div class="line"><span class="lineno">  379</span>  }</div>
+<div class="line"><span class="lineno">  380</span>}</div>
 </div><!-- fragment -->
 </div>
 </div>

@@ -49,6 +49,8 @@ var classcarla__converter_1_1CarlaConverter =
     [ "pub_objects_carla_map_", "classcarla__converter_1_1CarlaConverter.html#a2e98529f7836a9b2de1cfc4bb46dbedf", null ],
     [ "pub_objects_map_", "classcarla__converter_1_1CarlaConverter.html#a7346ba9e83d5b2d8ae5263b6e5b5ac00", null ],
     [ "pub_traffic_lights_carla_map_", "classcarla__converter_1_1CarlaConverter.html#af8fc798725a2c13b9e892e1321f09622", null ],
+    [ "standstill_threshold_", "classcarla__converter_1_1CarlaConverter.html#a6c154aae01ac6ad9675cfeb0136ea4fe", null ],
+    [ "steering_angle_ack_variance_", "classcarla__converter_1_1CarlaConverter.html#a012fa4ff16d09b2eeb92a6946eda24c1", null ],
     [ "sub_custom_objects_map_", "classcarla__converter_1_1CarlaConverter.html#a964fe6303918c832011d109a369b9e8c", null ],
     [ "sub_gnss_map_", "classcarla__converter_1_1CarlaConverter.html#a259e4fb8fd7fa4ca49c0360ea1cf619f", null ],
     [ "sub_imu_map_", "classcarla__converter_1_1CarlaConverter.html#ac53eea9c3a17ceff865aa3dbd9a99a7a", null ],

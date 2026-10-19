@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">carla_converter<span id="projectnumber">&#160;v1.3.2</span>
+   <div id="projectname">carla_converter<span id="projectnumber">&#160;v1.4.0</span>
    </div>
   </td>
  </tr>
@@ -151,18 +151,18 @@ Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>process exit code </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="carla__converter_8cpp_source.html#l00699">699</a> of file <a class="el" href="carla__converter_8cpp_source.html">carla_converter.cpp</a>.</p>
-<div class="fragment"><div class="line"><span class="lineno">  699</span>                                 {</div>
-<div class="line"><span class="lineno">  700</span>  rclcpp::init(argc, argv);</div>
-<div class="line"><span class="lineno">  701</span>  <span class="keyword">auto</span> node = std::make_shared&lt;carla_converter::CarlaConverter&gt;();</div>
-<div class="line"><span class="lineno">  702</span>  rclcpp::executors::SingleThreadedExecutor executor;</div>
-<div class="line"><span class="lineno">  703</span>  RCLCPP_INFO(node-&gt;get_logger(), <span class="stringliteral">&quot;Spinning node &#39;%s&#39; with %s&quot;</span>, node-&gt;get_fully_qualified_name(), <span class="stringliteral">&quot;SingleThreadedExecutor&quot;</span>);</div>
-<div class="line"><span class="lineno">  704</span>  executor.add_node(node);</div>
-<div class="line"><span class="lineno">  705</span>  executor.spin();</div>
-<div class="line"><span class="lineno">  706</span>  rclcpp::shutdown();</div>
-<div class="line"><span class="lineno">  707</span> </div>
-<div class="line"><span class="lineno">  708</span>  <span class="keywordflow">return</span> 0;</div>
-<div class="line"><span class="lineno">  709</span>}</div>
+<p class="definition">Definition at line <a class="el" href="carla__converter_8cpp_source.html#l00709">709</a> of file <a class="el" href="carla__converter_8cpp_source.html">carla_converter.cpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  709</span>                                 {</div>
+<div class="line"><span class="lineno">  710</span>  rclcpp::init(argc, argv);</div>
+<div class="line"><span class="lineno">  711</span>  <span class="keyword">auto</span> node = std::make_shared&lt;carla_converter::CarlaConverter&gt;();</div>
+<div class="line"><span class="lineno">  712</span>  rclcpp::executors::SingleThreadedExecutor executor;</div>
+<div class="line"><span class="lineno">  713</span>  RCLCPP_INFO(node-&gt;get_logger(), <span class="stringliteral">&quot;Spinning node &#39;%s&#39; with %s&quot;</span>, node-&gt;get_fully_qualified_name(), <span class="stringliteral">&quot;SingleThreadedExecutor&quot;</span>);</div>
+<div class="line"><span class="lineno">  714</span>  executor.add_node(node);</div>
+<div class="line"><span class="lineno">  715</span>  executor.spin();</div>
+<div class="line"><span class="lineno">  716</span>  rclcpp::shutdown();</div>
+<div class="line"><span class="lineno">  717</span> </div>
+<div class="line"><span class="lineno">  718</span>  <span class="keywordflow">return</span> 0;</div>
+<div class="line"><span class="lineno">  719</span>}</div>
 </div><!-- fragment -->
 </div>
 </div>
