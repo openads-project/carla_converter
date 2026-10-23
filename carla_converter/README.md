@@ -19,12 +19,18 @@ flowchart LR
     S7:::hidden -->|'/carla/' + actor_name + '/gnss'| NODE
     S8:::hidden -->|'/carla/' + actor_name + '/imu'| NODE
     S9:::hidden -->|'/carla/' + topic_name| NODE
+    S10:::hidden -->|/carla/actor_list| NODE
+    S11:::hidden -->|'/carla/' + actor_name + '/v2x_objectlist'| NODE
+    S12:::hidden -->|topic matching cpm_topic_pattern| NODE
     NODE -->|~/object_list| P0:::hidden
     NODE -->|~/traffic_lights| P1:::hidden
     NODE -->|~/map_info| P2:::hidden
     NODE -->|'~/' + actor_name + '/ego_data'| P3:::hidden
     NODE -->|'~/' + actor_name + '/object_list'| P4:::hidden
     NODE -->|'~/' + topic_name| P5:::hidden
+    NODE -->|'~/' + actor_name + '/etsi_cam'| P6:::hidden
+    NODE -->|'~/' + actor_name + '/cpm'| P7:::hidden
+    NODE -->|'~/' + mirrored_topic + '/cpm'| P8:::hidden
     classDef hidden display: none;
 ```
 
@@ -42,6 +48,9 @@ flowchart LR
 | `"/carla/" + actor_name + "/gnss"` | `sensor_msgs/msg/NavSatFix` | GNSS fix for each actor from `ego_data_actors` |
 | `"/carla/" + actor_name + "/imu"` | `sensor_msgs/msg/Imu` | IMU data for each actor from `ego_data_actors` |
 | `"/carla/" + topic_name` | `derived_object_msgs/msg/ObjectArray` | Custom CARLA ObjectArray topics that are subscribed and converted automatically |
+| `/carla/actor_list` | `carla_msgs/msg/CarlaActorList` | CARLA actor list, used to resolve actor ids of configured actors (e.g. infrastructure units without `vehicle_info`) and to discover vehicle actors without individual topics for `cam_penetration_rate` |
+| `"/carla/" + actor_name + "/v2x_objectlist"` | `derived_object_msgs/msg/ObjectArray` | Actor's own ideal object sensor feed, for each actor from `cpm_actors` |
+| topic matching `cpm_topic_pattern` | `perception_msgs/msg/ObjectList` | Any object list topic matching `cpm_topic_pattern` (and not published by this node) is subscribed and converted to CPM automatically |
 
 #### Published Topics
 
@@ -53,6 +62,9 @@ flowchart LR
 | `"~/" + actor_name + "/ego_data"` | `perception_msgs/msg/EgoData` | Ego state for each actor from `ego_data_actors` |
 | `"~/" + actor_name + "/object_list"` | `perception_msgs/msg/ObjectList` | Object list transformed into each actor frame from `object_list_actors` |
 | `"~/" + topic_name` | `perception_msgs/msg/ObjectList` | Converted output for each custom CARLA ObjectArray topic |
+| `"~/" + actor_name + "/etsi_cam"` | `etsi_its_cam_msgs/msg/CAM` | Ego state converted to CAM for each actor from `ego_data_actors` and each actor selected via `cam_penetration_rate` (requires simulation time to be current unix time) |
+| `"~/" + actor_name + "/cpm"` | `etsi_its_cpm_ts_msgs/msg/CollectivePerceptionMessage` | Object list converted to CPM for each actor from `cpm_actors` (requires simulation time to be current unix time) |
+| `"~/" + mirrored_topic + "/cpm"` | `etsi_its_cpm_ts_msgs/msg/CollectivePerceptionMessage` | CPM for each topic discovered via `cpm_topic_pattern` (a trailing `object_list` is replaced by `cpm`, otherwise `/cpm` is appended; requires the source header stamp to be current unix time) |
 
 #### Parameters
 
@@ -60,6 +72,8 @@ flowchart LR
 | --- | --- | --- | --- |
 | `ego_data_actors` | `string` | `"ego_vehicle"` | Comma-separated list of actor names to publish ego data for |
 | `object_list_actors` | `string` | `"ego_vehicle"` | Comma-separated list of actor names to publish object lists for |
+| `cpm_actors` | `string` | `""` | Comma-separated subset of `object_list_actors` to publish CPM for, sourced from each actor's own ideal object sensor topic (`/carla/<actor_name>/v2x_objectlist`). Use `cpm_topic_pattern` instead for actors without that topic |
+| `cpm_topic_pattern` | `string` | `""` | Regex matched against discovered `perception_msgs/msg/ObjectList` topics (not already published by this node); matches are subscribed and converted to CPM. Empty disables this dynamic discovery |
 | `pos_variances` | `float` | `oa::CONTINUOUS_STATE_COVARIANCE_INVALID` | Position covariance value |
 | `vel_variances` | `float` | `oa::CONTINUOUS_STATE_COVARIANCE_INVALID` | Velocity covariance value |
 | `acc_variances` | `float` | `oa::CONTINUOUS_STATE_COVARIANCE_INVALID` | Acceleration covariance value |
@@ -69,6 +83,7 @@ flowchart LR
 | `enable_traffic_lights` | `bool` | `false` | Enable traffic light subscriptions and publishing |
 | `traffic_light_frequency` | `float` | `10.0` | Publishing frequency for traffic lights in Hz |
 | `carla_fixed_frame_id` | `string` | `"carla_map"` | Fixed frame ID used for the CARLA map |
+| `cam_penetration_rate` | `float` | `0.0` | Percentage (`0`-`100`) of vehicle actors (besides those in `ego_data_actors`, which always send CAM) that additionally send CAM, selected via a deterministic per-actor hash |
 
 ## Launch Files
 

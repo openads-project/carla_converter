@@ -6,9 +6,13 @@
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_listener.h>
+#include <algorithm>
 #include <chrono>
+#include <functional>
+#include <limits>
 #include <map>
 #include <optional>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -17,18 +21,24 @@
 
 #include <derived_object_msgs/msg/object_array.hpp>
 #include <geometry_msgs/msg/accel.hpp>
+#include <geometry_msgs/msg/pose.hpp>
+#include <geometry_msgs/msg/vector3.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include <shape_msgs/msg/solid_primitive.hpp>
 #include <tf2_perception_msgs/tf2_perception_msgs.hpp>
 
+#include <ad2etsi_converters/Converters.hpp>
+#include <carla_msgs/msg/carla_actor_list.hpp>
 #include <carla_msgs/msg/carla_ego_vehicle_info.hpp>
 #include <carla_msgs/msg/carla_ego_vehicle_status.hpp>
 #include <carla_msgs/msg/carla_traffic_light_info_list.hpp>
 #include <carla_msgs/msg/carla_traffic_light_status_list.hpp>
 #include <carla_msgs/msg/carla_world_info.hpp>
+#include <etsi_its_cpm_ts_msgs/msg/collective_perception_message.hpp>
 #include <perception_msgs_utils/object_access.hpp>
+#include <std_msgs/msg/header.hpp>
 #include <std_msgs/msg/string.hpp>
 
 #define ROS_LOG_STREAM(level, ...) RCLCPP_##level##_STREAM(this->get_logger(), __VA_ARGS__)
@@ -42,6 +52,8 @@ namespace ssm = sensor_msgs::msg;
 
 namespace cm = carla_msgs::msg;
 namespace oa = perception_msgs::object_access;
+namespace etsi_cam = etsi_its_cam_msgs::msg;
+namespace etsi_cpm = etsi_its_cpm_ts_msgs::msg;
 namespace stm = std_msgs::msg;
 
 template <typename T>
@@ -110,9 +122,54 @@ class CarlaConverter : public rclcpp::Node {
 
   /**
    * @brief Periodically scans all active topics and subscribes to any new
-   *        CARLA ObjectArray topics not yet covered by a static subscription
+   *        CARLA ObjectArray topics not yet covered by a static subscription,
+   *        newly appeared vehicle actors (see setupEgoDataActor), and, if
+   *        cpm_topic_pattern is set, any perception_msgs ObjectList topic
+   *        matching that pattern not already published by this node
    */
   void subscribeCustomTopics();
+
+  /**
+   * @brief Sets up ego_data/etsi_cam publishers for the given actor and registers it
+   *        as an ego data actor if not already one. If actor_id is not set, also
+   *        subscribes the odometry/vehicle_status/vehicle_info/gnss/imu topics for the
+   *        actor (topic-driven actor). If actor_id is set, no such topics exist for the
+   *        actor (e.g. a co-simulation-driven actor with no individual CARLA ROS bridge
+   *        topics); its identity/state is instead seeded directly and it is later driven
+   *        by matching /carla/objects entries (see actorListCallback, objectsCallback)
+   *
+   * @param actor_name name to register/publish the actor under
+   * @param actor_id CARLA actor id, only set for actors with no individual topics
+   */
+  void setupEgoDataActor(const std::string& actor_name, std::optional<cm::CarlaEgoVehicleInfo::_id_type> actor_id = std::nullopt);
+
+  /**
+   * @brief Discovers vehicle actors from the CARLA actor list that have no individual
+   *        ROS bridge topics and, based on cam_penetration_rate, registers a subset of 
+   *        them as ego data actors
+   *
+   * @param msg incoming CarlaActorList message
+   */
+  void actorListCallback(const cm::CarlaActorList::ConstSharedPtr msg);
+
+  /**
+   * @brief Fills EgoData from the given kinematic state and publishes it; also attempts
+   *        CAM conversion. Shared by odometry-topic-driven actors (via odometryCallback)
+   *        and actors driven directly from /carla/objects (via objectsCallback)
+   *
+   * @param actor_name name of the CARLA actor
+   * @param header header (frame/stamp) of the source message
+   * @param pose pose of the actor
+   * @param velocity_linear linear velocity of the actor (child frame)
+   * @param yaw_rate yaw rate of the actor (child frame)
+   * @param acceleration_linear linear acceleration of the actor (child frame)
+   */
+  void publishEgoDataAndCam(const std::string& actor_name,
+                            const std_msgs::msg::Header& header,
+                            const gm::Pose& pose,
+                            const gm::Vector3& velocity_linear,
+                            double yaw_rate,
+                            const gm::Vector3& acceleration_linear);
 
   /**
    * @brief Stores the latest GNSS fix for the given actor
@@ -162,12 +219,30 @@ class CarlaConverter : public rclcpp::Node {
   void objectsCallback(const dom::ObjectArray::ConstSharedPtr msg);
 
   /**
+   * @brief Converts a cpm_actor's own ideal object sensor ObjectArray (/carla/<actor_name>/v2x_objectlist)
+   *        to CPM and publishes it.
+   *
+   * @param msg incoming ObjectArray message
+   * @param actor_name name of the CARLA actor
+   */
+  void cpmObjectsCallback(const dom::ObjectArray::ConstSharedPtr msg, std::string actor_name);
+
+  /**
    * @brief Converts a custom ObjectArray topic and publishes the result, optionally transformed
    *
    * @param msg incoming ObjectArray message
    * @param topic_name source topic name (without the /carla/ prefix)
    */
   void customObjectsCallback(const dom::ObjectArray::ConstSharedPtr msg, std::string topic_name);
+
+  /**
+   * @brief Converts a dynamically discovered ObjectList topic (matching cpm_topic_pattern) to
+   *        a CPM and publishes it
+   *
+   * @param msg incoming ObjectList message
+   * @param topic_name source topic name
+   */
+  void dynamicObjectListCpmCallback(const pi::ObjectList::ConstSharedPtr msg, std::string topic_name);
 
   /**
    * @brief Builds the internal traffic light object list from static CARLA traffic light info
@@ -203,14 +278,51 @@ class CarlaConverter : public rclcpp::Node {
    */
   pi::ObjectList convertObjectArray(const dom::ObjectArray::ConstSharedPtr msg);
 
-  // TODO(ika): open-source etsi conversion
-  // /**
-  //  * @brief Converts an EgoData message to an ETSI CAM message using the UTM transform
-  //  *
-  //  * @param msg EgoData to convert
-  //  * @return converted CAM message
-  //  */
-  // etsi_cam::CAM convertEgoDataCam(const pi::EgoData msg);
+  /**
+   * @brief Converts an EgoData message to an ETSI CAM message using the UTM transform
+   *
+   * @param msg EgoData to convert
+   * @return converted CAM message
+   */
+  etsi_cam::CAM convertEgoDataCam(const pi::EgoData msg);
+
+  /**
+   * @brief Converts an ObjectList message to an ETSI CPM message using the UTM transform
+   *
+   * @param msg ObjectList to convert
+   * @param station_id ETSI station id to report the CPM under
+   * @return converted CollectivePerceptionMessage
+   */
+  etsi_cpm::CollectivePerceptionMessage convertObjectListCpm(
+      const pi::ObjectList& msg,
+      uint32_t station_id,
+      uint8_t station_type = etsi_cpm::WrappedCpmContainer::CHOICE_CONTAINER_DATA_ORIGINATING_VEHICLE_CONTAINER);
+
+  /**
+   * @brief Resolves the UTM zone/hemisphere to convert the given frame into, shared by both the CAM
+   *        and CPM conversion paths. Anchors the frame in WGS84 via its closest "utm_<zone><N|S>"
+   *        ancestor in the TF tree and returns the zone natural to the frame's own position, which
+   *        is the zone etsi_its_msgs derives from the reference position it stores
+   *
+   * @param frame_id source TF frame
+   * @param stamp source message stamp
+   * @param zone output UTM zone number
+   * @param is_northp output UTM hemisphere flag
+   * @return whether a usable UTM zone was found
+   */
+  bool resolveUtmZone(const std::string& frame_id, const rclcpp::Time& stamp, int& zone, bool& is_northp);
+
+  /**
+   * @brief Resolves the ETSI station id to report CPMs from a dynamically discovered ObjectList
+   *        topic. Taken from the objects' sensor_id, which is the inverse of what ad2etsi's
+   *        cpm2objectlist writes, and therefore preserves the station identity across a relayed
+   *        object list.
+   *
+   * @param msg incoming ObjectList
+   * @param topic_name source topic name
+   * @return station id to report the CPM under
+   */
+  uint32_t resolveDynamicStationId(const pi::ObjectList& msg, const std::string& topic_name);
 
   /**
    * @brief Transforms an ObjectList into the target TF frame, falling back to parent frames
@@ -239,9 +351,11 @@ class CarlaConverter : public rclcpp::Node {
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::TimerBase::SharedPtr timer_traffic_lights_;
   rclcpp::Time last_cam_msg_;
+  rclcpp::Time last_cpm_msg_;
 
   // subscriber and publisher
   Subscriber<dom::ObjectArray> sub_objects_;
+  Subscriber<cm::CarlaActorList> sub_actor_list_;
   Subscriber<cm::CarlaTrafficLightInfoList> sub_traffic_light_info_;
   Subscriber<cm::CarlaTrafficLightStatusList> sub_traffic_light_status_;
   Subscriber<cm::CarlaWorldInfo> sub_world_info_;
@@ -252,6 +366,11 @@ class CarlaConverter : public rclcpp::Node {
   std::map<std::string, Subscriber<cm::CarlaEgoVehicleStatus>> sub_vehicle_status_map_;
   std::map<std::string, Subscriber<cm::CarlaEgoVehicleInfo>> sub_vehicle_info_map_;
   std::map<std::string, Subscriber<dom::ObjectArray>> sub_custom_objects_map_;
+  std::map<std::string, Subscriber<dom::ObjectArray>> sub_cpm_objects_map_;
+  std::map<std::string, Subscriber<pi::ObjectList>> sub_dynamic_cpm_map_;
+
+  // station id established for each dynamically discovered CPM topic, see resolveDynamicStationId
+  std::map<std::string, uint32_t> dynamic_station_id_map_;
 
   Publisher<pi::ObjectList> pub_objects_carla_map_;
   Publisher<pi::ObjectList> pub_traffic_lights_carla_map_;
@@ -259,14 +378,20 @@ class CarlaConverter : public rclcpp::Node {
 
   std::map<std::string, Publisher<pi::ObjectList>> pub_objects_map_;
   std::map<std::string, Publisher<pi::EgoData>> pub_ego_data_map_;
+  std::map<std::string, Publisher<etsi_cam::CAM>> pub_etsi_cam_map_;
   std::map<std::string, Publisher<pi::ObjectList>> pub_custom_objects_map_;
+  std::map<std::string, Publisher<etsi_cpm::CollectivePerceptionMessage>> pub_etsi_cpm_map_;
+  std::map<std::string, Publisher<etsi_cpm::CollectivePerceptionMessage>> pub_dynamic_cpm_map_;
 
   // ros parameters
   std::string carla_fixed_frame_id_ = "carla_map";
   std::string ego_data_actors_string_ = "ego_vehicle";
   std::string object_list_actors_string_ = "ego_vehicle";
+  std::string cpm_actors_string_ = "";
   std::vector<std::string> ego_data_actors_;
   std::vector<std::string> object_list_actors_;
+  std::vector<std::string> cpm_actors_;
+  std::string cpm_topic_pattern_ = "";
   double pos_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
   double vel_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
   double acc_variances_ = oa::CONTINUOUS_STATE_COVARIANCE_INVALID;
@@ -275,6 +400,7 @@ class CarlaConverter : public rclcpp::Node {
   double standstill_threshold_ = 0.01;
   bool enable_traffic_lights_ = false;
   double traffic_light_frequency_ = 10.0;
+  double cam_penetration_rate_ = 0.0;
 
   // ego information
   std::map<std::string, cm::CarlaEgoVehicleInfo::_id_type> ego_id_map_;
@@ -283,6 +409,10 @@ class CarlaConverter : public rclcpp::Node {
   std::map<std::string, gm::Accel> ego_acceleration_map_;
   std::map<std::string, sm::SolidPrimitive> ego_shape_map_;
   std::map<std::string, ssm::NavSatFix> ego_gnss_map_;
+
+  // CARLA actor ids already registered as an ego data actor, via either vehicleInfoCallback
+  // (topic-driven actors) or actorListCallback (actors with no individual topics)
+  std::set<cm::CarlaEgoVehicleInfo::_id_type> known_vehicle_ids_;
 
   pi::EgoData msg_ego_data_;
   pi::ObjectList::SharedPtr msg_traffic_lights_;
