@@ -6,6 +6,7 @@
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_listener.h>
+#include <GeographicLib/UTMUPS.hpp>
 #include <algorithm>
 #include <chrono>
 #include <functional>
@@ -27,15 +28,17 @@
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include <shape_msgs/msg/solid_primitive.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <tf2_perception_msgs/tf2_perception_msgs.hpp>
 
-#include <ad2etsi_converters/Converters.hpp>
+#include <carla_converter/etsi_conversion.hpp>
 #include <carla_msgs/msg/carla_actor_list.hpp>
 #include <carla_msgs/msg/carla_ego_vehicle_info.hpp>
 #include <carla_msgs/msg/carla_ego_vehicle_status.hpp>
 #include <carla_msgs/msg/carla_traffic_light_info_list.hpp>
 #include <carla_msgs/msg/carla_traffic_light_status_list.hpp>
 #include <carla_msgs/msg/carla_world_info.hpp>
+#include <etsi_its_cam_msgs/msg/cam.hpp>
 #include <etsi_its_cpm_ts_msgs/msg/collective_perception_message.hpp>
 #include <perception_msgs_utils/object_access.hpp>
 #include <std_msgs/msg/header.hpp>

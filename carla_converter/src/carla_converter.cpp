@@ -23,8 +23,8 @@ CarlaConverter::CarlaConverter() : Node("carla_converter") {
                                 "Comma-separated list of actor names to publish object lists for", false, false, true);
   this->declareAndLoadParameter("cpm_actors", cpm_actors_string_,
                                 "Comma-separated subset of object_list_actors to publish CPM messages. Each actor's CPM is "
-                                "sourced from its own ideal object sensor topic (/carla/<actor_name>/v2x_objectlist)."
-                                "Use cpm_topic_pattern instead if an actor has no such topic but publishes a custom"
+                                "sourced from its own ideal object sensor topic (/carla/<actor_name>/v2x_objectlist). "
+                                "Use cpm_topic_pattern instead if an actor has no such topic but publishes a custom "
                                 "object list.",
                                 false, false, true);
   this->declareAndLoadParameter("cpm_topic_pattern", cpm_topic_pattern_,
@@ -994,7 +994,7 @@ etsi_cam::CAM CarlaConverter::convertEgoDataCam(const pi::EgoData msg) {
   int zone = 0;
   bool is_northp = true;
   if (resolveUtmZone(msg.header.frame_id, msg.header.stamp, zone, is_northp)) {
-    ad2etsi::egodata2cam(msg_ego_data_, msg_cam, *tf2_buffer_.get(), zone, is_northp);
+    etsi::egoDataToCam(msg, msg_cam, *tf2_buffer_, zone, is_northp);
   } else {
     RCLCPP_ERROR(this->get_logger(), "Tranformation to global utm frame not found.");
   }
@@ -1011,7 +1011,7 @@ etsi_cpm::CollectivePerceptionMessage CarlaConverter::convertObjectListCpm(const
   if (!resolveUtmZone(msg.header.frame_id, msg.header.stamp, zone, is_northp)) {
     throw std::runtime_error("Tranformation to global utm frame not found.");
   }
-  ad2etsi::objectlist2cpm(msg, msg_cpm, *tf2_buffer_.get(), station_type, station_id, "", zone, is_northp);
+  etsi::objectListToCpm(msg, msg_cpm, *tf2_buffer_, station_type, station_id, zone, is_northp);
 
   return msg_cpm;
 }

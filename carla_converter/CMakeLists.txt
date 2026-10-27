@@ -20,11 +20,16 @@ find_package(tf2_ros REQUIRED)
 find_package(carla_msgs REQUIRED)
 find_package(perception_msgs REQUIRED)
 find_package(perception_msgs_utils REQUIRED)
-find_package(ad2etsi_converters REQUIRED)
+find_package(etsi_its_cam_msgs REQUIRED)
+find_package(etsi_its_cpm_ts_msgs REQUIRED)
+find_package(etsi_its_msgs_utils REQUIRED)
 
 set(TARGET_NAME carla_converter)
 
-add_executable(${TARGET_NAME} src/carla_converter.cpp)
+add_executable(${TARGET_NAME}
+  src/carla_converter.cpp
+  src/etsi_conversion.cpp
+)
 
 target_include_directories(${TARGET_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -47,7 +52,9 @@ ament_target_dependencies(${TARGET_NAME}
   carla_msgs
   perception_msgs
   perception_msgs_utils
-  ad2etsi_converters
+  etsi_its_cam_msgs
+  etsi_its_cpm_ts_msgs
+  etsi_its_msgs_utils
 )
 
 install(TARGETS ${TARGET_NAME}
