@@ -72,8 +72,8 @@ flowchart LR
 | --- | --- | --- | --- |
 | `ego_data_actors` | `string` | `"ego_vehicle"` | Comma-separated list of actor names to publish ego data for |
 | `object_list_actors` | `string` | `"ego_vehicle"` | Comma-separated list of actor names to publish object lists for |
-| `cpm_actors` | `string` | `""` | Comma-separated subset of object_list_actors to publish CPM messages. Each actor's CPM is sourced from its own ideal object sensor topic (/carla/<actor_name>/v2x_objectlist). Use cpm_topic_pattern instead if an actor has no such topic but publishes a custom object list. |
-| `cpm_topic_pattern` | `string` | `""` | Regex matched against discovered perception_msgs/ObjectList topics; matching topics not already published by this node get an additional CPM conversion and publisher. |
+| `cpm_actors` | `string` | - | Comma-separated subset of object_list_actors to publish CPM messages. Each actor's CPM is sourced from its own ideal object sensor topic (/carla/<actor_name>/v2x_objectlist). Use cpm_topic_pattern instead if an actor has no such topic but publishes a custom object list. |
+| `cpm_topic_pattern` | `string` | - | Regex matched against discovered perception_msgs/ObjectList topics; matching topics not already published by this node get an additional CPM conversion and publisher. |
 | `pos_variances` | `float` | `0.0` | Position variance [m^2] |
 | `vel_variances` | `float` | `0.0` | Velocity variance [m^2/s^2] |
 | `acc_variances` | `float` | `0.0` | Acceleration variance [m^2/s^4] |

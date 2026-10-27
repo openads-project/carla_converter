@@ -809,7 +809,7 @@ void CarlaConverter::customObjectsCallback(const dom::ObjectArray::ConstSharedPt
 
 uint32_t CarlaConverter::resolveDynamicStationId(const pi::ObjectList& msg, const std::string& topic_name) {
   // deterministic id derived from topic name, whenever message carries no usable identity.
-  const uint32_t fallback_station_id = static_cast<uint32_t>(std::hash<std::string>{}(topic_name)) | 0x80000000u;
+  const uint32_t fallback_station_id = static_cast<uint32_t>(std::hash<std::string>{}(topic_name)) | 0x80000000U;
 
   auto station_id_it = dynamic_station_id_map_.find(topic_name);
   if (station_id_it != dynamic_station_id_map_.end()) return station_id_it->second;

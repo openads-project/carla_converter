@@ -390,11 +390,11 @@ class CarlaConverter : public rclcpp::Node {
   std::string carla_fixed_frame_id_ = "carla_map";
   std::string ego_data_actors_string_ = "ego_vehicle";
   std::string object_list_actors_string_ = "ego_vehicle";
-  std::string cpm_actors_string_ = "";
+  std::string cpm_actors_string_;
   std::vector<std::string> ego_data_actors_;
   std::vector<std::string> object_list_actors_;
   std::vector<std::string> cpm_actors_;
-  std::string cpm_topic_pattern_ = "";
+  std::string cpm_topic_pattern_;
   double pos_variances_ = 0.0;
   double vel_variances_ = 0.0;
   double acc_variances_ = 0.0;
