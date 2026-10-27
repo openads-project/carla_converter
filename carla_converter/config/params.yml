@@ -3,6 +3,8 @@
     carla_fixed_frame_id: "carla_map"
     ego_data_actors: "ego_vehicle"
     object_list_actors: "ego_vehicle"
+    cpm_actors: ""
+    cpm_topic_pattern: ""
     pos_variances: 0.0
     vel_variances: 0.0
     acc_variances: 0.0
@@ -12,3 +14,4 @@
     standstill_threshold: 0.01
     enable_traffic_lights: false
     traffic_light_frequency: 10.0
+    cam_penetration_rate: 0.0
