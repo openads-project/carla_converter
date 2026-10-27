@@ -1,6 +1,6 @@
 openadservice:
   name: carla-converter
-  image: ghcr.io/openads-project/carla_converter:v1.3.2
+  image: ghcr.io/openads-project/carla_converter:v1.4.0
   env:
     # --- name ------
     NAMESPACE: /

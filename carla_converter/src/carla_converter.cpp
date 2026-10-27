@@ -31,17 +31,20 @@ CarlaConverter::CarlaConverter() : Node("carla_converter") {
                                 "Regex matched against discovered perception_msgs/ObjectList topics; matching topics not "
                                 "already published by this node get an additional CPM conversion and publisher.",
                                 false, false, true);
-  this->declareAndLoadParameter("pos_variances", pos_variances_, "Position covariance value", true, false, false);
-  this->declareAndLoadParameter("vel_variances", vel_variances_, "Velocity covariance value", true, false, false);
-  this->declareAndLoadParameter("acc_variances", acc_variances_, "Acceleration covariance value", true, false, false);
-  this->declareAndLoadParameter("angle_variances", angle_variances_, "Angle covariance value", true, false, false);
-  this->declareAndLoadParameter("angle_rate_variances", angle_rate_variances_, "Angle rate covariance value", true, false, false);
+  this->declareAndLoadParameter("pos_variances", pos_variances_, "Position variance [m^2]", true, false, false);
+  this->declareAndLoadParameter("vel_variances", vel_variances_, "Velocity variance [m^2/s^2]", true, false, false);
+  this->declareAndLoadParameter("acc_variances", acc_variances_, "Acceleration variance [m^2/s^4]", true, false, false);
+  this->declareAndLoadParameter("angle_variances", angle_variances_, "Angle variance [rad^2]", true, false, false);
+  this->declareAndLoadParameter("angle_rate_variances", angle_rate_variances_, "Angle rate variance [rad^2/s^2]", true, false,
+                                false);
+  this->declareAndLoadParameter("steering_angle_ack_variance", steering_angle_ack_variance_,
+                                "Ackermann steering angle variance [rad^2]", true, false, false);
   this->declareAndLoadParameter("standstill_threshold", standstill_threshold_,
                                 "Velocity threshold to indicate standstill of vehicle [m/s]", true, false, false);
   this->declareAndLoadParameter("enable_traffic_lights", enable_traffic_lights_,
                                 "Enable traffic light subscriptions and publishing", false, false, true);
   this->declareAndLoadParameter("traffic_light_frequency", traffic_light_frequency_,
-                                "Publishing frequency for traffic lights in Hz", false, false, true);
+                                "Publishing frequency for traffic lights [Hz]", false, false, true);
   this->declareAndLoadParameter("carla_fixed_frame_id", carla_fixed_frame_id_, "Fixed frame ID used for the CARLA map");
   this->declareAndLoadParameter("cam_penetration_rate", cam_penetration_rate_,
                                 "Percentage of vehicle actors (besides those in ego_data_actors, which always send CAM) "
@@ -540,6 +543,9 @@ void CarlaConverter::trafficLightInfoCallback(const cm::CarlaTrafficLightInfoLis
       pi_light.existence_probability = 1.0;
       oa::initializeState(pi_light, pi::TRAFFICLIGHT::MODEL_ID);
       oa::setPose(pi_light.state, traffic_light.transform);
+      oa::setContinuousStateCovarianceAt(pi_light, pi::TRAFFICLIGHT::X, pi::TRAFFICLIGHT::X, pos_variances_);
+      oa::setContinuousStateCovarianceAt(pi_light, pi::TRAFFICLIGHT::Y, pi::TRAFFICLIGHT::Y, pos_variances_);
+      oa::setContinuousStateCovarianceAt(pi_light, pi::TRAFFICLIGHT::Z, pi::TRAFFICLIGHT::Z, pos_variances_);
       oa::setTrafficLightType(pi_light.state, pi::TRAFFICLIGHT::TYPE_UNKNOWN);
       oa::setTrafficLightState(pi_light.state, pi::TRAFFICLIGHT::STATE_UNKNOWN);
 
@@ -686,7 +692,9 @@ void CarlaConverter::publishEgoDataAndCam(const std::string& actor_name,
   oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::PITCH, pi::EGO::PITCH, angle_variances_);
   oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::YAW, pi::EGO::YAW, angle_variances_);
   oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::YAW_RATE, pi::EGO::YAW_RATE, angle_rate_variances_);
-
+  oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::STEERING_ANGLE_ACK, pi::EGO::STEERING_ANGLE_ACK,
+                                     steering_angle_ack_variance_);
+  
   // set vehicle id and dimensions
   msg_ego_data_.vehicle_id = ego_id_map_[actor_name];
   msg_ego_data_.length = ego_shape_map_[actor_name].dimensions[0];
@@ -941,7 +949,7 @@ pi::ObjectList CarlaConverter::convertObjectArray(const dom::ObjectArray::ConstS
 
     // set z for vehicles to center
     if (objectTemp.state.classifications[0].type != pi::ObjectClassification::PEDESTRIAN) {
-      oa::setZ(objectTemp, msg->objects[i].pose.position.z + msg->objects[i].shape.dimensions[2] / 2.0);
+      oa::setZ(objectTemp, msg->objects[i].pose.position.z + msg->objects[i].shape.dimensions[2] / 2.0, false);
     }
 
     objectTemp.state.reference_point.value = pi::ObjectReferencePoint::GEOMETRIC_CENTER;

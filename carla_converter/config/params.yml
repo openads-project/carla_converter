@@ -5,12 +5,13 @@
     object_list_actors: "ego_vehicle"
     cpm_actors: ""
     cpm_topic_pattern: ""
-    pos_variances: 0.2
-    vel_variances: -1.0
-    acc_variances: -1.0
-    angle_variances: 0.1
-    angle_rate_variances: -1.0
-    standstill_threshold: 0.01 # velocity threshold to indicate standstill of vehicle [m/s]
+    pos_variances: 0.0
+    vel_variances: 0.0
+    acc_variances: 0.0
+    angle_variances: 0.0
+    angle_rate_variances: 0.0
+    steering_angle_ack_variance: 0.0
+    standstill_threshold: 0.01
     enable_traffic_lights: false
     traffic_light_frequency: 10.0
     cam_penetration_rate: 0.0
