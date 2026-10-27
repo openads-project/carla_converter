@@ -694,7 +694,7 @@ void CarlaConverter::publishEgoDataAndCam(const std::string& actor_name,
   oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::YAW_RATE, pi::EGO::YAW_RATE, angle_rate_variances_);
   oa::setContinuousStateCovarianceAt(msg_ego_data_.state, pi::EGO::STEERING_ANGLE_ACK, pi::EGO::STEERING_ANGLE_ACK,
                                      steering_angle_ack_variance_);
-  
+
   // set vehicle id and dimensions
   msg_ego_data_.vehicle_id = ego_id_map_[actor_name];
   msg_ego_data_.length = ego_shape_map_[actor_name].dimensions[0];
