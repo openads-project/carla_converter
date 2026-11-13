@@ -816,7 +816,7 @@ uint32_t CarlaConverter::resolveDynamicStationId(const pi::ObjectList& msg, cons
 
   if (msg.objects.empty()) return fallback_station_id;
 
-  // ad2etsi's inverse conversion writes a CPM's station id into sensor_id (cpm2objectlist), so
+  // openads_etsi_its_conversion's inverse conversion writes a CPM's station id into sensor_id (cpm2objectlist), so
   // reading it back out here is that exact inverse and preserves the station identity across a
   // relayed object list.
   uint64_t sensor_id = 0;
@@ -1002,7 +1002,7 @@ etsi_cam::CAM CarlaConverter::convertEgoDataCam(const pi::EgoData msg) {
   int zone = 0;
   bool is_northp = true;
   if (resolveUtmZone(msg.header.frame_id, msg.header.stamp, zone, is_northp)) {
-    etsi::egoDataToCam(msg, msg_cam, *tf2_buffer_, zone, is_northp);
+    openads_etsi_its_conversion::egodata2cam(msg, msg_cam, *tf2_buffer_, zone, is_northp);
   } else {
     RCLCPP_ERROR(this->get_logger(), "Tranformation to global utm frame not found.");
   }
@@ -1019,7 +1019,8 @@ etsi_cpm::CollectivePerceptionMessage CarlaConverter::convertObjectListCpm(const
   if (!resolveUtmZone(msg.header.frame_id, msg.header.stamp, zone, is_northp)) {
     throw std::runtime_error("Tranformation to global utm frame not found.");
   }
-  etsi::objectListToCpm(msg, msg_cpm, *tf2_buffer_, station_type, station_id, zone, is_northp);
+  // an empty reference_pose_frame_id reports the origin of the ObjectList frame as the CPM reference position
+  openads_etsi_its_conversion::objectlist2cpm(msg, msg_cpm, *tf2_buffer_, station_type, station_id, "", zone, is_northp);
 
   return msg_cpm;
 }

@@ -31,7 +31,6 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <tf2_perception_msgs/tf2_perception_msgs.hpp>
 
-#include <carla_converter/etsi_conversion.hpp>
 #include <carla_msgs/msg/carla_actor_list.hpp>
 #include <carla_msgs/msg/carla_ego_vehicle_info.hpp>
 #include <carla_msgs/msg/carla_ego_vehicle_status.hpp>
@@ -40,6 +39,7 @@
 #include <carla_msgs/msg/carla_world_info.hpp>
 #include <etsi_its_cam_msgs/msg/cam.hpp>
 #include <etsi_its_cpm_ts_msgs/msg/collective_perception_message.hpp>
+#include <openads_etsi_its_conversion/conversion.hpp>
 #include <perception_msgs_utils/object_access.hpp>
 #include <std_msgs/msg/header.hpp>
 #include <std_msgs/msg/string.hpp>
@@ -317,9 +317,9 @@ class CarlaConverter : public rclcpp::Node {
 
   /**
    * @brief Resolves the ETSI station id to report CPMs from a dynamically discovered ObjectList
-   *        topic. Taken from the objects' sensor_id, which is the inverse of what ad2etsi's
-   *        cpm2objectlist writes, and therefore preserves the station identity across a relayed
-   *        object list.
+   *        topic. Taken from the objects' sensor_id, which is the inverse of what
+   *        openads_etsi_its_conversion's cpm2objectlist writes, and therefore preserves the station
+   *        identity across a relayed object list.
    *
    * @param msg incoming ObjectList
    * @param topic_name source topic name

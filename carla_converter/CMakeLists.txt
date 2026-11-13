@@ -22,14 +22,14 @@ find_package(perception_msgs REQUIRED)
 find_package(perception_msgs_utils REQUIRED)
 find_package(etsi_its_cam_msgs REQUIRED)
 find_package(etsi_its_cpm_ts_msgs REQUIRED)
-find_package(etsi_its_msgs_utils REQUIRED)
+find_package(openads_etsi_its_conversion REQUIRED)
+# workaround to find GeographicLib, see https://bugs.launchpad.net/ubuntu/+source/geographiclib/+bug/1805173
+list(APPEND CMAKE_MODULE_PATH "/usr/share/cmake/geographiclib")
+find_package(GeographicLib REQUIRED)
 
 set(TARGET_NAME carla_converter)
 
-add_executable(${TARGET_NAME}
-  src/carla_converter.cpp
-  src/etsi_conversion.cpp
-)
+add_executable(${TARGET_NAME} src/carla_converter.cpp)
 
 target_include_directories(${TARGET_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -54,8 +54,11 @@ ament_target_dependencies(${TARGET_NAME}
   perception_msgs_utils
   etsi_its_cam_msgs
   etsi_its_cpm_ts_msgs
-  etsi_its_msgs_utils
+  openads_etsi_its_conversion
 )
+
+# GeographicLib is used directly to resolve the UTM zone for the ETSI conversions
+target_link_libraries(${TARGET_NAME} ${GeographicLib_LIBRARIES})
 
 install(TARGETS ${TARGET_NAME}
   DESTINATION lib/${PROJECT_NAME}
