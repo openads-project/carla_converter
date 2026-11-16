@@ -19,6 +19,10 @@ CarlaConverter::CarlaConverter() : Node("carla_converter") {
   // declare and load parameters
   this->declareAndLoadParameter("ego_data_actors", ego_data_actors_string_,
                                 "Comma-separated list of actor names to publish ego data for", false, false, true);
+  this->declareAndLoadParameter("cam_actors", cam_actors_string_,
+                                "Comma-separated list of actor names to publish CAM messages for, independent of "
+                                "ego_data_actors. Leave empty to publish no CAMs for configured actors.",
+                                false, false, true);
   this->declareAndLoadParameter("object_list_actors", object_list_actors_string_,
                                 "Comma-separated list of actor names to publish object lists for", false, false, true);
   this->declareAndLoadParameter("cpm_actors", cpm_actors_string_,
@@ -47,9 +51,10 @@ CarlaConverter::CarlaConverter() : Node("carla_converter") {
                                 "Publishing frequency for traffic lights [Hz]", false, false, true);
   this->declareAndLoadParameter("carla_fixed_frame_id", carla_fixed_frame_id_, "Fixed frame ID used for the CARLA map");
   this->declareAndLoadParameter("cam_penetration_rate", cam_penetration_rate_,
-                                "Percentage of vehicle actors (besides those in ego_data_actors, which always send CAM) "
-                                "that additionally send CAM messages",
-                                true, false, false, 0.0, 100.0);
+                                "Percentage of all vehicles on the map that send CAM messages. Vehicles from cam_actors "
+                                "count towards it and always send CAMs. Further vehicles are selected up to the nearest "
+                                "number of vehicles. -1 disables it.",
+                                true, false, false, -1.0, 100.0);
 
   this->setup();
 }
@@ -157,6 +162,11 @@ void CarlaConverter::setup() {
     actor_name.erase(std::remove_if(actor_name.begin(), actor_name.end(), isspace), actor_name.end());
     ego_data_actors_.push_back(actor_name);
   }
+  std::stringstream cam_actors_ss(cam_actors_string_);
+  while (std::getline(cam_actors_ss, actor_name, ',')) {
+    actor_name.erase(std::remove_if(actor_name.begin(), actor_name.end(), isspace), actor_name.end());
+    if (!actor_name.empty()) cam_actors_.insert(actor_name);
+  }
   std::stringstream object_list_actors_ss(object_list_actors_string_);
   while (std::getline(object_list_actors_ss, actor_name, ',')) {
     actor_name.erase(std::remove_if(actor_name.begin(), actor_name.end(), isspace), actor_name.end());
@@ -229,10 +239,9 @@ void CarlaConverter::setup() {
   RCLCPP_INFO(this->get_logger(), "Subscribed to '%s'", sub_world_info_->get_topic_name());
   RCLCPP_INFO(this->get_logger(), "Publishing to '%s'", pub_map_info_->get_topic_name());
 
-  // setup subscriber and publisher for the configured ego_data_actors_
-  for (size_t i = 0; i < ego_data_actors_.size(); i++) {
-    setupEgoDataActor(ego_data_actors_[i]);
-  }
+  // setup subscriber and publisher for the configured ego_data_actors_ and cam_actors_
+  for (const std::string& name : ego_data_actors_) setupEgoDataActor(name);
+  for (const std::string& name : cam_actors_) setupEgoDataActor(name);
 
   // setup object subscriber and publisher for object_list_actors_
   for (std::string& actor_name : object_list_actors_) {
@@ -280,8 +289,8 @@ void CarlaConverter::setup() {
 }
 
 void CarlaConverter::setupEgoDataActor(const std::string& actor_name, std::optional<cm::CarlaEgoVehicleInfo::_id_type> actor_id) {
-  // skip if already fully set up (e.g. re-discovered actor)
-  if (pub_ego_data_map_.find(actor_name) != pub_ego_data_map_.end()) return;
+  // skip if already tracked (e.g. actor from both ego_data_actors and cam_actors, or re-selected vehicle)
+  if (!tracked_actors_.insert(actor_name).second) return;
 
   // actors not driven by carla
   if (actor_id.has_value()) {
@@ -292,7 +301,6 @@ void CarlaConverter::setupEgoDataActor(const std::string& actor_name, std::optio
     // is left at 0 for now; could be approximated later from yaw rate & speed if needed
     ego_steering_angle_map_[actor_name] = 0.0;
     ego_steering_angle_max_map_[actor_name] = 0.0;
-    known_vehicle_ids_.insert(*actor_id);
   } else {
     auto odometryArgCallback = [this](const std::string& actor_name) {
       return [this, actor_name](const nm::Odometry::ConstSharedPtr msg) -> void {
@@ -340,38 +348,32 @@ void CarlaConverter::setupEgoDataActor(const std::string& actor_name, std::optio
     sub_imu_map_.insert({actor_name, sub_imu});
   }
 
-  // setup publisher depending on actor_name
-  Publisher<pi::EgoData> pub_ego_data = this->create_publisher<pi::EgoData>("~/" + actor_name + "/ego_data", 1);
-  Publisher<etsi_cam::CAM> pub_etsi_cam = this->create_publisher<etsi_cam::CAM>("~/" + actor_name + "/etsi_cam", 1);
-
-  // save publisher in map with actor_name as key
-  pub_ego_data_map_.insert({actor_name, pub_ego_data});
-  pub_etsi_cam_map_.insert({actor_name, pub_etsi_cam});
-
-  // convertObjectArray() looks up each ego actor's shape via ego_data_actors_,
-  // so actors added dynamically (not from the ego_data_actors parameter) must
-  // be registered here too
-  if (std::find(ego_data_actors_.begin(), ego_data_actors_.end(), actor_name) == ego_data_actors_.end()) {
-    ego_data_actors_.push_back(actor_name);
+  // setup ego_data publisher only for ego_data_actors_, CAM publishers are created on the first CAM
+  if (std::find(ego_data_actors_.begin(), ego_data_actors_.end(), actor_name) != ego_data_actors_.end()) {
+    Publisher<pi::EgoData> pub_ego_data = this->create_publisher<pi::EgoData>("~/" + actor_name + "/ego_data", 1);
+    pub_ego_data_map_.insert({actor_name, pub_ego_data});
   }
 
   if (actor_id.has_value()) {
-    ROS_LOG_STREAM(INFO, "Registered actor " << actor_name << " (id " << *actor_id
-                                             << ") for /carla/objects-driven ego data, publishing ~/" << actor_name
-                                             << "/ego_data");
+    ROS_LOG_STREAM(INFO, "Registered actor " << actor_name << " (id " << *actor_id << ") for /carla/objects-driven ego data");
   } else {
-    ROS_LOG_STREAM(
-        INFO, "Subscribed /carla state topics for actor " << actor_name << " and publishing ~/" << actor_name << "/ego_data");
+    ROS_LOG_STREAM(INFO, "Subscribed /carla state topics for actor " << actor_name);
   }
 }
 
 void CarlaConverter::actorListCallback(const cm::CarlaActorList::ConstSharedPtr msg) {
+  // vehicles on the map: cam_actors_ count towards cam_penetration_rate, all others are candidates (name, id)
+  size_t n_vehicles = 0;
+  size_t n_cam_actors = 0;
+  std::vector<std::pair<std::string, cm::CarlaEgoVehicleInfo::_id_type>> candidates;
+
   for (const auto& actor : msg->actors) {
     // fill CPM station IDs also for RSU units via the carla actor_list
     const bool is_configured_actor =
         std::find(object_list_actors_.begin(), object_list_actors_.end(), actor.rolename) != object_list_actors_.end() ||
         std::find(cpm_actors_.begin(), cpm_actors_.end(), actor.rolename) != cpm_actors_.end() ||
-        std::find(ego_data_actors_.begin(), ego_data_actors_.end(), actor.rolename) != ego_data_actors_.end();
+        std::find(ego_data_actors_.begin(), ego_data_actors_.end(), actor.rolename) != ego_data_actors_.end() ||
+        cam_actors_.count(actor.rolename) > 0;
     if (is_configured_actor && ego_id_map_[actor.rolename] == 0) {
       ego_id_map_[actor.rolename] = actor.id;
       ROS_LOG_STREAM(INFO, "Resolved CARLA id " << actor.id << " for configured actor '" << actor.rolename << "' (type '"
@@ -379,19 +381,42 @@ void CarlaConverter::actorListCallback(const cm::CarlaActorList::ConstSharedPtr 
     }
 
     if (actor.type.rfind("vehicle.", 0) != 0) continue;
-    if (known_vehicle_ids_.find(actor.id) != known_vehicle_ids_.end()) continue;
+    n_vehicles++;
+    if (cam_actors_.count(actor.rolename) > 0) {
+      n_cam_actors++;
+    } else {
+      // already tracked actors (e.g. ego_data_actors) keep their name, others are tracked from /carla/objects
+      const bool is_tracked = tracked_actors_.count(actor.rolename) > 0;
+      candidates.emplace_back(is_tracked ? actor.rolename : actor.rolename + "_" + std::to_string(actor.id), actor.id);
+    }
+  }
 
-    // guard against double registering topic-driven actors without yet arrived vehicle info toipic.
-    if (std::find(ego_data_actors_.begin(), ego_data_actors_.end(), actor.rolename) != ego_data_actors_.end()) continue;
+  // -1 disables cam_penetration_rate. 0 cannot be met if cam_actors_ exist, which always send CAMs
+  if (cam_penetration_rate_ < 0.0) {
+    cam_penetration_actors_.clear();
+    return;
+  }
+  if (cam_penetration_rate_ == 0.0) {
+    RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 60000,
+                         "cam_penetration_rate is 0 %%, only cam_actors send CAMs. Set it to -1 to disable it");
+  }
 
-    // deterministic per-actor percentile in [0, 100)
-    double actor_percentile = static_cast<double>(std::hash<cm::CarlaEgoVehicleInfo::_id_type>{}(actor.id) % 10000) / 100.0;
-    if (actor_percentile >= cam_penetration_rate_) continue;
+  // select vehicles up to the nearest number of vehicles matching the rate; vehicles selected before
+  // come first, so that they do not switch CAMs on and off when the population changes
+  const auto n_target = static_cast<size_t>(std::lround(cam_penetration_rate_ / 100.0 * static_cast<double>(n_vehicles)));
+  std::stable_partition(candidates.begin(), candidates.end(),
+                        [this](const auto& candidate) { return cam_penetration_actors_.count(candidate.first) > 0; });
+  std::set<std::string> selected;
+  for (const auto& [actor_name, actor_id] : candidates) {
+    if (n_cam_actors + selected.size() >= n_target) break;
+    setupEgoDataActor(actor_name, actor_id);
+    selected.insert(actor_name);
+  }
 
-    std::string actor_name = actor.rolename + "_" + std::to_string(actor.id);
-    setupEgoDataActor(actor_name, actor.id);
-    ROS_LOG_STREAM(INFO, "Auto-enabled CAM for co-simulation vehicle actor "
-                             << actor_name << " (cam_penetration_rate: " << cam_penetration_rate_ << ")");
+  if (selected != cam_penetration_actors_) {
+    ROS_LOG_STREAM(INFO, n_cam_actors + selected.size() << " of " << n_vehicles << " vehicles send CAMs (cam_penetration_rate: "
+                                                        << cam_penetration_rate_ << " %)");
+    cam_penetration_actors_ = std::move(selected);
   }
 }
 
@@ -434,25 +459,6 @@ void CarlaConverter::subscribeCustomTopics() {
       pub_custom_objects_map_.insert({topic_name, pub_custom_objects});
 
       ROS_LOG_STREAM(INFO, "Subscribed custom topic /carla/" << topic_name << " and publishing ~/" << topic_name);
-
-    } else if (topic_type == "carla_msgs/msg/CarlaEgoVehicleInfo") {
-      // discover vehicle actors not covered by ego_data_actors_/object_list_actors_ yet
-      std::smatch match;
-      std::regex pattern_vehicle_info(R"(/carla/([^/]+)/vehicle_info)");
-      if (!std::regex_match(topic_name, match, pattern_vehicle_info)) continue;
-      std::string actor_name = match[1];
-
-      // skip if actor is already known (configured or previously discovered)
-      if (sub_vehicle_info_map_.find(actor_name) != sub_vehicle_info_map_.end()) continue;
-
-      // deterministic per-actor percentile in [0, 100) so the same actor
-      // always gets the same outcome across restarts/reconfigures
-      double actor_percentile = static_cast<double>(std::hash<std::string>{}(actor_name) % 10000) / 100.0;
-      if (actor_percentile < cam_penetration_rate_) {
-        setupEgoDataActor(actor_name);
-        ROS_LOG_STREAM(INFO, "Auto-enabled CAM for discovered vehicle actor "
-                                 << actor_name << " (cam_penetration_rate: " << cam_penetration_rate_ << ")");
-      }
 
     } else if (topic_type == "perception_msgs/msg/ObjectList") {
       // dynamic ObjectList -> CPM discovery is opt-in
@@ -528,9 +534,6 @@ void CarlaConverter::vehicleInfoCallback(const cm::CarlaEgoVehicleInfo::ConstSha
         std::max(ego_steering_angle_max_map_[actor_name], static_cast<double>(wheel.max_steer_angle));
   }
   ego_info_set_map_[actor_name] = true;
-  // marks this actor's id as covered by the topic-driven path, so actorListCallback
-  // does not also register it via the /carla/objects-driven path
-  known_vehicle_ids_.insert(msg->id);
 }
 
 void CarlaConverter::trafficLightInfoCallback(const cm::CarlaTrafficLightInfoList::ConstSharedPtr msg) {
@@ -649,6 +652,10 @@ void CarlaConverter::publishEgoDataAndCam(const std::string& actor_name,
                                           const gm::Vector3& velocity_linear,
                                           double yaw_rate,
                                           const gm::Vector3& acceleration_linear) {
+  const auto pub_ego_data = pub_ego_data_map_.find(actor_name);
+  const bool publish_cam = cam_actors_.count(actor_name) > 0 || cam_penetration_actors_.count(actor_name) > 0;
+  if (pub_ego_data == pub_ego_data_map_.end() && !publish_cam) return;
+
   // map ego data from CARLA to the perception_msgs EgoData format
   msg_ego_data_.header = header;
 
@@ -702,12 +709,16 @@ void CarlaConverter::publishEgoDataAndCam(const std::string& actor_name,
   msg_ego_data_.height = ego_shape_map_[actor_name].dimensions[2];
 
   // publish ego_data in carla_map frame
-  pub_ego_data_map_[actor_name]->publish(msg_ego_data_);
+  if (pub_ego_data != pub_ego_data_map_.end()) pub_ego_data->second->publish(msg_ego_data_);
+  if (!publish_cam) return;
+
+  Publisher<etsi_cam::CAM>& pub_etsi_cam = pub_etsi_cam_map_[actor_name];
+  if (!pub_etsi_cam) pub_etsi_cam = this->create_publisher<etsi_cam::CAM>("~/" + actor_name + "/etsi_cam", 1);
 
   // try to convert ego_data to CAM
   try {
     etsi_cam::CAM msg_cam = convertEgoDataCam(msg_ego_data_);
-    pub_etsi_cam_map_[actor_name]->publish(msg_cam);
+    pub_etsi_cam->publish(msg_cam);
   } catch (const std::exception& e) {
     if (this->now() - last_cam_msg_ > rclcpp::Duration(1, 0)) {
       RCLCPP_WARN(this->get_logger(),
@@ -723,9 +734,9 @@ void CarlaConverter::objectsCallback(const dom::ObjectArray::ConstSharedPtr msg)
   // publish object_list in carla_map frame
   pub_objects_carla_map_->publish(msg_object_list_);
 
-  // ego_data_actors_ with no odometry subscription have no individual /carla/<actor_name>/...
+  // tracked actors with no odometry subscription have no individual /carla/<actor_name>/...
   // topics and are instead driven directly from this /carla/objects feed
-  for (std::string& actor_name : ego_data_actors_) {
+  for (const std::string& actor_name : tracked_actors_) {
     if (sub_odometry_map_.find(actor_name) != sub_odometry_map_.end()) continue;
     if (!ego_shape_set_map_[actor_name]) continue;
 
@@ -866,7 +877,7 @@ pi::ObjectList CarlaConverter::convertObjectArray(const dom::ObjectArray::ConstS
     // only add classified objects
     if (!msg->objects[i].object_classified) continue;
 
-    for (auto& actor_name : ego_data_actors_) {
+    for (const auto& actor_name : tracked_actors_) {
       // only continue if ego_info_set_
       if (!ego_info_set_map_[actor_name]) continue;
 

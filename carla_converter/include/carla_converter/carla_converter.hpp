@@ -125,16 +125,15 @@ class CarlaConverter : public rclcpp::Node {
 
   /**
    * @brief Periodically scans all active topics and subscribes to any new
-   *        CARLA ObjectArray topics not yet covered by a static subscription,
-   *        newly appeared vehicle actors (see setupEgoDataActor), and, if
+   *        CARLA ObjectArray topics not yet covered by a static subscription and, if
    *        cpm_topic_pattern is set, any perception_msgs ObjectList topic
    *        matching that pattern not already published by this node
    */
   void subscribeCustomTopics();
 
   /**
-   * @brief Sets up ego_data/etsi_cam publishers for the given actor and registers it
-   *        as an ego data actor if not already one. If actor_id is not set, also
+   * @brief Tracks the ego data of the given actor, which is needed for its EgoData and CAMs,
+   *        and sets up its ego_data publisher if it is from ego_data_actors. If actor_id is not set, also
    *        subscribes the odometry/vehicle_status/vehicle_info/gnss/imu topics for the
    *        actor (topic-driven actor). If actor_id is set, no such topics exist for the
    *        actor (e.g. a co-simulation-driven actor with no individual CARLA ROS bridge
@@ -147,17 +146,18 @@ class CarlaConverter : public rclcpp::Node {
   void setupEgoDataActor(const std::string& actor_name, std::optional<cm::CarlaEgoVehicleInfo::_id_type> actor_id = std::nullopt);
 
   /**
-   * @brief Discovers vehicle actors from the CARLA actor list that have no individual
-   *        ROS bridge topics and, based on cam_penetration_rate, registers a subset of 
-   *        them as ego data actors
+   * @brief Resolves the CARLA ids of configured actors and selects the vehicles that send CAMs
+   *        in addition to cam_actors, so that cam_penetration_rate is met as closely as possible,
+   *        as cam_actors count towards the rate and always send CAMs
    *
    * @param msg incoming CarlaActorList message
    */
   void actorListCallback(const cm::CarlaActorList::ConstSharedPtr msg);
 
   /**
-   * @brief Fills EgoData from the given kinematic state and publishes it; also attempts
-   *        CAM conversion. Shared by odometry-topic-driven actors (via odometryCallback)
+   * @brief Fills EgoData from the given kinematic state and publishes it for ego_data_actors; also
+   *        converts it to a CAM for cam_actors and vehicles selected via cam_penetration_rate.
+   *        Shared by odometry-topic-driven actors (via odometryCallback)
    *        and actors driven directly from /carla/objects (via objectsCallback)
    *
    * @param actor_name name of the CARLA actor
@@ -389,9 +389,11 @@ class CarlaConverter : public rclcpp::Node {
   // ros parameters
   std::string carla_fixed_frame_id_ = "carla_map";
   std::string ego_data_actors_string_ = "ego_vehicle";
+  std::string cam_actors_string_ = "ego_vehicle";
   std::string object_list_actors_string_ = "ego_vehicle";
   std::string cpm_actors_string_;
   std::vector<std::string> ego_data_actors_;
+  std::set<std::string> cam_actors_;
   std::vector<std::string> object_list_actors_;
   std::vector<std::string> cpm_actors_;
   std::string cpm_topic_pattern_;
@@ -404,7 +406,7 @@ class CarlaConverter : public rclcpp::Node {
   double standstill_threshold_ = 0.01;
   bool enable_traffic_lights_ = false;
   double traffic_light_frequency_ = 10.0;
-  double cam_penetration_rate_ = 0.0;
+  double cam_penetration_rate_ = -1.0;
 
   // ego information
   std::map<std::string, cm::CarlaEgoVehicleInfo::_id_type> ego_id_map_;
@@ -414,9 +416,10 @@ class CarlaConverter : public rclcpp::Node {
   std::map<std::string, sm::SolidPrimitive> ego_shape_map_;
   std::map<std::string, ssm::NavSatFix> ego_gnss_map_;
 
-  // CARLA actor ids already registered as an ego data actor, via either vehicleInfoCallback
-  // (topic-driven actors) or actorListCallback (actors with no individual topics)
-  std::set<cm::CarlaEgoVehicleInfo::_id_type> known_vehicle_ids_;
+  // actors whose ego data is tracked (ego_data_actors, cam_actors and vehicles selected via cam_penetration_rate)
+  std::set<std::string> tracked_actors_;
+  // vehicles currently selected via cam_penetration_rate
+  std::set<std::string> cam_penetration_actors_;
 
   pi::EgoData msg_ego_data_;
   pi::ObjectList::SharedPtr msg_traffic_lights_;
