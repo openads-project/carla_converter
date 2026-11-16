@@ -1,14 +1,20 @@
 /**/*:
   ros__parameters:
-    carla_fixed_frame_id: "carla_map"
-    ego_data_actors: "ego_vehicle"
-    object_list_actors: "ego_vehicle"
-    pos_variances: 0.0
-    vel_variances: 0.0
-    acc_variances: 0.0
-    angle_variances: 0.0
-    angle_rate_variances: 0.0
-    steering_angle_ack_variance: 0.0
-    standstill_threshold: 0.01
-    enable_traffic_lights: false
-    traffic_light_frequency: 10.0
+    carla_fixed_frame_id: "carla_map"   # fixed frame ID used for the CARLA map
+    ego_data_actors: "ego_vehicle"      # actors (comma-separated role names) that publish EgoData
+    cam_actors: "ego_vehicle"           # actors that publish CAMs, independent of ego_data_actors; empty: none
+    object_list_actors: "ego_vehicle"   # actors that publish the object list in their frame
+    cpm_actors: ""                      # subset of object_list_actors that publish CPMs from /carla/<actor>/v2x_objectlist
+    cpm_topic_pattern: ""               # regex of ObjectList topics that are additionally converted to CPMs; empty: none
+    pos_variances: 0.0                  # position variance [m^2]
+    vel_variances: 0.0                  # velocity variance [m^2/s^2]
+    acc_variances: 0.0                  # acceleration variance [m^2/s^4]
+    angle_variances: 0.0                # angle variance [rad^2]
+    angle_rate_variances: 0.0           # angle rate variance [rad^2/s^2]
+    steering_angle_ack_variance: 0.0    # Ackermann steering angle variance [rad^2]
+    standstill_threshold: 0.01          # velocity threshold to indicate standstill [m/s]
+    enable_traffic_lights: false        # enable traffic light subscriptions and publishing
+    traffic_light_frequency: 10.0       # publishing frequency for traffic lights [Hz]
+    # percentage of all vehicles on the map that send CAMs [%]: cam_actors count towards it and always send CAMs,
+    # further vehicles are selected up to the nearest number of vehicles, 0 logs a warning, -1 disables it
+    cam_penetration_rate: -1.0

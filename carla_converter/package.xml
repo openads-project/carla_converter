@@ -20,8 +20,12 @@
 
   <depend>carla_msgs</depend>
   <depend>derived_object_msgs</depend>
+  <depend>etsi_its_cam_msgs</depend>
+  <depend>etsi_its_cpm_ts_msgs</depend>
+  <depend>geographiclib</depend>
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
+  <depend>openads_etsi_its_conversion</depend>
   <depend>perception_msgs</depend>
   <depend>perception_msgs_utils</depend>
   <depend>sensor_msgs</depend>

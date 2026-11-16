@@ -1,4 +1,8 @@
 repositories:
+  openads_etsi_its_conversion:
+    type: git
+    url: https://github.com/openads-project/openads_etsi_its_conversion.git
+    version: v1.3.0
   perception_interfaces:
     type: git
     url: https://github.com/ika-rwth-aachen/perception_interfaces.git
